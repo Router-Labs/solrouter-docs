@@ -360,10 +360,10 @@ A separate, agent-first surface for privacy-preserving on-chain actions and encr
 
 ## Supported Models
 
-- **Nosana:** Decentralized GPU inference (`gpt-oss:20b`)
-- **OpenAI:** GPT-5, GPT-4o, GPT-4o Mini
-- **Anthropic:** Claude 4.5 Sonnet, Claude 3.5 Haiku
-- **Google:** Gemini 2.0 Flash
+- **Nosana:** Decentralized GPU inference — GPT-OSS 20B (default)
+- **Qwen:** Qwen 3.6 Plus (1M context)
+- **OpenAI:** GPT-5.4, GPT-4o, GPT-4o mini
+- **Anthropic:** Claude 4.7 Opus, Claude 4.6 Sonnet, Claude 4.5 Sonnet, Claude 4.5 Haiku
 
 All models are reachable through the same encrypted path — the TEE picks the upstream provider based on the model string, so the encryption guarantee is uniform.
 
