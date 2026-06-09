@@ -1,0 +1,79 @@
+---
+title: "Overview"
+icon: List
+description: "The Solrouter REST API gives you encrypted AI chat, agent reasoning, TEE attestation, and private on-chain swaps. Base URL: https://api.solrouter.com"
+---
+
+import { Cards, Card } from 'fumadocs-ui/components/card';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { MessageSquare, Bot, ShieldCheck, Lock } from 'lucide-react';
+
+The Solrouter REST API is the direct HTTP interface to Solrouter's cryptographically private AI infrastructure. You can use it to send encrypted chat completions, run SERV-guided agent reasoning with tool calls, verify TEE attestation, and orchestrate privacy-preserving on-chain swaps — all over a single authenticated surface without email, credit card, or KYC.
+
+## Base URL
+
+Every API request is made against the following base URL:
+
+```
+https://api.solrouter.com
+```
+
+## Authentication
+
+All requests require a Bearer token in the `Authorization` header. You generate your key at [solrouter.com/sdk](https://solrouter.com/sdk) by connecting a Solana wallet — no email or credit card required. Balance is prepaid in USDC or `$ROUTER`.
+
+```
+Authorization: Bearer sk_solrouter_...
+```
+
+For agents that don't hold an API key, Solrouter also supports **x402 per-call USDC payment** facilitated by Coinbase on Solana mainnet. See the [Authentication](/docs/api-reference/authentication) page for full details on both methods.
+
+## Endpoints
+
+<Cards>
+  <Card title="Encrypted Chat" icon={<MessageSquare />} href="/docs/develop/privacy-sdk">
+    Send end-to-end encrypted chat completions with **`@solrouter/sdk`** (encrypted client-side by default), or pay-per-call via the x402 `POST /api/v1/x402/chat/completions` endpoint in the Agent Privacy API below.
+  </Card>
+
+  <Card title="Agent" icon={<Bot />} href="/docs/api-reference/agent">
+    **POST /agent** — Run your prompt through the full SERV-guided agent pipeline with built-in tools including web search, on-chain data, DEX quotes, and Solana wallet inspection.
+  </Card>
+
+  <Card title="TEE Attestation" icon={<ShieldCheck />} href="/docs/api-reference/tee/public-key">
+    **GET /tee/public-key** — Fetch the enclave's live X25519 public key, then verify it against the Intel-signed TDX attestation quote. See the [attestation guide](/docs/concepts/attestation) for the full verification flow.
+  </Card>
+
+  <Card title="Agent Privacy API" icon={<Lock />} href="/docs/develop/private-swaps">
+    **/agents/v1/**\* — Agent-first surface for private on-chain swaps, managed encrypted-balance wallets, and x402-paywalled encrypted inference. Full OpenAPI spec at `/agents/v1/openapi.json`.
+  </Card>
+</Cards>
+
+## OpenAPI Spec and Discovery
+
+The full OpenAPI 3.1 specification for the Agent Privacy API is available at:
+
+```
+GET /agents/v1/openapi.json
+```
+
+You can import this spec directly into tools like Postman, Insomnia, or any OpenAPI-compatible client to explore all `/agents/v1/*` endpoints with type-safe request and response schemas.
+
+Two well-known discovery documents are also published for agent and payment interoperability:
+
+```
+GET /.well-known/agent-card.json   — A2A protocol v1.0 card with the full skill list
+GET /.well-known/x402              — x402 paywall manifest with per-call USDC pricing
+```
+
+## Response Format
+
+All endpoints return JSON. Every response includes a top-level `success` field that indicates whether the request completed without error:
+
+* `success: true` — the request succeeded; additional fields carry the result data.
+* `success: false` — the request failed; an `error` field describes what went wrong.
+
+For a complete list of error codes and how to handle them, see the [Authentication](/docs/api-reference/authentication) page, which covers `401`, `402`, and `403` responses in detail.
+
+<Callout>
+  When you use the `@solrouter/sdk`, all chat requests are encrypted by default before leaving your machine. The Solrouter backend never sees plaintext — it routes the encrypted blob blindly to the Intel TDX enclave. If you call the REST API directly with `curl` or another HTTP client, you are sending plaintext unless you implement client-side encryption yourself or pass `"encrypted": false` intentionally.
+</Callout>

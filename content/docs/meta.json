@@ -1,0 +1,12 @@
+{
+  "pages": [
+    "---Get Started---",
+    "index",
+    "quickstart",
+    "chat-app",
+    "concepts",
+    "develop",
+    "payments",
+    "api-reference"
+  ]
+}

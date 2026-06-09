@@ -1,0 +1,118 @@
+---
+title: "Quickstart"
+icon: Rocket
+description: "Install @solrouter/sdk, generate an API key with your Solana wallet, and send your first encrypted AI request with just a few lines of TypeScript."
+---
+
+import { Cards, Card } from 'fumadocs-ui/components/card';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import { Lock, KeyRound, Bot, Code } from 'lucide-react';
+
+Most AI APIs can read every prompt you send them. Solrouter doesn't: your message is encrypted on your machine before it leaves, and the backend relays it without ever seeing the plaintext. In the next five steps you'll set that up end to end — sign in with a Solana wallet, install the SDK, and send your first encrypted request. No email, no credit card, just a wallet and a few lines of TypeScript.
+
+<Steps>
+  <Step>
+    ### Get an API key
+
+    Your key is how Solrouter authenticates you and bills your usage — and it's tied to your wallet, not your identity.
+
+    Go to [solrouter.com/sdk](https://solrouter.com/sdk), connect your Solana wallet, and generate an API key. Top up your prepaid balance in USDC or \$ROUTER to start making calls.
+
+    <Callout>
+      No email, no credit card, and no KYC required. Your API key is tied to your wallet — that's it.
+    </Callout>
+  </Step>
+
+  <Step>
+    ### Install the SDK
+
+    The SDK handles encryption, routing, and decryption for you, so you write normal TypeScript and get privacy by default.
+
+    Add `@solrouter/sdk` to your project using your preferred package manager.
+
+    <Tabs items={["npm", "yarn", "pnpm"]}>
+      <Tab value="npm">
+      ```bash
+      npm install @solrouter/sdk
+      ```
+      </Tab>
+      <Tab value="yarn">
+      ```bash
+      yarn add @solrouter/sdk
+      ```
+      </Tab>
+      <Tab value="pnpm">
+      ```bash
+      pnpm add @solrouter/sdk
+      ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step>
+    ### Initialize the client
+
+    One line gets you a configured client. Pass your API key and you're ready to make calls.
+
+    The SDK automatically fetches the TEE's attested public key — the encryption target for your prompts (a TEE, or Trusted Execution Environment, is hardware that isolates code and data even from the machine's owner). You don't need to configure anything else.
+
+    ```typescript
+    import { SolRouter } from '@solrouter/sdk';
+
+    const client = new SolRouter({
+      apiKey: 'sk_solrouter_...'
+    });
+    ```
+  </Step>
+
+  <Step>
+    ### Send your first encrypted chat
+
+    This is where the privacy guarantee pays off: your prompt travels encrypted the whole way, and only the TEE can read it.
+
+    Call `client.chat()` to send a message. The SDK encrypts it client-side with Arcium's RescueCipher, routes the encrypted blob through the Solrouter backend (which can't read it), and decrypts the response for you automatically.
+
+    ```typescript
+    // Encrypted end-to-end — Solrouter backend never sees plaintext
+    const response = await client.chat('What are the risks of this DeFi protocol?');
+    console.log(response.message);
+    ```
+  </Step>
+
+  <Step>
+    ### Check your balance
+
+    Solrouter bills against prepaid funds, so check your remaining balance any time — for example, before a batch of calls or to surface it in your own UI.
+
+    Query your prepaid balance:
+
+    ```typescript
+    const { balance, balanceFormatted } = await client.getBalance();
+    console.log(`Balance: ${balanceFormatted}`);
+    ```
+  </Step>
+</Steps>
+
+## Next steps
+
+You've sent an encrypted request and checked your balance — that's the core loop. Where you go next depends on what you're building: the full SDK surface, private on-chain agent actions, or direct HTTP access.
+
+<Cards>
+  <Card title="Privacy SDK" icon={<Lock />} href="/docs/develop/privacy-sdk">
+    Full `@solrouter/sdk` documentation: model selection, opt-out mode, SERV reasoning, and more.
+  </Card>
+
+  <Card title="Authentication" icon={<KeyRound />} href="/docs/develop/authentication">
+    Learn about API key auth, x402 keyless payments, and keeping your credentials safe.
+  </Card>
+
+  <Card title="Agent Tools SDK" icon={<Bot />} href="/docs/develop/agent-tools-sdk">
+    Typed tools for private swaps and encrypted inference in any function-calling agent framework.
+  </Card>
+
+  <Card title="API Reference" icon={<Code />} href="/docs/api-reference/overview">
+    Browse the full REST API, including the agent endpoint and x402 paywall spec.
+  </Card>
+</Cards>

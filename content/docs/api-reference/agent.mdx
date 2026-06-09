@@ -1,0 +1,73 @@
+---
+title: "POST /agent"
+icon: Webhook
+description: "The /agent endpoint runs your prompt through SERV guided reasoning with access to web search, on-chain data, DEX quotes, and Solana tools."
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+The `/agent` endpoint runs your prompt through Solrouter's full SERV-guided agent pipeline. Unlike a direct chat completion, the agent has access to a suite of built-in tools — web search, on-chain data, DEX quotes, token prices, and more — and uses SERV (Structured Execution via Reasoning Virtualization) to walk a deterministic reasoning graph rather than letting the model make freeform structural decisions. The result is faster, cheaper, and more reliable than a standard agent loop, while still producing synthesis-quality answers for complex multi-step queries.
+
+## Endpoint
+
+```
+POST https://api.solrouter.com/agent
+```
+
+## Request
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `prompt` | string (required) | The question or task you want the agent to work on. You can ask for research, comparisons, on-chain analysis, swap quotes, or any other task covered by the built-in tools. |
+| `model` | string | The model used for synthesis at the end of the reasoning pipeline. All models run on Solrouter's self-hosted Nosana GPU network — no third-party APIs. `gpt-oss:20b` (default) — Apache-2.0 open weights, 20B parameters. `qwen3:8b` — open weights, 8B parameters. |
+| `useTools` | boolean | Enable or disable tool calls during agent execution. When `true`, the agent can call any of its built-in tools to gather data before synthesising a final answer. Set to `false` to run the prompt through guided reasoning without external data retrieval. Defaults to `true`. |
+
+## Example Request
+
+```bash
+curl -X POST "https://api.solrouter.com/agent" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Compare Marginfi vs Kamino lending on Solana",
+    "model": "gpt-oss:20b",
+    "useTools": true
+  }'
+```
+
+## Example Response
+
+```json
+{
+  "success": true,
+  "reply": "## Marginfi vs Kamino Lending Comparison\n\n...",
+  "toolCalls": [
+    { "tool": "web_search", "args": { "query": "Marginfi vs Kamino lending Solana" } },
+    { "tool": "token_price", "args": { "token": "MNDE" } }
+  ],
+  "iterations": 4,
+  "skillGraph": {
+    "nodesTraversed": ["defi-analysis", "liquidity-risk", "comparative-analysis"],
+    "relevanceScore": 0.72
+  }
+}
+```
+
+## Response Fields
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `success` | boolean | Whether the request completed successfully. `true` on success; `false` if an error occurred. |
+| `reply` | string | The agent's final synthesised answer in Markdown. This is produced by the LLM synthesis step after SERV has collected all relevant data through tool calls. |
+| `toolCalls` | array | The list of tools the agent called during execution, in order. Each entry contains a `tool` name and an `args` object with the parameters that were passed to that tool. |
+| `iterations` | number | The number of reasoning iterations the SERV pipeline executed before producing the final answer. |
+| `skillGraph.nodesTraversed` | array | The skill graph nodes that were activated for this query. Nodes represent structured domain knowledge (e.g. `defi-analysis`, `liquidity-risk`, `comparative-analysis`) that was injected into the synthesis context. Simple queries may return an empty array if skill-graph traversal was skipped. |
+| `skillGraph.relevanceScore` | number | A score between 0 and 1 indicating how relevant the activated domain knowledge was to the query. Higher scores mean the skill graph contributed meaningfully to the final answer. |
+
+## Available Tools
+
+The agent has access to all built-in tools listed on the [Agents Overview](/docs/concepts/agent-framework) page, including `web_search`, `scrape_url`, `crawl_url`, `solana_balance`, `token_price`, `swap_quote`, `trending_tokens`, and `deepwiki`. Tool selection is handled automatically by the SERV reasoning pipeline — you don't need to specify which tools to use.
+
+<Callout title="Tip">
+  If you are using the `@solrouter/sdk`, you can reach the same SERV-guided agent pipeline by passing `reasoning: 'braid'` to `client.chat()`. This routes your request through `/agent` automatically and returns the same structured response, with the added benefit of client-side encryption if `encrypted: true` is set.
+</Callout>

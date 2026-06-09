@@ -1,0 +1,56 @@
+---
+title: "Models"
+icon: Layers
+description: "Solrouter runs only self-hosted open-weight models on the Nosana GPU network — no prompts reach OpenAI, Anthropic, or any third-party provider."
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+When you turn on privacy mode, Solrouter answers you using only self-hosted, open-weight models — never a proprietary API. That choice is deliberate: it's what lets the privacy guarantee actually hold.
+
+Every model runs on the [Nosana](https://nosana.io) decentralized GPU network. Your encrypted request travels from your device to an Intel TDX enclave (a hardware-isolated execution environment that keeps your data sealed even from the machine's operator), runs against one of the models below, and goes nowhere else. There are no integrations with proprietary model APIs in this path.
+
+## Available Models
+
+These are the open-weight models you can run in privacy mode today, with the ID you pass when selecting one.
+
+| Model       | ID            | License      | Notes                                                              |
+| ----------- | ------------- | ------------ | ------------------------------------------------------------------ |
+| GPT-OSS 20B | `gpt-oss-20b` | Apache-2.0   | Default model. Strong general reasoning and instruction following. |
+| Qwen 3 8B   | `qwen3-8b`    | Open weights | Lighter-weight alternative. Faster responses for simpler tasks.    |
+
+Both models are open-weight: their architecture and weights are public, so anyone can audit them. You aren't trusting a black box — you can inspect exactly what is running on your prompt.
+
+## Choosing a Model
+
+This is how you pick a model in code, and when to reach for each one.
+
+Leave the model out and Solrouter defaults to `gpt-oss-20b`. To choose explicitly, pass it as an option to `client.chat()`:
+
+```typescript
+const response = await client.chat('Your prompt here', {
+  model: 'gpt-oss-20b',  // gpt-oss-20b (default) | qwen3-8b
+});
+```
+
+Reach for `qwen3-8b` when speed matters more than depth — short, straightforward queries. Reach for `gpt-oss-20b` when the task needs stronger reasoning, longer context, or detailed synthesis.
+
+<Callout title="Tip">
+  Call `list_models` via the MCP server to confirm which models are currently live and what each one costs per call.
+</Callout>
+
+## Why Self-Hosted Models?
+
+Here's the reasoning behind the constraint — why Solrouter refuses to route privacy-mode traffic to any third party.
+
+End-to-end privacy only holds if your prompt never reaches a third-party API. The moment Solrouter handed your decrypted prompt to OpenAI or Anthropic, that provider would see your plaintext — and client-side encryption plus TEE isolation would have bought you nothing.
+
+Running only open-weight models on the Nosana network closes that gap. It means:
+
+* Your prompt leaves the Intel TDX enclave only as a re-encrypted response sent back to you.
+* No third-party model provider ever sees your query, your documents, or your response.
+* The inference infrastructure stays auditable — Nosana's decentralized network and open-weight models don't depend on any single company's closed systems.
+
+<Callout>
+  There are no third-party model APIs in the Solrouter privacy pipeline — no OpenAI, no Anthropic, no Google, no Midjourney. If you need a proprietary model, you can disable encryption with `{ encrypted: false }`, but those prompts no longer get TEE isolation or the privacy guarantees described here.
+</Callout>

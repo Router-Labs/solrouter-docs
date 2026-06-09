@@ -1,0 +1,69 @@
+---
+title: "MCP Server"
+icon: Plug
+description: "Use Solrouter's encrypted AI and private swap tools directly from Claude Desktop or Cursor by installing the @solrouter/mcp-server MCP integration."
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+You already work inside Claude Desktop or Cursor. The Solrouter MCP server lets you run Solrouter's encrypted AI and Agent Privacy API tools right there — no separate app, no copy-paste between windows.
+
+MCP (Model Context Protocol — an open standard for connecting AI clients to external tools) is the bridge. Once you wire up the server, every tool call — research, token analysis, private swaps — runs through the same end-to-end encrypted pipeline as the SDK. Your queries stay private even though they start in your editor or desktop assistant.
+
+## Configuration
+
+This is the one-time setup that registers Solrouter as a tool provider in your client.
+
+Add the following block to your MCP configuration file. For **Claude Desktop**, that file is `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS (or the equivalent path on Windows). For **Cursor**, add it under `mcpServers` in your Cursor settings JSON (`~/.cursor/mcp.json`).
+
+```json
+{
+  "mcpServers": {
+    "solrouter": {
+      "command": "npx",
+      "args": ["@solrouter/mcp-server"],
+      "env": {
+        "SOLROUTER_API_KEY": "sk_solrouter_..."
+      }
+    }
+  }
+}
+```
+
+Save the config, then restart Claude Desktop or reload the Cursor window. The Solrouter tools appear in the tool list automatically — nothing else to install.
+
+## Privacy and research tools
+
+Use these tools when you want encrypted AI inference or on-chain research from inside your client.
+
+| Tool                     | Description                                                           |
+| ------------------------ | --------------------------------------------------------------------- |
+| `private_research`       | Encrypted multi-source research (web + DEX + on-chain + AI synthesis) |
+| `encrypted_chat`         | Direct E2E encrypted AI query                                         |
+| `private_token_analysis` | Comprehensive encrypted token research                                |
+| `private_wallet_audit`   | Encrypted wallet intelligence                                         |
+| `list_models`            | Available models with pricing                                         |
+| `account_balance`        | USDC + `$ROUTER` credit balance                                       |
+
+## Agent Privacy API tools
+
+When you need to move funds privately — quoting, executing, and managing swaps — reach for these. They expose the full Solrouter Agent Privacy API, including private swap execution and managed wallet operations.
+
+| Tool                         | Description                                            |
+| ---------------------------- | ------------------------------------------------------ |
+| `umbra_quote`                | Quote a private swap with anonymity-set sizing         |
+| `umbra_anonymity_set`        | Inspect current anonymity set for a mint pair          |
+| `umbra_swap_oneshot`         | One-shot swap session — agent signs funding tx         |
+| `umbra_swap_oneshot_execute` | Submit signed funding tx to start execution            |
+| `umbra_session_status`       | Poll session state until `settled`                     |
+| `umbra_create_wallet`        | Provision a managed Umbra wallet for an agent          |
+| `umbra_swap_managed`         | Run a swap from a managed wallet                       |
+| `umbra_encrypt`              | Convert balance to encrypted balance on same wallet    |
+| `umbra_shield`               | Mixer round-trip → withdraw → forward to fresh address |
+| `umbra_balance`              | Read encrypted balance of a managed wallet             |
+| `umbra_attestation`          | Fetch the on-chain attestation PDA for a session       |
+| `private_inference_paid`     | x402-paywalled encrypted inference (no API key)        |
+
+<Callout>
+  Every request through the MCP server is end-to-end encrypted with the same Arcium RescueCipher + Intel TDX pipeline as the Privacy SDK. Your prompt starts in Claude Desktop or Cursor, but Solrouter's backend never sees the plaintext — only the enclave does.
+</Callout>

@@ -1,0 +1,134 @@
+---
+title: "Attestation"
+icon: BadgeCheck
+description: "Every Solrouter TEE response is backed by an Intel-signed TDX quote. Fetch the attestation and verify the enclave code yourself — on-chain or off-chain."
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+When you send a prompt to a private inference service, how do you know it actually ran where the service claims — and on the code the service published, not a tampered copy that quietly logs your data? Solrouter answers that with attestation: hardware-signed proof you can check yourself.
+
+Every response processed inside the Solrouter TEE (Trusted Execution Environment — hardware that isolates code and data even from the machine's owner) is backed by a real Intel-signed TDX quote. That quote cryptographically binds the enclave's public key to the exact code measurement running inside the Confidential VM. You never have to take Solrouter's word for it: fetch the quote, verify Intel's signature chain, inspect the event log measurements, and confirm on-chain that your specific session ran inside an attested enclave. Trust is optional; verification is always available.
+
+## Live attestation endpoints
+
+These two endpoints hand you the raw material for verification. Query them any time to retrieve the current attestation data.
+
+### Get the TEE public key
+
+```bash
+GET https://api.solrouter.com/tee/public-key
+```
+
+This returns the X25519 public key currently active inside the Confidential VM — the key your SDK uses to encrypt prompts client-side. The enclave generates it at boot, so only the enclave holds the matching private key. Nobody on the host, including Solrouter, can decrypt traffic sealed to it.
+
+### Get the TDX attestation quote
+
+```bash
+GET https://api.solrouter.com/tee/attestation
+```
+
+This returns the Intel TDX attestation quote — the hardware-signed proof that ties everything together. Its `report_data` field contains `sha256(pubkey)`, which binds the public key you fetched above to the exact code measurement inside the CVM. Verify the quote and you confirm three things at once:
+
+1. The host CPU is a genuine Intel TDX-capable processor.
+2. The public key was generated inside that specific enclave instance.
+3. The enclave is running the code Solrouter publishes — not a modified version.
+
+## What you can verify
+
+Attestation only matters if you can check the claims independently. Here is exactly what the quote lets you prove on your own, with no input from Solrouter:
+
+* **Intel root chain** — the TDX quote is signed by an Intel-issued key. Verifying the signature chain confirms the hardware is a genuine TDX CPU, not a simulated or spoofed environment.
+* **Code measurements** — the event log inside the quote includes verifiable measurements of every component in the running stack:
+  * `compose-hash` — the container composition that defines the enclave workload
+  * `app-id` — the specific application image
+  * `os-image-hash` — the guest OS image loaded into the CVM
+  * `mr-kms` — the KMS measurement used for key management
+* **Public key binding** — because `report_data = sha256(pubkey)`, you can confirm that the key used to encrypt your prompt belongs to this exact enclave instance, not an interceptor sitting in the middle.
+
+<Callout title="Tip">
+  Advanced users can verify the full Intel TDX quote chain independently using Intel's DCAP (Data Center Attestation Primitives) libraries or a third-party TEE verification service. The quote Solrouter returns is a standard TDX quote — no proprietary format.
+</Callout>
+
+## On-chain attestation anchor
+
+Off-chain verification proves the enclave is genuine, but it lives in a response you have to trust Solrouter to keep. For a record nobody can quietly edit later, Solrouter anchors attestation data to Solana mainnet.
+
+The Solrouter encryption-attestation program is deployed at:
+
+```
+ATMRatMtsKX4bHax7U4FRdhbE4mjU4NKpDZGqZqAhBKb
+```
+
+Each privacy-mode session can publish a **PDA (Program Derived Address — an account whose address is deterministically derived from the program)** that links that specific request to the attested TEE. Once it settles on-chain, there is an immutable, publicly verifiable record that your interaction ran inside a verified enclave — not just a log entry in Solrouter's database that could change.
+
+To fetch the on-chain attestation PDA for any session, use the `umbra_attestation` tool in the Agent Tools SDK or MCP server:
+
+<Tabs items={["Agent Tools SDK", "MCP (Claude / Cursor)"]}>
+  <Tab value="Agent Tools SDK">
+    ```typescript
+    import { SolrouterAgentClient, callTool } from '@solrouter/agent-tools';
+
+    const client = new SolrouterAgentClient({ apiKey: 'sk_solrouter_...' });
+
+    // Fetch the on-chain attestation for a completed session.
+    // callTool is a standalone function — pass the client as the first arg.
+    // (Equivalent direct method: client.attestation('your-session-id'))
+    const attestation = await callTool(client, 'umbra_attestation', {
+      sessionId: 'your-session-id',
+    });
+
+    console.log(attestation);
+    ```
+  </Tab>
+  <Tab value="MCP (Claude / Cursor)">
+    ```bash
+    # In your MCP-connected client, call:
+    umbra_attestation({ sessionId: "your-session-id" })
+    ```
+  </Tab>
+</Tabs>
+
+## Verification flow
+
+Here is the end-to-end check, from fetching the key to confirming the on-chain anchor. Each step builds on the last, and the final one is optional.
+
+<Steps>
+  <Step>
+### Fetch the public key
+
+Call `GET https://api.solrouter.com/tee/public-key` and store the returned X25519 public key.
+  </Step>
+
+  <Step>
+### Fetch the attestation quote
+
+Call `GET https://api.solrouter.com/tee/attestation` to retrieve the Intel TDX quote.
+  </Step>
+
+  <Step>
+### Verify the quote signature
+
+Use Intel DCAP or a compatible TEE verification library to validate the quote's signature chain back to Intel's root certificate. This proves the hardware is real.
+  </Step>
+
+  <Step>
+### Check report_data
+
+Confirm that `report_data` in the quote equals `sha256(pubkey)` from Step 1. This binds the public key to the verified enclave, so you know you encrypted to the right key.
+  </Step>
+
+  <Step>
+### Inspect code measurements
+
+Compare the `compose-hash`, `app-id`, `os-image-hash`, and `mr-kms` values against what Solrouter publishes in its open-source repository to confirm you are running the expected code.
+  </Step>
+
+  <Step>
+### Check the on-chain anchor (optional)
+
+Look up the session PDA on Solana mainnet at `ATMRatMtsKX4bHax7U4FRdhbE4mjU4NKpDZGqZqAhBKb` to confirm the on-chain settlement record.
+  </Step>
+</Steps>

@@ -1,0 +1,10 @@
+{
+  "title": "Swaps",
+  "icon": "ArrowLeftRight",
+  "pages": [
+    "agents/v1/quote/get",
+    "agents/v1/anonymity-set/get",
+    "agents/v1/swaps/oneshot/post",
+    "agents/v1/swaps/oneshot/id/execute/post"
+  ]
+}

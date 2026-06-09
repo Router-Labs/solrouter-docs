@@ -1,0 +1,16 @@
+{
+  "title": "API Reference",
+  "icon": "Terminal",
+  "pages": [
+    "overview",
+    "authentication",
+    "agent",
+    "tee",
+    "---Agent Privacy API---",
+    "agent-privacy/swaps",
+    "agent-privacy/managed-wallets",
+    "agent-privacy/private-balance",
+    "agent-privacy/inference",
+    "agent-privacy/sessions"
+  ]
+}

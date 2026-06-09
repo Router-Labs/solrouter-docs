@@ -1,0 +1,102 @@
+---
+title: "SERV Reasoning"
+icon: BrainCircuit
+description: "SERV replaces freeform LLM decisions with deterministic guided reasoning diagrams, cutting token costs by 79.7% and latency by 35% with no quality loss."
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+A standard agent loop asks the LLM what to do at every step, which is slow, expensive, and unpredictable. SERV (Structured Execution via Reasoning Virtualization) fixes that by separating the two jobs an agent actually does: deciding *what* to gather, and writing *the answer*.
+
+Instead of asking the model what to do next, SERV walks a Guided Reasoning Diagram (GRD) — a pre-defined execution graph that controls tool selection, sequencing, and data collection on its own, with no LLM in the loop. The model is called exactly once, at the very end, to turn the collected data into a natural language response.
+
+Splitting structure from synthesis is the whole trick: it makes SERV far cheaper and faster than a standard agent loop while keeping output quality high.
+
+## Performance results
+
+Here is what that split buys you, benchmarked against a standard agent loop on identical complex research queries:
+
+| Metric      | Standard     | SERV        | Improvement |
+| ----------- | ------------ | ----------- | ----------- |
+| Quality     | 80/100       | 93/100      | +13         |
+| Token cost  | 19,917/query | 4,047/query | -79.7%      |
+| Latency     | 24.0s        | 15.7s       | -35%        |
+| Reliability | 100%         | 100%        | Parity      |
+
+SERV cuts cost and latency *and* improves quality, with no loss in reliability. The quality gain is not magic: because the GRD gathers data the same structured way every time, the model synthesizes from a complete, consistent picture instead of improvising its own research path.
+
+## How SERV works
+
+This section walks through the four stages a query passes through, and why each one keeps the LLM out of the decisions it isn't good at.
+
+A standard agent loop asks the model the same question at every step: "Given what you know so far, what tool should you call next?" That burns tokens on structural choices the model has no special advantage in making, and it introduces non-determinism that can derail a complex query halfway through.
+
+SERV takes a different approach:
+
+<Steps>
+  <Step>
+    ### Query classification
+
+    The incoming prompt is classified into a query type (e.g. DeFi comparison, wallet audit, token research). Each query type maps to a pre-defined Guided Reasoning Diagram.
+  </Step>
+
+  <Step>
+    ### GRD execution
+
+    SERV walks the diagram node by node — calling tools, collecting data, and branching on results — all deterministically, without LLM involvement.
+  </Step>
+
+  <Step>
+    ### Skill graph injection
+
+    If the query type triggers relevant knowledge nodes, the skill graph injects domain context into the synthesis payload. See [Skill Graphs](/docs/concepts/skill-graphs) for details.
+  </Step>
+
+  <Step>
+    ### LLM synthesis
+
+    Only after all data is collected does SERV call the LLM — once — to transform the structured results into a coherent natural language response.
+  </Step>
+</Steps>
+
+The key insight: don't ask a 20B model to make structural decisions. Do those deterministically, and reserve the LLM for the one task it does best — turning raw information into useful language.
+
+## Using SERV in the SDK
+
+The fastest way to try SERV is through the SDK. Pass `reasoning: 'braid'` to the `chat()` method, and your request routes through the agent endpoint with SERV-guided reasoning enabled.
+
+```typescript
+import { SolRouter } from '@solrouter/sdk';
+
+const client = new SolRouter({
+  apiKey: 'sk_solrouter_...'
+});
+
+const response = await client.chat('Compare Marginfi vs Kamino lending on Solana', {
+  reasoning: 'braid',  // enables SERV-guided reasoning
+});
+
+console.log(response.message);
+```
+
+## Using SERV via the API
+
+If you're not using the SDK, you can call the agent endpoint directly over HTTP. Set `useTools: true` to activate the SERV execution graph.
+
+```bash
+curl -X POST "https://api.solrouter.com/agent" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Compare Marginfi vs Kamino lending on Solana",
+    "model": "gpt-oss:20b",
+    "useTools": true
+  }'
+```
+
+The response includes an `iterations` field showing how many GRD steps SERV executed, and a `toolCalls` array logging every tool the agent invoked and with what arguments.
+
+<Callout title="Tip">
+  SERV shines on complex, multi-step research queries — protocol comparisons, wallet audits, market analysis, tokenomics deep-dives — where structured data gathering pays off. For simple lookups like a single token price or swap quote, a direct tool call is faster. SERV's skill graph traversal is selective and skips automatically for lightweight queries, but if you already know your query is simple, calling the relevant tool directly gives you the lowest possible latency.
+</Callout>
