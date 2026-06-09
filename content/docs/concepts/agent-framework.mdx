@@ -1,0 +1,83 @@
+---
+title: "Agent Framework"
+icon: LayoutDashboard
+description: "Solrouter's agent framework combines SERV guided reasoning, skill graphs, and built-in Solana tools for deterministic, cost-efficient AI agent execution."
+---
+
+import { Cards, Card } from 'fumadocs-ui/components/card';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Workflow, Share2, Lock } from 'lucide-react';
+
+A standard agent asks the LLM what to do at every step, which burns tokens, adds latency, and makes behavior hard to predict. Solrouter's agent framework removes that uncertainty: each request runs through SERV (Structured Execution via Reasoning Virtualization), which replaces freeform LLM decision-making with a deterministic execution graph.
+
+A skill-graph layer rides alongside SERV, injecting structured domain knowledge — DeFi, on-chain data, market analysis, and more — straight into the synthesis context, but only when your query actually needs it. You get an agent that reasons more reliably, spends far fewer tokens, and responds faster than a typical agent loop.
+
+## Core components
+
+The framework rests on three pieces. Start here to learn how each one works.
+
+<Cards>
+  <Card title="SERV Reasoning" icon={<Workflow />} href="/docs/concepts/serv-reasoning">
+    Deterministic execution graphs that replace freeform LLM decisions, cutting token cost by 79.7% and latency by 35%.
+  </Card>
+
+  <Card title="Skill Graphs" icon={<Share2 />} href="/docs/concepts/skill-graphs">
+    Domain knowledge injection across 14 nodes — DeFi, on-chain signals, privacy tech, and more — activated only when needed.
+  </Card>
+
+  <Card title="Privacy API" icon={<Lock />} href="/docs/develop/private-swaps">
+    Agent-first surface for private on-chain swaps and x402-paywalled encrypted inference on Solana.
+  </Card>
+</Cards>
+
+## Built-in tools
+
+These are the tools every agent can reach without any setup. SERV picks which ones to call — and in what order — from the pre-defined execution graph for your query type, rather than asking the LLM at runtime.
+
+| Tool              | Description                                                                     |
+| ----------------- | ------------------------------------------------------------------------------- |
+| `web_search`      | Search the web via Brave Search API for real-time information                   |
+| `scrape_url`      | Extract and clean content from any URL                                          |
+| `crawl_url`       | Crawl entire websites via Cloudflare Browser Rendering (handles JS-heavy sites) |
+| `solana_balance`  | Check SOL and SPL token balances for any wallet                                 |
+| `token_price`     | Real-time price, volume, liquidity, market cap via DexScreener + Jupiter        |
+| `swap_quote`      | DEX swap quotes from Jupiter aggregator                                         |
+| `trending_tokens` | Trending / boosted tokens from DexScreener with price data                      |
+| `deepwiki`        | AI-powered GitHub repository research via DeepWiki                              |
+
+## Quick example
+
+Here's the smallest request that exercises the whole pipeline. Send a prompt to the agent endpoint with your API key, and set `useTools: true` to turn on SERV-guided tool execution.
+
+```bash
+curl -X POST "https://api.solrouter.com/agent" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Compare Marginfi vs Kamino lending on Solana",
+    "model": "gpt-oss:20b",
+    "useTools": true
+  }'
+```
+
+The response gives you the synthesized reply plus a record of how the agent got there: every tool call it made, how many reasoning iterations it ran, and a skill-graph summary listing which knowledge nodes it traversed.
+
+```json
+{
+  "success": true,
+  "reply": "## Marginfi vs Kamino Lending Comparison\n\n...",
+  "toolCalls": [
+    { "tool": "web_search", "args": { "query": "Marginfi vs Kamino lending Solana" } },
+    { "tool": "token_price", "args": { "token": "MNDE" } }
+  ],
+  "iterations": 4,
+  "skillGraph": {
+    "nodesTraversed": ["defi-analysis", "liquidity-risk", "comparative-analysis"],
+    "relevanceScore": 0.72
+  }
+}
+```
+
+<Callout>
+  SERV is the default reasoning mode for every agent request with `useTools: true`. A standard agent loop asks the LLM which tool to call at each step; SERV instead walks a pre-defined execution graph and calls the LLM only once at the end, to synthesize the answer. That single difference is why token cost and latency drop so sharply — and output quality holds.
+</Callout>

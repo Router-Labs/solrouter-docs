@@ -1,0 +1,10 @@
+{
+  "title": "Managed Wallets",
+  "icon": "Wallet",
+  "pages": [
+    "agents/v1/wallets/post",
+    "agents/v1/wallets/id/fund-intent/post",
+    "agents/v1/wallets/id/swap/post",
+    "agents/v1/wallets/id/audit/get"
+  ]
+}

@@ -1,0 +1,65 @@
+---
+title: "Pricing"
+icon: CircleDollarSign
+description: "Solrouter is metered per API call. Prepay in USDC or $ROUTER from your Solana wallet — no subscription, no credit card, no email required."
+---
+
+import { Cards, Card } from 'fumadocs-ui/components/card';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { CircleDollarSign, RotateCw } from 'lucide-react';
+
+Most AI platforms make you commit before you build: a monthly subscription, a credit card on file, an email to verify. Solrouter does none of that. You pay per API call from a balance you fund yourself, so you only ever spend what you use.
+
+The setup is short. Connect a Solana wallet at [solrouter.com/sdk](https://solrouter.com/sdk), fund your balance with USDC or `$ROUTER`, generate an API key, and start building. Every product — the Privacy SDK, Agent Privacy API, MCP server, and chat app — draws from that same prepaid balance.
+
+<Callout>
+  There are no hidden fees. You pay per call from your prepaid balance. When the balance reaches zero, calls stop — nothing is billed retroactively.
+</Callout>
+
+## Payment methods
+
+You can fund your balance two ways. Both cost the same per call; the difference is what each one means for you and for the token.
+
+<Cards>
+  <Card title="USDC" icon={<CircleDollarSign />}>
+    Pay with USDC from your Solana wallet. As a stablecoin pegged to the dollar, its value stays put — so you carry no price risk between top-ups. Top up at any time from [solrouter.com/sdk](https://solrouter.com/sdk).
+  </Card>
+
+  <Card title="$ROUTER" icon={<RotateCw />}>
+    Pay with the native `$ROUTER` token at the same per-call price as USDC. Every fee you pay in `$ROUTER` feeds the buyback-and-burn model — see [\$ROUTER buyback and burn](#router-buyback-and-burn) below.
+  </Card>
+</Cards>
+
+## x402 keyless payments
+
+An autonomous agent often has no human around to sign up for an account or manage an API key. x402 solves that: it lets an agent pay for each call on its own, with no registration at all.
+
+x402 is a standard for HTTP-native micropayments — payments built directly into the web request itself — settled in USDC on Solana mainnet and facilitated by Coinbase. Any x402-aware agent can discover the payment manifest and start paying immediately.
+
+* **Discovery:** `/.well-known/x402` — the x402 paywall manifest listing available endpoints and pricing.
+* **Endpoint:** `POST /api/v1/x402/chat/completions` — Arcium-encrypted prompt in, encrypted response out.
+* **Price:** \$0.005 per call, settled on-chain before the request is processed.
+* **Best for:** autonomous agents that self-fund their own inference costs without a human managing API keys.
+
+Going keyless costs you no privacy. The x402 path runs the same end-to-end encrypted inference as the API-key path: your prompt is still encrypted with RescueCipher before it reaches Solrouter's backend.
+
+## Managing your balance
+
+You can read your current balance straight from the SDK, so an agent or app can check funds before it spends and top up when it runs low.
+
+```typescript
+const { balance, balanceFormatted } = await client.getBalance();
+console.log(`Balance: ${balanceFormatted}`);
+```
+
+To add funds, visit [solrouter.com/sdk](https://solrouter.com/sdk) and connect your Solana wallet. Deposit USDC or `$ROUTER` in any amount — there is no minimum.
+
+## \$ROUTER buyback and burn
+
+Here is what your fees do for the token. The model is deliberately simple and mechanical: no emissions, no staking curves, no tiered discount programs — just supply that tightens as the network is used.
+
+* **100% of USDC revenue** flows into buying back `$ROUTER` on the open market.
+* **50% of each buyback** is permanently burned, reducing total supply.
+* **50% of `$ROUTER` fees** paid directly are burned at the time of payment.
+
+Every call you make — whether you pay in USDC or `$ROUTER` — tightens supply. See [/docs/payments/tokenomics](/docs/payments/tokenomics) for the full token mechanics, supply schedule, and vesting details.

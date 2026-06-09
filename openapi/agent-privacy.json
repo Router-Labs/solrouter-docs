@@ -1,0 +1,1673 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Solrouter Agent Privacy API",
+    "version": "1.0.0",
+    "description": "Private Solana swaps and encrypted inference for AI agents. Mainnet only. Swaps route through the Umbra Privacy mixer + Jupiter; inference is Arcium-encrypted end-to-end and processed inside an Intel TDX enclave. Pay per call with x402 (USDC on Solana, `X-PAYMENT` header) or with a Solrouter API key (`sk_solrouter_*`).",
+    "contact": {
+      "name": "Solrouter",
+      "url": "https://solrouter.com"
+    },
+    "license": {
+      "name": "MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.solrouter.com",
+      "description": "Solrouter mainnet"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Swaps",
+      "description": "Private token swaps. Quote first, then run a one-shot ephemeral-wallet swap (Mode B) where the agent signs its own funding tx. No managed custody required."
+    },
+    {
+      "name": "Managed Wallets",
+      "description": "Provision a Solrouter-custodied Umbra wallet (Mode A), fund it, swap from it, and read its audit log. The wallet keypair is envelope-encrypted server-side; the agent never holds keys."
+    },
+    {
+      "name": "Private Balance",
+      "description": "Encrypted-balance operations on a managed wallet: encrypt a public balance into ciphertext, shield + unlink to a fresh address, withdraw back to a public address, and read the encrypted snapshot."
+    },
+    {
+      "name": "Inference",
+      "description": "Cryptographically private, OpenAI-compatible chat completions. Prompts are Arcium-encrypted client-side; Solrouter never sees plaintext."
+    },
+    {
+      "name": "Sessions",
+      "description": "Poll the state of an async swap/balance session and fetch its on-chain attestation once settled."
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "ApiKey": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "sk_solrouter_*"
+      },
+      "X402": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-PAYMENT",
+        "description": "x402 USDC-on-Solana payment payload"
+      }
+    },
+    "schemas": {
+      "Quote": {
+        "type": "object",
+        "description": "Private-swap quote with Solrouter spread applied and anonymity-set guidance.",
+        "properties": {
+          "fromMint": {
+            "type": "string"
+          },
+          "toMint": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string",
+            "description": "input amount, base units"
+          },
+          "slippageBps": {
+            "type": "integer"
+          },
+          "expectedOut": {
+            "type": "string",
+            "description": "output amount after Solrouter spread, base units"
+          },
+          "rawJupiterOut": {
+            "type": "string",
+            "description": "raw Jupiter output before spread, base units"
+          },
+          "spreadBps": {
+            "type": "integer"
+          },
+          "priceImpactPct": {
+            "type": "string"
+          },
+          "routePlanLength": {
+            "type": "integer"
+          },
+          "bucketed": {
+            "type": "boolean",
+            "description": "true when amount snaps to a standard denomination bucket"
+          },
+          "bucketLabel": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "nearestBucket": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "privacyNotes": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "fromMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "toMint": "So11111111111111111111111111111111111111112",
+          "amount": "1000000",
+          "slippageBps": 50,
+          "expectedOut": "6630000000",
+          "rawJupiterOut": "6663316583",
+          "spreadBps": 50,
+          "priceImpactPct": "0.04",
+          "routePlanLength": 2,
+          "bucketed": true,
+          "bucketLabel": "USDC_1",
+          "nearestBucket": "USDC_1",
+          "privacyNotes": "amount snaps to standard denomination — strong anonymity-set"
+        }
+      },
+      "Session": {
+        "type": "object",
+        "description": "State of a swap/balance session. Poll until `state` is settled.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "oneshot",
+              "managed"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "description": "e.g. running, funded, swapping, settled, failed"
+          },
+          "ephemeralPubkey": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "walletId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fromMint": {
+            "type": "string"
+          },
+          "toMint": {
+            "type": "string"
+          },
+          "amountBaseUnits": {
+            "type": "string"
+          },
+          "actualOut": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "destinationPubkey": {
+            "type": "string"
+          },
+          "fundingTxSig": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "finalTxSig": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "attestationPda": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "example": {
+          "id": "b3d9a1e2-5c4f-4a8b-9e7d-1f2a3b4c5d6e",
+          "mode": "oneshot",
+          "state": "settled",
+          "ephemeralPubkey": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+          "walletId": null,
+          "fromMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "toMint": "So11111111111111111111111111111111111111112",
+          "amountBaseUnits": "1000000",
+          "actualOut": "6628113450",
+          "destinationPubkey": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+          "fundingTxSig": "5h7Qw2KQz9oA3nP1cVxYtRb8sLmJ4dE6fGh9kU2wXcZ1aBpQ7rT3vN5mY8sD0fL2gH4jK6lM9nP1qR3sT5uV7w",
+          "finalTxSig": "5h7Qw2KQz9oA3nP1cVxYtRb8sLmJ4dE6fGh9kU2wXcZ1aBpQ7rT3vN5mY8sD0fL2gH4jK6lM9nP1qR3sT5uV7w",
+          "attestationPda": "AtStPdaXyZ1111111111111111111111111111111111"
+        }
+      },
+      "SessionAck": {
+        "type": "object",
+        "description": "Acknowledgement for an async operation. Poll GET /agents/v1/sessions/{id} for progress.",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "example": "running"
+          },
+          "estimatedSeconds": {
+            "type": "integer",
+            "description": "rough time to settlement"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "machine-readable error code"
+          },
+          "detail": {
+            "type": "string",
+            "description": "human-readable detail (optional)"
+          }
+        },
+        "example": {
+          "error": "missing_required_fields"
+        }
+      }
+    }
+  },
+  "paths": {
+    "/agents/v1/quote": {
+      "get": {
+        "tags": [
+          "Swaps"
+        ],
+        "summary": "Quote a private swap",
+        "description": "Price a private swap before executing it. Returns the expected output after Solrouter's spread plus anonymity-set guidance — whether the amount snaps to a standard denomination bucket (strong privacy) or is an off-bucket amount with a unique on-chain fingerprint.",
+        "parameters": [
+          {
+            "name": "fromMint",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          },
+          {
+            "name": "toMint",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "So11111111111111111111111111111111111111112"
+          },
+          {
+            "name": "amount",
+            "in": "query",
+            "required": true,
+            "description": "input amount in base units",
+            "schema": {
+              "type": "string"
+            },
+            "example": "1000000"
+          },
+          {
+            "name": "slippageBps",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 50
+            },
+            "example": 50
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Quote with spread + privacy notes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Quote"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing or invalid query params",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "X402": []
+          },
+          {
+            "ApiKey": []
+          }
+        ],
+        "x-x402-price": {
+          "usdc": 0.001
+        }
+      }
+    },
+    "/agents/v1/anonymity-set": {
+      "get": {
+        "tags": [
+          "Swaps"
+        ],
+        "summary": "Pool depth for a denomination bucket",
+        "description": "Inspect the anonymity set for a standard denomination bucket before swapping — how many recent deposits share that bucket. A deeper pool means a larger crowd to hide in.",
+        "parameters": [
+          {
+            "name": "bucket",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "SOL_1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pool depth + strength rating",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "bucket": {
+                      "type": "string"
+                    },
+                    "poolDepth": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ],
+                      "description": "deposits in the last 24h"
+                    },
+                    "strength": {
+                      "type": "string",
+                      "enum": [
+                        "strong",
+                        "weak"
+                      ]
+                    },
+                    "raw": {
+                      "type": "object",
+                      "description": "raw indexer stats"
+                    }
+                  }
+                },
+                "example": {
+                  "bucket": "SOL_1",
+                  "poolDepth": 42,
+                  "strength": "strong",
+                  "raw": {}
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Indexer unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agents/v1/swaps/oneshot": {
+      "post": {
+        "tags": [
+          "Swaps"
+        ],
+        "summary": "Begin a one-shot ephemeral-wallet private swap (Mode B)",
+        "description": "Start a private swap that runs through a throwaway ephemeral wallet — no managed custody. Solrouter returns an unsigned `fundingTx`; the agent signs and broadcasts it, then calls `POST /swaps/oneshot/{id}/execute` to kick off the swap orchestrator.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "payerPubkey",
+                  "fromMint",
+                  "toMint",
+                  "amount",
+                  "destinationPubkey"
+                ],
+                "properties": {
+                  "payerPubkey": {
+                    "type": "string",
+                    "description": "the agent's wallet that funds the swap"
+                  },
+                  "fromMint": {
+                    "type": "string"
+                  },
+                  "toMint": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "string",
+                    "description": "input amount, base units"
+                  },
+                  "destinationPubkey": {
+                    "type": "string",
+                    "description": "where the swapped tokens are delivered"
+                  },
+                  "slippageBps": {
+                    "type": "integer",
+                    "default": 50
+                  },
+                  "bypassBucket": {
+                    "type": "boolean",
+                    "description": "allow off-bucket amounts (weaker anonymity-set)"
+                  },
+                  "webhookUrl": {
+                    "type": "string",
+                    "description": "optional callback on settlement"
+                  }
+                }
+              },
+              "example": {
+                "payerPubkey": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+                "fromMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                "toMint": "So11111111111111111111111111111111111111112",
+                "amount": "1000000",
+                "destinationPubkey": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+                "slippageBps": 50
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Session created; sign + broadcast fundingTx, then call /execute",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sessionId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "ephemeralPubkey": {
+                      "type": "string"
+                    },
+                    "fundingTx": {
+                      "type": "string",
+                      "description": "base64 unsigned tx for the agent to sign"
+                    },
+                    "expectedSeconds": {
+                      "type": "integer"
+                    },
+                    "bucketed": {
+                      "type": "boolean"
+                    },
+                    "expiresAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                },
+                "example": {
+                  "sessionId": "b3d9a1e2-5c4f-4a8b-9e7d-1f2a3b4c5d6e",
+                  "ephemeralPubkey": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+                  "fundingTx": "AQAB...base64...",
+                  "expectedSeconds": 75,
+                  "bucketed": true,
+                  "expiresAt": "2026-06-09T18:30:00.000Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing fields, off-bucket amount, or non-positive amount",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "451": {
+            "description": "Destination address is sanctioned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "X402": []
+          },
+          {
+            "ApiKey": []
+          }
+        ],
+        "x-x402-price": {
+          "usdc": 0.1
+        }
+      }
+    },
+    "/agents/v1/swaps/oneshot/{id}/execute": {
+      "post": {
+        "tags": [
+          "Swaps"
+        ],
+        "summary": "Submit fundingTxSig and start the swap orchestrator",
+        "description": "After signing + broadcasting the funding tx from the one-shot session, submit its signature here to start the swap.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "b3d9a1e2-5c4f-4a8b-9e7d-1f2a3b4c5d6e"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "fundingTxSig"
+                ],
+                "properties": {
+                  "fundingTxSig": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "fundingTxSig": "5h7Qw2KQz9oA3nP1cVxYtRb8sLmJ4dE6fGh9kU2wXcZ1aBpQ7rT3vN5mY8sD0fL2gH4jK6lM9nP1qR3sT5uV7w"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Orchestrator started",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionAck"
+                },
+                "example": {
+                  "sessionId": "b3d9a1e2-5c4f-4a8b-9e7d-1f2a3b4c5d6e",
+                  "status": "running",
+                  "estimatedSeconds": 75
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing fundingTxSig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Session not found or already executed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agents/v1/wallets": {
+      "post": {
+        "tags": [
+          "Managed Wallets"
+        ],
+        "summary": "Provision a managed Umbra wallet (Mode A)",
+        "description": "Create a Solrouter-custodied Umbra wallet. The keypair is generated server-side and envelope-encrypted (AES-256-GCM) — the agent never holds private keys. Fund the returned `umbraAddress`, then run swaps and encrypted-balance operations against the wallet id.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "webhookUrl": {
+                    "type": "string",
+                    "description": "optional callback for session updates"
+                  },
+                  "webhookSecret": {
+                    "type": "string",
+                    "description": "optional HMAC secret for webhook signing"
+                  }
+                }
+              },
+              "example": {
+                "webhookUrl": "https://my-agent.example/hooks/umbra"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Managed wallet created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "walletId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "umbraAddress": {
+                      "type": "string"
+                    },
+                    "network": {
+                      "type": "string",
+                      "example": "mainnet"
+                    },
+                    "fundingHint": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "walletId": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+                  "umbraAddress": "umbra1q9c0ffee7p3rh4z8x2v6m5k0n9d3w7s2a1b4c8e6f0g",
+                  "network": "mainnet",
+                  "fundingHint": "send SOL or SPL tokens to umbraAddress to fund this wallet"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Provisioning failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "x-x402-price": {
+          "usdc": 0.05
+        }
+      }
+    },
+    "/agents/v1/wallets/{id}/swap": {
+      "post": {
+        "tags": [
+          "Managed Wallets"
+        ],
+        "summary": "Run a private swap from a managed wallet (Mode A)",
+        "description": "Execute a private swap funded by a managed wallet's balance. Returns a session id to poll; no client-side signing needed.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "fromMint",
+                  "toMint",
+                  "amount",
+                  "destinationPubkey"
+                ],
+                "properties": {
+                  "fromMint": {
+                    "type": "string"
+                  },
+                  "toMint": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "string",
+                    "description": "input amount, base units"
+                  },
+                  "destinationPubkey": {
+                    "type": "string"
+                  },
+                  "slippageBps": {
+                    "type": "integer",
+                    "default": 50
+                  },
+                  "bypassBucket": {
+                    "type": "boolean"
+                  },
+                  "webhookUrl": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "fromMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                "toMint": "So11111111111111111111111111111111111111112",
+                "amount": "1000000",
+                "destinationPubkey": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+                "slippageBps": 50
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Session created; poll /sessions/{id}",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionAck"
+                },
+                "example": {
+                  "sessionId": "b3d9a1e2-5c4f-4a8b-9e7d-1f2a3b4c5d6e",
+                  "status": "running",
+                  "estimatedSeconds": 70
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing fields or off-bucket amount",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "451": {
+            "description": "Destination address is sanctioned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "x-x402-price": {
+          "usdc": 0.05
+        }
+      }
+    },
+    "/agents/v1/wallets/{id}/fund-intent": {
+      "post": {
+        "tags": [
+          "Managed Wallets"
+        ],
+        "summary": "Build an unsigned funding tx for the agent to sign",
+        "description": "Returns an unsigned base64 transaction that moves tokens from the agent's own wallet into the managed wallet. The agent signs and broadcasts it.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "mint",
+                  "amount",
+                  "payerPubkey"
+                ],
+                "properties": {
+                  "mint": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "string",
+                    "description": "base units"
+                  },
+                  "payerPubkey": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                "amount": "1000000",
+                "payerPubkey": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Unsigned funding tx",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tx": {
+                      "type": "string",
+                      "description": "base64 unsigned tx"
+                    },
+                    "mint": {
+                      "type": "string"
+                    },
+                    "amount": {
+                      "type": "string"
+                    },
+                    "to": {
+                      "type": "string",
+                      "description": "managed wallet umbra address"
+                    }
+                  }
+                },
+                "example": {
+                  "tx": "AQAB...base64...",
+                  "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                  "amount": "1000000",
+                  "to": "umbra1q9c0ffee7p3rh4z8x2v6m5k0n9d3w7s2a1b4c8e6f0g"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing fields or non-integer amount",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "x-x402-price": {
+          "usdc": 0.001
+        }
+      }
+    },
+    "/agents/v1/wallets/{id}/audit": {
+      "get": {
+        "tags": [
+          "Managed Wallets"
+        ],
+        "summary": "Wallet operation audit log",
+        "description": "Chronological audit log of every operation on a managed wallet (created, swap, encrypt, shield, withdraw), newest first.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "maximum": 500
+            },
+            "example": 100
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "example": "2026-06-01T00:00:00.000Z"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Audit entries, newest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "entries": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "event": {
+                            "type": "string"
+                          },
+                          "metadata": {
+                            "type": "object"
+                          },
+                          "created_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "entries": [
+                    {
+                      "event": "created",
+                      "metadata": {
+                        "owner": "user_123"
+                      },
+                      "created_at": "2026-06-09T17:55:00.000Z"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ]
+      }
+    },
+    "/agents/v1/wallets/{id}/encrypt": {
+      "post": {
+        "tags": [
+          "Private Balance"
+        ],
+        "summary": "Encrypt a public balance into an encrypted balance",
+        "description": "One tx, ~10s. Funds stay at the same Umbra address but the running balance + future activity become ciphertext on chain. No mixer, no fresh address. Use when you want amount-privacy without breaking address linkability.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "mint",
+                  "amount"
+                ],
+                "properties": {
+                  "mint": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "string",
+                    "description": "base units"
+                  }
+                }
+              },
+              "example": {
+                "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                "amount": "1000000"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Session created; poll /sessions/{id} until settled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionAck"
+                },
+                "example": {
+                  "sessionId": "b3d9a1e2-5c4f-4a8b-9e7d-1f2a3b4c5d6e",
+                  "status": "running",
+                  "estimatedSeconds": 12
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing fields or non-integer amount",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "x-x402-price": {
+          "usdc": 0.02
+        }
+      }
+    },
+    "/agents/v1/wallets/{id}/shield": {
+      "post": {
+        "tags": [
+          "Private Balance"
+        ],
+        "summary": "Shield + unlink — mixer round-trip to a fresh address",
+        "description": "Four txs, ~60s. Public balance enters the Umbra mixer, a claim breaks the on-chain link, then withdraw + transfer delivers to a FRESH destination. Source and destination both appear on-chain but with no link between them. Use when you want destination unlinkability without converting tokens.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "mint",
+                  "amount",
+                  "destinationPubkey"
+                ],
+                "properties": {
+                  "mint": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "string",
+                    "description": "base units"
+                  },
+                  "destinationPubkey": {
+                    "type": "string",
+                    "description": "fresh, unlinked destination"
+                  },
+                  "bypassBucket": {
+                    "type": "boolean"
+                  }
+                }
+              },
+              "example": {
+                "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                "amount": "1000000",
+                "destinationPubkey": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Session created; poll /sessions/{id} until settled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionAck"
+                },
+                "example": {
+                  "sessionId": "b3d9a1e2-5c4f-4a8b-9e7d-1f2a3b4c5d6e",
+                  "status": "running",
+                  "estimatedSeconds": 65
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing fields or off-bucket amount",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "451": {
+            "description": "Destination address is sanctioned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "x-x402-price": {
+          "usdc": 0.05
+        }
+      }
+    },
+    "/agents/v1/wallets/{id}/withdraw": {
+      "post": {
+        "tags": [
+          "Private Balance"
+        ],
+        "summary": "Withdraw from encrypted balance to a public address",
+        "description": "Move funds out of a managed wallet's encrypted balance to a public Solana address.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "mint",
+                  "amount",
+                  "destinationPubkey"
+                ],
+                "properties": {
+                  "mint": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "string",
+                    "description": "base units"
+                  },
+                  "destinationPubkey": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                "amount": "1000000",
+                "destinationPubkey": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Withdrawal queued + callback signatures",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "queueSignature": {
+                      "type": "string"
+                    },
+                    "callbackSignature": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "queueSignature": "5h7Qw2KQz9oA3nP1cVxYtRb8sLmJ4dE6fGh9kU2wXcZ1aBpQ7rT3vN5mY8sD0fL2gH4jK6lM9nP1qR3sT5uV7w",
+                  "callbackSignature": "5h7Qw2KQz9oA3nP1cVxYtRb8sLmJ4dE6fGh9kU2wXcZ1aBpQ7rT3vN5mY8sD0fL2gH4jK6lM9nP1qR3sT5uV7w"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing fields",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "451": {
+            "description": "Destination address is sanctioned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Withdraw failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "x-x402-price": {
+          "usdc": 0.05
+        }
+      }
+    },
+    "/agents/v1/wallets/{id}/balance": {
+      "get": {
+        "tags": [
+          "Private Balance"
+        ],
+        "summary": "Encrypted-balance snapshot for given mints",
+        "description": "Decrypt and return the managed wallet's encrypted balance for one or more mints (comma-separated).",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+          },
+          {
+            "name": "mints",
+            "in": "query",
+            "required": true,
+            "description": "comma-separated mint addresses",
+            "schema": {
+              "type": "string"
+            },
+            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v,So11111111111111111111111111111111111111112"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Per-mint encrypted-balance snapshot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "balances": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "mint": {
+                            "type": "string"
+                          },
+                          "state": {
+                            "type": "string",
+                            "description": "e.g. encrypted, public, unknown"
+                          },
+                          "raw": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "balance in base units"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "balances": [
+                    {
+                      "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                      "state": "encrypted",
+                      "raw": "1000000"
+                    },
+                    {
+                      "mint": "So11111111111111111111111111111111111111112",
+                      "state": "unknown",
+                      "raw": null
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing mints param",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Balance query failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "x-x402-price": {
+          "usdc": 0.005
+        }
+      }
+    },
+    "/api/v1/x402/chat/completions": {
+      "post": {
+        "tags": [
+          "Inference"
+        ],
+        "summary": "Cryptographically private AI inference (Arcium-encrypted, x402-paywalled)",
+        "description": "OpenAI-compatible chat completions. The prompt MUST be Arcium-encrypted client-side using `@solrouter/sdk`'s `encryptPrompt()` helper; the encrypted prompt is processed and the response returned encrypted, without Solrouter ever seeing plaintext. Pay-per-call x402 ($0.005 USDC flat per call). For per-token internal-credit billing with an API key, use POST /api/v1/chat/completions instead.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "encryptedPrompt",
+                  "model"
+                ],
+                "properties": {
+                  "encryptedPrompt": {
+                    "type": "string",
+                    "description": "Arcium ciphertext (base64). Use @solrouter/sdk encryptPrompt()."
+                  },
+                  "model": {
+                    "type": "string",
+                    "example": "gpt-oss:20b"
+                  },
+                  "maxTokens": {
+                    "type": "integer",
+                    "default": 2048
+                  }
+                }
+              },
+              "example": {
+                "encryptedPrompt": "base64-arcium-ciphertext...",
+                "model": "gpt-oss:20b",
+                "maxTokens": 2048
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Encrypted completion + usage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "encryptedResponse": {
+                      "type": "string",
+                      "description": "Arcium ciphertext; decrypt client-side"
+                    },
+                    "usage": {
+                      "type": "object",
+                      "description": "token usage"
+                    },
+                    "cost": {
+                      "type": "number",
+                      "description": "USDC charged"
+                    }
+                  }
+                },
+                "example": {
+                  "encryptedResponse": "base64-arcium-ciphertext...",
+                  "usage": {
+                    "prompt_tokens": 18,
+                    "completion_tokens": 124,
+                    "total_tokens": 142
+                  },
+                  "cost": 0.005
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Payment required (x402)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "X402": []
+          },
+          {
+            "ApiKey": []
+          }
+        ],
+        "x-x402-price": {}
+      }
+    },
+    "/agents/v1/sessions/{id}": {
+      "get": {
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "Poll a swap session's state",
+        "description": "Fetch the current state of any swap/balance session. Poll until `state` is `settled` (or `failed`).",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "b3d9a1e2-5c4f-4a8b-9e7d-1f2a3b4c5d6e"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Session"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Session not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agents/v1/attestations/{sessionId}": {
+      "get": {
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "On-chain attestation for a settled session",
+        "description": "Once a session settles, fetch its on-chain attestation PDA + a snapshot of the swap (mints, amounts, final tx) with Solscan links.",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "b3d9a1e2-5c4f-4a8b-9e7d-1f2a3b4c5d6e"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Attestation PDA + swap snapshot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sessionId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "attestationPda": {
+                      "type": "string"
+                    },
+                    "explorerUrl": {
+                      "type": "string"
+                    },
+                    "snapshot": {
+                      "type": "object",
+                      "properties": {
+                        "mode": {
+                          "type": "string"
+                        },
+                        "fromMint": {
+                          "type": "string"
+                        },
+                        "toMint": {
+                          "type": "string"
+                        },
+                        "amountIn": {
+                          "type": "string"
+                        },
+                        "amountOut": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "finalTxSig": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "finalTxExplorer": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "startedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "settledAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "sessionId": "b3d9a1e2-5c4f-4a8b-9e7d-1f2a3b4c5d6e",
+                  "attestationPda": "AtStPdaXyZ1111111111111111111111111111111111",
+                  "explorerUrl": "https://solscan.io/account/AtStPdaXyZ1111111111111111111111111111111111",
+                  "snapshot": {
+                    "mode": "oneshot",
+                    "fromMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                    "toMint": "So11111111111111111111111111111111111111112",
+                    "amountIn": "1000000",
+                    "amountOut": "6628113450",
+                    "finalTxSig": "5h7Qw2KQz9oA3nP1cVxYtRb8sLmJ4dE6fGh9kU2wXcZ1aBpQ7rT3vN5mY8sD0fL2gH4jK6lM9nP1qR3sT5uV7w",
+                    "finalTxExplorer": "https://solscan.io/tx/5h7Qw2KQz9oA3nP1cVxYtRb8sLmJ4dE6fGh9kU2wXcZ1aBpQ7rT3vN5mY8sD0fL2gH4jK6lM9nP1qR3sT5uV7w",
+                    "startedAt": "2026-06-09T17:55:00.000Z",
+                    "settledAt": "2026-06-09T17:56:15.000Z"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Session not found, or no attestation yet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

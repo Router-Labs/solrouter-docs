@@ -1,0 +1,106 @@
+---
+title: "Privacy SDK"
+icon: Code
+description: "Add end-to-end encrypted AI to any app in minutes. Install @solrouter/sdk, pass your API key, and call client.chat() — encryption handled automatically."
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+Most AI APIs read your prompts in the clear. The Solrouter Privacy SDK is built so that no one — not even Solrouter — can. It handles encryption for you, so you never have to wire up cryptography yourself.
+
+Here is what happens when you call `client.chat()`. The SDK fetches the attested X25519 public key from the TEE (Trusted Execution Environment — hardware that isolates code and data even from the machine's owner), then encrypts your prompt on your machine using Arcium's RescueCipher. It sends the encrypted blob through the Solrouter backend, which routes it blindly — the backend cannot decrypt it. The response comes back encrypted and the SDK decrypts it with your ephemeral session key. Your plaintext prompt and response exist only on your machine and inside the Intel TDX enclave — nowhere else.
+
+## Installation
+
+Install the SDK from your package manager of choice.
+
+<Tabs items={["npm", "yarn", "pnpm"]}>
+  <Tab value="npm">
+  ```bash
+  npm install @solrouter/sdk
+  ```
+  </Tab>
+  <Tab value="yarn">
+  ```bash
+  yarn add @solrouter/sdk
+  ```
+  </Tab>
+  <Tab value="pnpm">
+  ```bash
+  pnpm add @solrouter/sdk
+  ```
+  </Tab>
+</Tabs>
+
+## Basic usage
+
+This section walks through the calls you will make most often, starting with the default encrypted chat.
+
+### Encrypted chat (default)
+
+You get end-to-end encryption with zero setup — every call is encrypted unless you opt out. Instantiate `SolRouter` with your API key and start chatting.
+
+```typescript
+import { SolRouter } from '@solrouter/sdk';
+
+const client = new SolRouter({ apiKey: 'sk_solrouter_...' });
+
+// Encrypted end-to-end. Solrouter backend never sees plaintext.
+const response = await client.chat('What are the risks of this DeFi protocol?');
+console.log(response.message);
+```
+
+### Choosing a model
+
+Solrouter runs two self-hosted models. Pick one with the `model` option; leave it out to use the default.
+
+```typescript
+const response = await client.chat('Summarize the latest Solana validator outage', {
+  model: 'gpt-oss-20b',  // gpt-oss-20b (default) | qwen3-8b
+});
+```
+
+### Opt out of encryption (faster, plaintext)
+
+Encryption adds a little latency. When a query isn't sensitive and you want it back faster, disable client-side encryption for that single call.
+
+```typescript
+const response = await client.chat('Hello', { encrypted: false });
+```
+
+### SERV-guided reasoning (agent path)
+
+For questions that need structured analysis rather than a single freeform answer, route through the agent endpoint. Setting `reasoning: 'braid'` runs your request through SERV guided reasoning — a deterministic execution graph that replaces freeform LLM decision-making with structured, tool-augmented steps.
+
+```typescript
+const response = await client.chat('Compare Marginfi vs Kamino lending on Solana', {
+  reasoning: 'braid',  // routes through agent endpoint with guided reasoning
+});
+```
+
+### Check balance
+
+You pay per call from a prepaid balance. Check what's left at any time.
+
+```typescript
+const { balance, balanceFormatted } = await client.getBalance();
+```
+
+## SDK options reference
+
+Each of these options goes in the object you pass as the second argument to `client.chat()`.
+
+| Option      | Type    | Default       | Description                                |
+| ----------- | ------- | ------------- | ------------------------------------------ |
+| `model`     | string  | `gpt-oss-20b` | Model to use: `gpt-oss-20b` or `qwen3-8b`  |
+| `encrypted` | boolean | `true`        | Enable/disable client-side encryption      |
+| `reasoning` | string  | —             | Set to `'braid'` for SERV-guided reasoning |
+
+## No KYC required
+
+Privacy starts at sign-up: there's nothing to identify you. You don't need an email address, credit card, or any personal information to use the SDK. Connect your Solana wallet at [solrouter.com/sdk](https://solrouter.com/sdk), generate an API key, and top up your balance in USDC or `$ROUTER`. Pricing is metered per call from your prepaid balance.
+
+<Callout>
+  Solrouter runs only self-hosted, open-weight models (`gpt-oss:20b` and `qwen3:8b`) on the Nosana decentralized GPU network. There are no third-party model APIs — no OpenAI, Anthropic, or Google. Your prompts and documents never leave to an external model provider.
+</Callout>

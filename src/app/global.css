@@ -1,0 +1,96 @@
+@import 'tailwindcss';
+@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/preset.css';
+
+/* Fonts mirror the brand: DM Sans body, JetBrains Mono code, Instrument Serif display. */
+@theme {
+  --font-sans: var(--font-dm), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jb), ui-monospace, monospace;
+}
+
+/* Light: warm paper fallback (brand is dark-first). MUST come before .dark. */
+:root {
+  --color-fd-background: #faf7f0;
+  --color-fd-foreground: #20140f;
+  --color-fd-muted: #f1ece1;
+  --color-fd-muted-foreground: #6b6356;
+  --color-fd-card: #fffdf8;
+  --color-fd-popover: #fffdf8;
+  --color-fd-border: rgba(32, 26, 21, 0.12);
+  --color-fd-primary: #2a2419;
+  --color-fd-primary-foreground: #faf7f0;
+  --color-fd-secondary: #f1ece1;
+  --color-fd-secondary-foreground: #20140f;
+  --color-fd-accent: #f1ece1;
+  --color-fd-accent-foreground: #20140f;
+  --color-fd-ring: #2a2419;
+}
+
+/* Brand tokens from pitch-deck/styles.css (canonical) — editorial black + cream. Default. */
+.dark {
+  --color-fd-background: #0a0908; /* --bg */
+  --color-fd-foreground: #e8e0d4; /* --text */
+  --color-fd-muted: #14110d;
+  --color-fd-muted-foreground: #b5ac9f; /* --muted */
+  --color-fd-card: #0c0b09;
+  --color-fd-popover: #0c0b09;
+  --color-fd-border: rgba(245, 230, 211, 0.1); /* --border */
+  --color-fd-primary: #f5e6d3; /* --cream */
+  --color-fd-primary-foreground: #0a0908;
+  --color-fd-secondary: #16140f;
+  --color-fd-secondary-foreground: #e8e0d4;
+  --color-fd-accent: rgba(245, 230, 211, 0.08);
+  --color-fd-accent-foreground: #f4ede0; /* --text-strong */
+  --color-fd-ring: #f5e6d3;
+}
+
+body {
+  font-family: var(--font-dm), ui-sans-serif, system-ui, sans-serif;
+  line-height: 1.7;
+}
+
+/* Editorial serif display headings (Instrument Serif is weight 400 only — no fake bold). */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-instrument), ui-serif, Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+.dark h1,
+.dark h2,
+.dark h3 {
+  color: #f4ede0;
+}
+h1 {
+  font-size: 2.5rem;
+  line-height: 1.12;
+}
+
+.prose a,
+article a {
+  text-underline-offset: 3px;
+}
+
+html {
+  scrollbar-gutter: stable;
+}
+html > body[data-scroll-locked] {
+  margin-right: 0px !important;
+  --removed-body-scroll-bar-size: 0px !important;
+}
+
+/* Accessibility: honor reduced-motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

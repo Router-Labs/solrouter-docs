@@ -1,0 +1,99 @@
+---
+title: "Authentication"
+icon: KeyRound
+description: "Solrouter uses bearer token authentication. Generate an API key at solrouter.com/sdk by connecting a Solana wallet — no email or KYC required."
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+Most AI APIs make you sign up with an email, verify your identity, and hand over a credit card before you can send a single request. Solrouter skips all of that. You authenticate with an API key passed as a bearer token, and you get that key by connecting a Solana wallet — no email sign-up, no KYC (Know Your Customer identity checks), no card.
+
+Fund a prepaid balance in USDC or \$ROUTER, and you're making calls in minutes.
+
+## Getting your API key
+
+Here's the full path from zero to your first authenticated request — four steps, all in the browser.
+
+<Steps>
+  <Step>
+### Go to solrouter.com/sdk
+
+Open [solrouter.com/sdk](https://solrouter.com/sdk) in your browser.
+  </Step>
+
+  <Step>
+### Connect your Solana wallet
+
+Connect any compatible Solana wallet (e.g. Phantom, Backpack, Solflare). Your wallet is your only identity credential — Solrouter collects no email and no personal information.
+  </Step>
+
+  <Step>
+### Generate an API key
+
+Click **Generate API Key**. Your key is issued immediately and starts with `sk_solrouter_...`. Copy it and store it somewhere safe — it won't be shown again.
+  </Step>
+
+  <Step>
+### Top up your balance
+
+Add funds to your prepaid account in **USDC** or **\$ROUTER**. Solrouter meters every API call per request and deducts the cost from this balance, so there's no monthly bill — you pay only for what you use.
+  </Step>
+</Steps>
+
+## Using your API key
+
+Once you have a key, you attach it to requests in one of two ways: through the SDK, which handles it for you, or directly over HTTP.
+
+### With the SDK
+
+Pass your API key when you create the `SolRouter` client. From then on, the SDK attaches it to every request automatically — you never touch the header yourself.
+
+```typescript
+import { SolRouter } from '@solrouter/sdk';
+
+const client = new SolRouter({ apiKey: 'sk_solrouter_...' });
+```
+
+### Direct HTTP (REST API)
+
+If you're not using the SDK, send the key yourself as a bearer token in the `Authorization` header.
+
+```bash
+curl -X POST "https://api.solrouter.com/agent" \
+  -H "Authorization: Bearer sk_solrouter_..." \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "Hello", "model": "gpt-oss:20b"}'
+```
+
+## Authentication tiers
+
+Solrouter offers three ways to authenticate, each suited to a different kind of caller. Pick the row that matches how your code runs.
+
+| Tier               | How it works                                                                                                                                            | Best for                                                             |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| **API key**        | `Authorization: Bearer sk_solrouter_...`, billed from your prepaid balance                                                                              | Most applications and development workflows                          |
+| **x402 (keyless)** | Per-call USDC settlement on Solana mainnet via Coinbase facilitator. Service discovery at [`/.well-known/x402`](https://solrouter.com/.well-known/x402) | Autonomous agents that don't hold API keys                           |
+| **Internal JWT**   | Short-lived JWT issued to Solrouter's own first-party products                                                                                          | Solrouter-hosted products only; not available to external developers |
+
+The x402 tier is worth a closer look if you're building agents: instead of provisioning and storing a long-lived key, an agent pays for each call on the spot in USDC. That means it can authenticate and transact entirely on-chain, with no secret to leak.
+
+## Keeping your API key safe
+
+Your key can spend real money, so treat it with the same care as a password. The practices below keep it out of the wrong hands.
+
+* **Never commit your API key to source control.** Treat `sk_solrouter_...` like a password — keep it out of Git history, `.env` files that are checked in, and any public repository.
+
+* **Use environment variables.** Store your key in `SOLROUTER_API_KEY` and read it at runtime so the secret never lives in your code:
+
+  ```typescript
+  const client = new SolRouter({
+    apiKey: process.env.SOLROUTER_API_KEY
+  });
+  ```
+
+* **Rotate compromised keys immediately.** If a key is exposed, go to [solrouter.com/sdk](https://solrouter.com/sdk), revoke the affected key, and generate a new one.
+
+<Callout type="warn">
+  Never expose your API key in client-side code or public repositories. Anyone with your key can spend your prepaid balance. If you suspect a key has been leaked, rotate it immediately at solrouter.com/sdk.
+</Callout>

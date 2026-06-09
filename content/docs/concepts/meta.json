@@ -1,0 +1,14 @@
+{
+  "title": "Core Concepts",
+  "icon": "BookOpen",
+  "pages": [
+    "how-it-works",
+    "encryption",
+    "attestation",
+    "encryption-proof",
+    "supported-models",
+    "agent-framework",
+    "serv-reasoning",
+    "skill-graphs"
+  ]
+}

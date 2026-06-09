@@ -1,0 +1,10 @@
+{
+  "title": "Private Balance",
+  "icon": "Lock",
+  "pages": [
+    "agents/v1/wallets/id/encrypt/post",
+    "agents/v1/wallets/id/shield/post",
+    "agents/v1/wallets/id/withdraw/post",
+    "agents/v1/wallets/id/balance/get"
+  ]
+}

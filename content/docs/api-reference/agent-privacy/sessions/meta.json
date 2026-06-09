@@ -1,0 +1,8 @@
+{
+  "title": "Sessions",
+  "icon": "Activity",
+  "pages": [
+    "agents/v1/sessions/id/get",
+    "agents/v1/attestations/sessionid/get"
+  ]
+}

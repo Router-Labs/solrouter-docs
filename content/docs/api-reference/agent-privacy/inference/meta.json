@@ -1,0 +1,7 @@
+{
+  "title": "Inference",
+  "icon": "Sparkles",
+  "pages": [
+    "api/v1/x402/chat/completions/post"
+  ]
+}
