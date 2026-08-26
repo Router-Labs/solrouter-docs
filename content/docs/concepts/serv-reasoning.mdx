@@ -1,88 +1,82 @@
 ---
-title: "SERV Reasoning"
+title: "Guided reasoning (BRAID)"
 icon: BrainCircuit
-description: "SERV replaces freeform LLM decisions with deterministic guided reasoning diagrams, cutting token costs by 79.7% and latency by 35% with no quality loss."
+description: "BRAID walks a fixed Guided Reasoning Diagram to collect data, then calls the model once to write the answer. Older material calls it SERV."
+status: live
+checked: "2026-08-26"
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout';
 import { Step, Steps } from 'fumadocs-ui/components/steps';
 
-A standard agent loop asks the LLM what to do at every step, which is slow, expensive, and unpredictable. SERV (Structured Execution via Reasoning Virtualization) fixes that by separating the two jobs an agent actually does: deciding *what* to gather, and writing *the answer*.
+A standard agent loop asks the model what to do at every step. Each step is one model call. BRAID separates the two jobs an agent does: deciding what data to gather, and writing the answer.
 
-Instead of asking the model what to do next, SERV walks a Guided Reasoning Diagram (GRD) — a pre-defined execution graph that controls tool selection, sequencing, and data collection on its own, with no LLM in the loop. The model is called exactly once, at the very end, to turn the collected data into a natural language response.
+BRAID walks a Guided Reasoning Diagram (GRD). A GRD is a fixed execution graph. It sets which tools run and in what order. The model is called once at the end to turn the collected data into a reply.
 
-Splitting structure from synthesis is the whole trick: it makes SERV far cheaper and faster than a standard agent loop while keeping output quality high.
+The code, the SDK option, and the API value call this path BRAID. Older material calls it SERV.
 
-## Performance results
+Six GRDs exist: `comparison`, `defi-analysis`, `general-research`, `market-overview`, `token-research`, and `wallet-analysis`.
 
-Here is what that split buys you, benchmarked against a standard agent loop on identical complex research queries:
+## What the split buys you
 
-| Metric      | Standard     | SERV        | Improvement |
-| ----------- | ------------ | ----------- | ----------- |
-| Quality     | 80/100       | 93/100      | +13         |
-| Token cost  | 19,917/query | 4,047/query | -79.7%      |
-| Latency     | 24.0s        | 15.7s       | -35%        |
-| Reliability | 100%         | 100%        | Parity      |
+The tool loop spends one model call per step. BRAID spends one synthesis call at the end, plus a short model call only for a branch that no rule can decide. That is the whole mechanism behind the cost and latency claim. No benchmark numbers are published.
 
-SERV cuts cost and latency *and* improves quality, with no loss in reliability. The quality gain is not magic: because the GRD gathers data the same structured way every time, the model synthesizes from a complete, consistent picture instead of improvising its own research path.
+## How BRAID works
 
-## How SERV works
-
-This section walks through the four stages a query passes through, and why each one keeps the LLM out of the decisions it isn't good at.
-
-A standard agent loop asks the model the same question at every step: "Given what you know so far, what tool should you call next?" That burns tokens on structural choices the model has no special advantage in making, and it introduces non-determinism that can derail a complex query halfway through.
-
-SERV takes a different approach:
+A query passes through four stages.
 
 <Steps>
   <Step>
-    ### Query classification
+    ### Intent detection
 
-    The incoming prompt is classified into a query type (e.g. DeFi comparison, wallet audit, token research). Each query type maps to a pre-defined Guided Reasoning Diagram.
+    Keyword rules map the prompt to one of six intents, for example wallet analysis, comparison, or DeFi analysis. Each intent maps to one GRD. No model call is made here.
   </Step>
 
   <Step>
     ### GRD execution
 
-    SERV walks the diagram node by node — calling tools, collecting data, and branching on results — all deterministically, without LLM involvement.
+    BRAID walks the diagram node by node. Tool nodes run in the order the GRD sets. Branch nodes use a rule first. When no rule applies, BRAID asks the model a short one-word question to pick the branch.
   </Step>
 
   <Step>
     ### Skill graph injection
 
-    If the query type triggers relevant knowledge nodes, the skill graph injects domain context into the synthesis payload. See [Skill Graphs](/docs/concepts/skill-graphs) for details.
+    If the prompt matches skill nodes, the skill graph adds domain context to the synthesis prompt. See [Skill Graphs](/docs/concepts/skill-graphs).
   </Step>
 
   <Step>
-    ### LLM synthesis
+    ### Synthesis
 
-    Only after all data is collected does SERV call the LLM — once — to transform the structured results into a coherent natural language response.
+    After the walk, BRAID calls the model once. The model turns the collected data into a reply.
   </Step>
 </Steps>
 
-The key insight: don't ask a 20B model to make structural decisions. Do those deterministically, and reserve the LLM for the one task it does best — turning raw information into useful language.
+Two prompt shapes skip the GRD walk. A swap prompt with two known tokens, or a prompt with three or more known tokens, calls the tools directly and then runs the same single synthesis call.
 
-## Using SERV in the SDK
+## Use BRAID in the SDK
 
-The fastest way to try SERV is through the SDK. Pass `reasoning: 'braid'` to the `chat()` method, and your request routes through the agent endpoint with SERV-guided reasoning enabled.
+Pass `reasoning: 'braid'` to `chat()`. The SDK then sends the request to `/agent`.
 
 ```typescript
 import { SolRouter } from '@solrouter/sdk';
 
 const client = new SolRouter({
-  apiKey: 'sk_solrouter_...'
+  apiKey: 'sk_solrouter_...',
+  baseUrl: 'https://api.solrouter.com',
 });
 
 const response = await client.chat('Compare Marginfi vs Kamino lending on Solana', {
-  reasoning: 'braid',  // enables SERV-guided reasoning
+  reasoning: 'braid',
 });
 
 console.log(response.message);
 ```
 
-## Using SERV via the API
+The SDK sends the prompt in plaintext on this path. The response has `encrypted: false`. Client-side encryption is not available for BRAID in SDK 1.1.0.
 
-If you're not using the SDK, you can call the agent endpoint directly over HTTP. Set `useTools: true` to activate the SERV execution graph.
+## Use BRAID over HTTP
+
+Call `/agent` directly and set `reasoning: 'braid'`. `useTools: true` alone does not select BRAID. It runs the standard tool loop.
 
 ```bash
 curl -X POST "https://api.solrouter.com/agent" \
@@ -91,12 +85,13 @@ curl -X POST "https://api.solrouter.com/agent" \
   -d '{
     "prompt": "Compare Marginfi vs Kamino lending on Solana",
     "model": "gpt-oss:20b",
-    "useTools": true
+    "reasoning": "braid",
+    "braidOptions": { "includeTrace": true }
   }'
 ```
 
-The response includes an `iterations` field showing how many GRD steps SERV executed, and a `toolCalls` array logging every tool the agent invoked and with what arguments.
+The response has `reasoning: 'braid'` and an `iterations` field. On this path `iterations` counts GRD nodes, not model calls. When `braidOptions.includeTrace` is `true`, the response also has a `braidTrace` object with the GRD id, the intent, and one entry per node. See [POST /agent](/docs/api-reference/agent) for the full envelope.
 
 <Callout title="Tip">
-  SERV shines on complex, multi-step research queries — protocol comparisons, wallet audits, market analysis, tokenomics deep-dives — where structured data gathering pays off. For simple lookups like a single token price or swap quote, a direct tool call is faster. SERV's skill graph traversal is selective and skips automatically for lightweight queries, but if you already know your query is simple, calling the relevant tool directly gives you the lowest possible latency.
+  BRAID fits multi-step research prompts: protocol comparisons, wallet audits, market overviews. For a single token price or swap quote, a direct tool call is faster.
 </Callout>

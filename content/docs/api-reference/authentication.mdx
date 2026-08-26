@@ -1,12 +1,14 @@
 ---
 title: "Authentication"
 icon: KeyRound
-description: "Pass your Solrouter API key as a Bearer token in the Authorization header. Generate keys at solrouter.com/sdk — no email or credit card required."
+description: "Pass your Solrouter API key as a Bearer token in the Authorization header. Generate keys at solrouter.com/sdk. No email or credit card required."
+status: live
+checked: "2026-08-26"
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout';
 
-Solrouter authenticates REST API requests using Bearer tokens. Every request you make must include your API key in the `Authorization` header. Keys are tied to a prepaid balance denominated in USDC or `$ROUTER`, and usage is metered per call — there are no subscriptions or seat fees.
+Solrouter authenticates REST API requests using Bearer tokens. Every request you make must include your API key in the `Authorization` header. Keys are tied to a prepaid balance denominated in USDC or `$ROUTER`, and usage is metered per call. There are no subscriptions or seat fees.
 
 ## Request Format
 
@@ -19,7 +21,7 @@ Authorization: Bearer sk_solrouter_...
 ## Getting an API Key
 
 1. Go to [solrouter.com/sdk](https://solrouter.com/sdk).
-2. Connect your Solana wallet — no email or credit card is required.
+2. Connect your Solana wallet. No email or credit card is required.
 3. Copy the generated API key. All keys follow the format `sk_solrouter_...`.
 4. Top up your balance in **USDC** or **`$ROUTER`** to start making calls.
 
@@ -36,20 +38,22 @@ curl -X POST "https://api.solrouter.com/agent" \
 
 ## x402 Keyless Authentication
 
-If you are building an agent that does not hold an API key, Solrouter supports **x402 per-call USDC payment**. Instead of a long-lived API key, each request is settled individually on Solana mainnet via a Coinbase facilitator — no account or prepaid balance required.
+If you are building an agent that does not hold an API key, Solrouter supports **x402 per-call USDC payment**. Instead of a long-lived API key, each request is settled individually on Solana mainnet. No account or prepaid balance is required.
 
-To discover the x402 payment manifest and per-call pricing, send a request to:
+x402 is the standard. The live manifest advertises Coinbase (`api.cdp.coinbase.com/x402`) as the facilitator. The manifest shows `X402_FACILITATOR_URL` when it is set, or a built-in default when it is not. It does not show which facilitator settles payments.
+
+To discover the x402 payment manifest and per-call pricing, send a request to the API host:
 
 ```
-GET /.well-known/x402
+GET https://api.solrouter.com/.well-known/x402
 ```
 
-Any x402-aware agent can use this manifest to self-fund calls autonomously. The x402 inference endpoint (`POST /api/v1/x402/chat/completions`) is Arcium-encrypted end-to-end and priced at \$0.005 per call.
+Any x402-aware agent can use this manifest to self-fund calls autonomously. The x402 inference endpoint (`POST /api/v1/x402/chat/completions`) takes an Arcium-encrypted prompt and is priced at \$0.005 per call.
 
 For agent-to-agent interoperability, Solrouter also publishes an A2A protocol v1.0 discovery card at:
 
 ```
-GET /.well-known/agent-card.json
+GET https://api.solrouter.com/.well-known/agent-card.json
 ```
 
 This card describes the full skill list available to agents integrating with the Solrouter Agent Privacy API.
@@ -60,7 +64,7 @@ This card describes the full skill list available to agents integrating with the
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 401 Unauthorized     | Missing or invalid API key. Check that your `Authorization` header is present and that the key begins with `sk_solrouter_`.                                  |
 | 402 Payment Required | x402 payment is required, or your prepaid balance is insufficient. Top up at [solrouter.com/sdk](https://solrouter.com/sdk) or use x402 per-call settlement. |
-| 403 Forbidden        | Your API key does not have permission to access this endpoint.                                                                                               |
+| 403 Forbidden        | Which endpoints return 403, and when, is not determined. The API key check itself returns 401, not 403.                                                       |
 
 <Callout type="warn">
   Never expose your API key in client-side code, public repositories, or browser bundles. If your key is compromised, anyone can drain your prepaid balance. Rotate it immediately at [solrouter.com/sdk](https://solrouter.com/sdk) and treat the new key as a secret environment variable on your server or in a secrets manager.

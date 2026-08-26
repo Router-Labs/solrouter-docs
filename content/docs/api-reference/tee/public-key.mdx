@@ -1,12 +1,14 @@
 ---
 title: "GET /tee/public-key"
 icon: KeyRound
-description: "Fetch the TDX enclave's X25519 public key for client-side encryption. The SDK fetches this automatically; required only for custom client implementations."
+description: "Fetch the enclave's X25519 public key for client-side encryption. The SDK fetches it once per process and caches it. Call it yourself only in a custom client."
+status: live
+checked: "2026-08-26"
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout';
 
-This endpoint returns the X25519 public key that is currently active inside the Solrouter Intel TDX enclave. Before sending a prompt or payload, your client uses this key to encrypt the data with Arcium's RescueCipher so that only the enclave can decrypt it. The Solrouter backend receives an opaque ciphertext blob and routes it to the enclave without being able to read its contents.
+This endpoint returns the X25519 public key that is active inside the Solrouter Intel TDX enclave (a TEE, a trusted execution environment: a hardware-isolated virtual machine). Before you send a prompt, your client encrypts it to this key with Arcium's RescueCipher. Only the enclave can decrypt it. The Solrouter backend receives an opaque ciphertext blob and relays it to the enclave. It cannot read the contents.
 
 ## Endpoint
 
@@ -14,14 +16,18 @@ This endpoint returns the X25519 public key that is currently active inside the 
 GET https://api.solrouter.com/tee/public-key
 ```
 
-No authentication is required for this endpoint.
+No authentication is required for this endpoint. The backend proxies the call to the enclave and returns the enclave's body unchanged.
 
 ## Response
 
 | Field | Type | Description |
 | --- | --- | --- |
-| publicKey | string | The enclave's current X25519 public key, encoded in base64. Use this as the recipient key when performing client-side encryption. |
-| algorithm | string | The key exchange algorithm. Always `X25519`. |
+| publicKey | string | The enclave's current X25519 public key, base64 encoded. Use it as the recipient key for client-side encryption. |
+| publicKeySha256 | string | Hex sha256 of the raw 32-byte public key. `GET /tee/attestation` pins this same digest in the quote's `report_data`. |
+| algorithm | string | Always `x25519` (lower case). |
+| teeType | string | Always `INTEL-TDX-PHALA`. |
+
+This response has no top-level `success` field.
 
 ## Example
 
@@ -29,25 +35,41 @@ No authentication is required for this endpoint.
 curl "https://api.solrouter.com/tee/public-key"
 ```
 
-Example response:
+Example response (shape checked against the live endpoint on 2026-08-26; values shortened):
 
 ```json
 {
-  "publicKey": "abc123...base64encodedkey...==",
-  "algorithm": "X25519"
+  "publicKey": "base64...=",
+  "publicKeySha256": "hex...",
+  "algorithm": "x25519",
+  "teeType": "INTEL-TDX-PHALA"
+}
+```
+
+## Errors
+
+When the backend cannot reach the enclave, it answers with status 502 and this body:
+
+```json
+{
+  "error": "tee_unreachable",
+  "message": "...",
+  "teeEndpoint": "..."
 }
 ```
 
 ## When to use this
 
-In most cases, you do not need to call this endpoint directly:
+In most cases you do not need to call this endpoint yourself.
 
-* **Using the `@solrouter/sdk`** — the SDK fetches the TEE public key automatically before every encrypted request. You never handle the key yourself.
-* **Using the `@solrouter/agent-tools` SDK** — same behavior; key fetch and encryption are handled transparently.
-* **Building a custom client** — if you are implementing your own encryption layer (for example, in a language without an official Solrouter SDK), fetch this endpoint first, then use the returned key as the X25519 recipient public key in your RescueCipher / ECDH key-exchange flow.
+* **`@solrouter/sdk`**: the SDK fetches the key once per process and caches it. You never handle the key yourself.
+* **`@solrouter/agent-tools`** (Soon): the package is not on npm yet.
+* **Custom client**: if you write your own encryption layer (for example in a language with no Solrouter SDK), fetch this endpoint first. Then use `publicKey` as the X25519 recipient key in your RescueCipher key-exchange flow.
 
-The SDK always fetches a fresh key before each session rather than caching a previously retrieved key. You should follow the same practice in custom clients to ensure you are always encrypting to the currently active enclave key.
+## Key lifetime and caching
+
+The enclave generates a new X25519 keypair on every CVM boot. The SDK fetches the key once per process and keeps it until you call `clearSession()`. A long-lived process can hold a stale key after the enclave restarts. When a request fails with `tee_unreachable`, or a reply fails to decrypt, call `clearSession()` and retry. The next request fetches the current key. Custom clients should do the same: cache the key, and fetch it again after a failure.
 
 <Callout>
-  The X25519 keypair is generated inside the Confidential VM at boot time. The private key never leaves the enclave — not to the Solrouter backend, not to any host process, and not to Solrouter employees. You can verify this claim independently by checking the TDX attestation quote, which binds the public key to the exact code measurement running inside the enclave — see the [attestation verification guide](/docs/concepts/attestation).
+  The X25519 keypair is generated inside the Confidential VM at boot. The private key never leaves the enclave: not to the Solrouter backend, not to any host process, and not to Solrouter staff. You can check this claim yourself. `GET /tee/attestation` returns a TDX quote whose `report_data` equals `sha256(publicKey)`. See the [attestation guide](/docs/concepts/attestation).
 </Callout>

@@ -1,11 +1,15 @@
 ---
 title: "Introduction"
 icon: Sparkles
-description: Solrouter is a cryptographically private AI layer — prompts are encrypted client-side and processed in an Intel TDX enclave, so no one can read your data.
+description: "Solrouter is a private AI layer for Solana developers. Your prompt is encrypted on your device, and the Solrouter backend never sees it in plaintext."
+status: mixed
+checked: "2026-08-26"
+statusNote: "The product cards carry their own status. The Agent Tools SDK is Soon because @solrouter/agent-tools is not on npm yet."
 ---
 
 import { Cards, Card } from 'fumadocs-ui/components/card';
 import { Callout } from 'fumadocs-ui/components/callout';
+import { TypicalVsSolrouter } from '@/components/diagrams/typical-vs-solrouter';
 import {
   Shield,
   Bot,
@@ -19,99 +23,128 @@ import {
   Link2,
 } from 'lucide-react';
 
-Solrouter is a cryptographically private AI infrastructure layer for Solana
-developers. The idea is simple: your prompts, documents, and responses should
-never exist in plaintext anywhere we could read them. So they don't — not on the
-wire, not on our backend, and not in any log file. Plaintext lives only inside a
-hardware-isolated enclave. Privacy here is enforced by math, not by a promise.
+Solrouter is a private AI infrastructure layer for Solana developers. The idea
+is simple: your prompts and responses should never exist in plaintext anywhere
+we could read them. On the encrypted path, your prompt is encrypted on your
+device. It stays encrypted through our backend and is decrypted only inside a
+hardware-isolated enclave. The SDK uses this path by default. The chat app uses
+it when you turn on Maximum Privacy Mode.
 
 ## Why Solrouter?
 
 Start with the problem. Today, every AI request you send is something the
 provider can read, store, and analyze.
 
-Mainstream providers keep your prompts indefinitely, ask for personal details to
-sign up, and back their privacy claims with a terms-of-service page. Nothing
-technical stops them from reading what you send — you're trusting a policy.
+Mainstream providers can keep your prompts, ask for personal details at sign-up,
+and back their privacy claims with a terms-of-service page. Nothing technical
+stops them from reading what you send. You trust a policy.
 
-Solrouter removes the need for that trust. We built the system so that **we
-cannot see your data** in the first place.
+Solrouter removes the need for that trust on the encrypted path. We built the
+system so that **our backend cannot read your prompt or the reply**.
 
-Here's how. Your prompt is encrypted on your device before it leaves your browser
-or app. Our backend only ever receives an opaque encrypted blob and forwards it,
-blindly, to an Intel TDX Confidential VM — a TEE (Trusted Execution Environment:
-hardware that isolates code and data so even the machine's operator can't inspect
-it at runtime). Plaintext appears only inside that attested enclave, which even
-we cannot read.
+Here is how. Your prompt is encrypted on your device before it leaves your
+browser or app. Our backend receives only an encrypted blob and forwards it to
+an Intel TDX Confidential VM. This is a TEE (Trusted Execution Environment:
+hardware that isolates code and data so even the machine's operator cannot
+inspect it at runtime). The enclave decrypts your prompt and sends it to an
+open-weight model on a Nosana GPU node. Solrouter's backend never sees the
+plaintext, and the request is not linked to your identity on the node.
+
+<TypicalVsSolrouter />
+
+**In words**
+
+- With a typical AI API, your prompt travels as readable text to the provider's server. That server can read it, store it, and train on it.
+- With Solrouter and encryption on, your device encrypts the prompt before it leaves.
+- The Solrouter backend passes the sealed message along. It sees the ciphertext and your wallet or key, never the text.
+- Only the enclave holds the key that opens it. The enclave sends the readable text to a Nosana GPU node, which runs the model and sees the prompt while it works.
+- The enclave encrypts the reply again, so only your device can read it.
+
+## Start here
+
+<Cards>
+  <Card title="What is a TEE?" href="/docs/what-is-a-tee">The sealed room, in plain words, with a picture.</Card>
+  <Card title="What is private here" href="/docs/what-is-private">Who can see what, cell by cell.</Card>
+  <Card title="Check a reply yourself" href="/docs/verify-a-reply">Paste a lock link and watch the check pass.</Card>
+  <Card title="Use cases" href="/docs/use-cases">What people, developers, agents, traders, and teams do with it.</Card>
+</Cards>
 
 <Callout title="No third-party model providers">
   In privacy mode, Solrouter does not use OpenAI, Anthropic, Google, or any
-  third-party model provider. All private inference runs on self-hosted,
-  open-weight models on the Nosana decentralized GPU network. Your prompts never
-  reach an external model API.
+  other third-party model provider. All private inference runs on self-hosted,
+  open-weight models on the Nosana decentralized GPU network. The Nosana node
+  that runs the model can see your prompt during inference. Solrouter does not
+  control that hardware.
 </Callout>
 
 ## Products
 
-Pick the surface that fits how you work — an SDK to embed in your app, typed
+Pick the surface that fits how you work: an SDK to embed in your app, typed
 agent tools, an MCP server for your editor, or the hosted chat app. They all run
 on the same private backend.
 
 <Cards>
   <Card icon={<Shield />} title="Privacy SDK" href="/docs/develop/privacy-sdk">
-    **`@solrouter/sdk`** — integrate end-to-end encrypted AI into your app. The
-    SDK handles key exchange, client-side encryption with Arcium RescueCipher,
-    and response decryption for you. No email or KYC — connect a Solana wallet
-    and start building.
+    **`@solrouter/sdk`**: add encrypted AI calls to your app. The SDK handles
+    key exchange, client-side encryption with Arcium RescueCipher, and response
+    decryption for you. No email or KYC: connect a Solana wallet and start
+    building.
   </Card>
   <Card icon={<Bot />} title="Agent Tools SDK" href="/docs/develop/agent-tools-sdk">
-    **`@solrouter/agent-tools`** — typed tools for the Agent Privacy API with a
-    Vercel AI SDK adapter. Quote, execute, and settle privacy-preserving swaps
-    and encrypted inference without writing orchestration boilerplate.
+    Status: Soon. **`@solrouter/agent-tools`** is not on npm yet. It will give
+    you typed tools for the Agent Privacy API with a Vercel AI SDK adapter.
+    Today, call `POST /agents/v1/*` over HTTP or use the `umbra_*` MCP tools.
   </Card>
   <Card icon={<Plug />} title="MCP Server" href="/docs/develop/mcp-server">
-    **`@solrouter/mcp-server`** — use Solrouter from Claude Desktop, Cursor, or
-    any MCP-compatible client. Encrypted chat, private token research, and wallet
+    **`@solrouter/mcp-server`**: use Solrouter from Claude Desktop, Cursor, or
+    any MCP-compatible client. Encrypted chat, token research, and wallet
     analysis without writing any code.
   </Card>
   <Card icon={<MessageSquare />} title="Chat App" href="https://solrouter.com/chat">
-    Multi-model encrypted chat with file attachments, image and video
-    generation, and a RAG knowledge base. No account needed beyond a connected
-    Solana wallet.
+    Chat in the browser with two open-weight models, file attachments, and a
+    RAG knowledge base. Encryption is a toggle, off by default. No account
+    needed beyond a connected Solana wallet.
   </Card>
 </Cards>
 
 ## Key Guarantees
 
-These are the promises that hold for any privacy-mode request, no matter which
-product you reach for. Each one is a property the system enforces, not a feature
-you have to remember to turn on.
+These properties hold for every encrypted request, whichever product you use.
+In the SDK, encryption is on by default. In the chat app, you turn on Maximum
+Privacy Mode.
 
 <Cards>
   <Card icon={<Lock />} title="Client-Side Encryption">
-    Your prompt is encrypted on your own device — using Arcium's RescueCipher
-    with X25519 key exchange — before it leaves your browser or application.
+    Your prompt is encrypted on your own device with Arcium's RescueCipher and
+    X25519 key exchange, before it leaves your browser or application.
   </Card>
-  <Card icon={<Cpu />} title="TEE-Isolated Inference">
-    Plaintext exists only inside an Intel TDX Confidential VM. No host process —
-    including Solrouter's own backend — can read enclave memory at runtime.
+  <Card icon={<Cpu />} title="TEE-Isolated Decryption">
+    Your prompt is decrypted inside an Intel TDX Confidential VM. No host
+    process, including Solrouter's own backend, can read enclave memory at
+    runtime. The enclave then sends the prompt to an open-weight model on a
+    Nosana GPU node, where it exists in plaintext during inference.
   </Card>
   <Card icon={<BadgeCheck />} title="Verifiable Attestation">
-    Don't take our word for it. Every TEE response carries an Intel-signed TDX
-    quote, so you can independently verify the enclave's public key and the exact
-    code running inside it.
+    Don't take our word for it. A TEE response carries an Intel TDX quote when
+    the CVM can reach the dStack agent. Otherwise `attestation.tdxQuote` is
+    null and `tdxQuoteError` says why. The quote lets you check the enclave's
+    public key. Comparing it against published enclave measurements: Soon.
   </Card>
   <Card icon={<UserX />} title="No KYC or Email Required">
-    Connect a Solana wallet, generate an API key, and start building. You pay per
-    call in USDC or `$ROUTER` from a prepaid balance — no signup form, no PII.
+    Connect a Solana wallet, generate an API key, and start building. You pay
+    per call in USDC or `$ROUTER` from a prepaid balance. There is no signup
+    form and no personal data.
   </Card>
   <Card icon={<Box />} title="Open-Weight Models Only">
-    All privacy-mode inference runs on self-hosted open-weight models
-    (`gpt-oss:20b` and `qwen3:8b`) on the Nosana decentralized GPU network.
+    All privacy-mode inference runs on self-hosted open-weight models on the
+    Nosana decentralized GPU network. Models: `gpt-oss:20b` (Live),
+    `qwen3.8:27b` (Live), `gemma4:31b` (Soon). `qwen3:8b` is retired
+    (Archived).
   </Card>
   <Card icon={<Link2 />} title="On-Chain Attestation Anchor">
-    The Solrouter attestation program is deployed on Solana mainnet. Each
-    privacy-mode session can publish a PDA that links the request to the verified
-    enclave on-chain.
+    Each inference sent through `POST /tee/process` (the SDK path) gets a Light
+    Protocol compressed account on Solana. Solrouter's deployer wallet commits
+    it after the CVM signs the proof. This is automatic: you do not publish
+    anything. The REST and x402 chat routes do not create a receipt today.
   </Card>
 </Cards>

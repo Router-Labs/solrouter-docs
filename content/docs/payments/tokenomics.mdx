@@ -1,7 +1,10 @@
 ---
 title: "$ROUTER Token"
 icon: Coins
-description: "$ROUTER is Solrouter's utility token on Solana. 1B total supply, 53.04% at TGE, with a buyback-and-burn model funded by 100% of protocol revenue."
+description: "$ROUTER is Solrouter's utility token on Solana. 1B total supply, 53.04% at TGE, with a buyback-and-burn mechanism whose ratios are not yet published."
+status: mixed
+checked: "2026-08-26"
+statusNote: "The token and its supply schedule are Live. Buyback and burn is Soon: the configured ratios are not published."
 ---
 
 import { Cards, Card } from 'fumadocs-ui/components/card';
@@ -10,7 +13,7 @@ import { TokenAllocation } from '@/components/diagrams/token-allocation';
 
 Most utility tokens bury their value behind staking lockups, emissions schedules, and governance you have to opt into. `$ROUTER` does the opposite: it is a way to pay for what you use, and nothing more.
 
-`$ROUTER` is Solrouter's utility token on Solana. You spend it on API calls across every Solrouter product — the Privacy SDK, Agent Privacy API, MCP server, and chat app — at the same per-call rate as USDC. There are no emissions, no staking rewards, and no governance complexity. One mechanic drives the whole design: protocol revenue buys back and burns `$ROUTER`, so supply tightens as usage grows.
+`$ROUTER` is Solrouter's utility token on Solana. You spend it on API calls across every Solrouter product (the Privacy SDK, Agent Privacy API, MCP server, and chat app). There are no emissions, no staking rewards, and no governance complexity. One mechanic drives the whole design: protocol revenue can buy back and burn `$ROUTER`, so supply tightens as usage grows.
 
 ## Token details
 
@@ -42,11 +45,11 @@ Here is where the 1B supply goes, and how quickly each slice becomes spendable.
 
 ## Circulating supply schedule
 
-Locked supply can't be sold, so this is how the float — and the potential sell pressure — grows over time.
+Locked supply cannot be sold, so this is how the float (and the potential sell pressure) grows over time.
 
-Tokens enter circulation over 24 months. The Liquidity Pool, OpenServ, and Superteam Germany allocations unlock at TGE (Token Generation Event — the moment the token first goes live). Treasury releases 9.5% at TGE and vests the rest linearly over 24 months.
+Tokens enter circulation over 24 months. The Liquidity Pool, OpenServ, and Superteam Germany allocations unlock at TGE (Token Generation Event, the moment the token first goes live). Treasury releases 9.5% at TGE and vests the rest linearly over 24 months.
 
-The Team allocation has a 3-month cliff (zero unlocks until month three), then vests linearly over the following 12 months. Algorithmic Fundraising unlocks per FDV band as each band clears, so the schedule below is indicative — the real cadence depends on demand.
+The Team allocation has a 3-month cliff (zero unlocks until month three), then vests linearly over the following 12 months. Algorithmic Fundraising unlocks per FDV band as each band clears, so the schedule below is indicative. The real cadence depends on demand.
 
 | Milestone | Circulating % | Circulating Tokens |
 | --------- | ------------- | ------------------ |
@@ -57,27 +60,27 @@ The Team allocation has a 3-month cliff (zero unlocks until month three), then v
 
 ## Algorithmic fundraising
 
-Instead of selling the raise allocation all at once, Solrouter releases it in steps tied to the token's own valuation — so capital comes in only as the market values the protocol higher.
+Instead of selling the raise allocation all at once, Solrouter releases it in steps tied to the token's own valuation. Capital comes in only as the market values the protocol higher.
 
-5% of total supply (50,000,000 `$ROUTER`) sells across 14 FDV (Fully Diluted Valuation — the value of the entire 1B supply at the current price) bands ranging from $500K to $100M. Each band unlocks only after the previous band's valuation threshold clears, raising capital progressively as demand grows. Total estimated capital across all 14 bands is roughly \$807,750, calculated using each band's midpoint valuation.
+5% of total supply (50,000,000 `$ROUTER`) sells across 14 FDV (Fully Diluted Valuation, the value of the entire 1B supply at the current price) bands ranging from $500K to $100M. Each band unlocks only after the previous band's valuation threshold clears, raising capital progressively as demand grows. Total estimated capital across all 14 bands is roughly \$807,750, calculated using each band's midpoint valuation.
 
-| Band      | Valuation (USD) | % of Supply | Capital Raised | Cumulative    |
-| --------- | --------------- | ----------- | -------------- | ------------- |
-| 1         | $500K – $750K   | 0.30%       | \$1,875        | \$1,875       |
-| 2         | $750K – $1M     | 0.30%       | \$2,625        | \$4,500       |
-| 3         | $1M – $1.5M     | 0.35%       | \$4,375        | \$8,875       |
-| 4         | $1.5M – $2M     | 0.35%       | \$6,125        | \$15,000      |
-| 5         | $2M – $3M       | 0.40%       | \$10,000       | \$25,000      |
-| 6         | $3M – $5M       | 0.40%       | \$16,000       | \$41,000      |
-| 7         | $5M – $8M       | 0.45%       | \$29,250       | \$70,250      |
-| 8         | $8M – $12M      | 0.45%       | \$45,000       | \$115,250     |
-| 9         | $12M – $18M     | 0.50%       | \$75,000       | \$190,250     |
-| 10        | $18M – $25M     | 0.50%       | \$107,500      | \$297,750     |
-| 11        | $25M – $40M     | 0.40%       | \$130,000      | \$427,750     |
-| 12        | $40M – $60M     | 0.30%       | \$150,000      | \$577,750     |
-| 13        | $60M – $80M     | 0.20%       | \$140,000      | \$717,750     |
-| 14        | $80M – $100M    | 0.10%       | \$90,000       | \$807,750     |
-| **Total** |                 | **5.00%**   | **\$807,750**  | **\$807,750** |
+| Band      | Valuation (USD)  | % of Supply | Capital Raised | Cumulative    |
+| --------- | ---------------- | ----------- | -------------- | ------------- |
+| 1         | $500K to $750K   | 0.30%       | \$1,875        | \$1,875       |
+| 2         | $750K to $1M     | 0.30%       | \$2,625        | \$4,500       |
+| 3         | $1M to $1.5M     | 0.35%       | \$4,375        | \$8,875       |
+| 4         | $1.5M to $2M     | 0.35%       | \$6,125        | \$15,000      |
+| 5         | $2M to $3M       | 0.40%       | \$10,000       | \$25,000      |
+| 6         | $3M to $5M       | 0.40%       | \$16,000       | \$41,000      |
+| 7         | $5M to $8M       | 0.45%       | \$29,250       | \$70,250      |
+| 8         | $8M to $12M      | 0.45%       | \$45,000       | \$115,250     |
+| 9         | $12M to $18M     | 0.50%       | \$75,000       | \$190,250     |
+| 10        | $18M to $25M     | 0.50%       | \$107,500      | \$297,750     |
+| 11        | $25M to $40M     | 0.40%       | \$130,000      | \$427,750     |
+| 12        | $40M to $60M     | 0.30%       | \$150,000      | \$577,750     |
+| 13        | $60M to $80M     | 0.20%       | \$140,000      | \$717,750     |
+| 14        | $80M to $100M    | 0.10%       | \$90,000       | \$807,750     |
+| **Total** |                  | **5.00%**   | **\$807,750**  | **\$807,750** |
 
 *Capital estimated using each band's midpoint valuation.*
 
@@ -89,28 +92,30 @@ For the first 130 seconds after the liquidity pool opens, per-transfer and per-w
 
 | Time After Open   | Max Per Transfer | Max Per Wallet (Buys) |
 | ----------------- | ---------------- | --------------------- |
-| 0 – 70 seconds    | 100,000 (0.01%)  | 1,000,000 (0.1%)      |
-| 70 – 130 seconds  | 1,000,000 (0.1%) | 5,000,000 (0.5%)      |
+| 0 to 70 seconds   | 100,000 (0.01%)  | 1,000,000 (0.1%)      |
+| 70 to 130 seconds | 1,000,000 (0.1%) | 5,000,000 (0.5%)      |
 | After 130 seconds | No limit         | No limit              |
 
 ## Buyback and burn
 
-This is the engine that ties token value to real usage: the more people pay Solrouter, the more `$ROUTER` permanently leaves circulation. Revenue flows straight into supply reduction — no intermediary pools, no governance votes, no discretionary treasury spending.
+Status: Soon. This is the engine that ties token value to real usage: the more people pay Solrouter, the more `$ROUTER` can leave circulation. The mechanism exists in code. The ratios are runtime settings (`BURN_USDC_BPS`, `BURN_OUTPUT_TOKEN_BPS`, `BURN_TOKEN_BPS`), and the worker skips its run while they are zero.
 
 <Cards>
-  <Card title="100%" icon={<ArrowRightLeft />}>
-    Of USDC revenue goes toward buying back `$ROUTER` on the open market.
+  <Card title="USDC buyback" icon={<ArrowRightLeft />}>
+    Status: Soon. A configured share of USDC revenue buys back `$ROUTER` on the open market through Jupiter.
   </Card>
 
-  <Card title="50%" icon={<Flame />}>
-    Of each buyback is permanently burned, permanently reducing total supply.
+  <Card title="Buyback burn" icon={<Flame />}>
+    Status: Soon. A configured share of each buyback is burned. The rest stays in treasury.
   </Card>
 
-  <Card title="50%" icon={<Flame />}>
-    Of `$ROUTER` fees paid directly are burned at the time of payment.
+  <Card title="Direct fee burn" icon={<Flame />}>
+    Status: Soon. A configured share of `$ROUTER` fees paid directly is burned on receipt. The rest stays in treasury.
   </Card>
 </Cards>
 
-The model stays simple on purpose. No emissions mint new tokens, no staking curves add complexity, and no tiered discount programs fragment the tokenomics. Every API call reduces supply — whether you pay in USDC or `$ROUTER`. The more Solrouter is used, the tighter the supply becomes.
+Configured ratios: not published. `GET /payments/buyback/log` returns the recent buyback worker ticks, including skipped ones.
+
+The model stays simple on purpose. No emissions mint new tokens, no staking curves add complexity, and no tiered discount programs fragment the tokenomics.
 
 To pay for API calls with `$ROUTER`, see [Pricing](/docs/payments/overview).

@@ -1,72 +1,57 @@
 ---
 title: "How It Works"
 icon: Workflow
-description: Solrouter uses Arcium RescueCipher with X25519 key exchange and Intel TDX Trusted Execution Environments so plaintext never leaves the enclave.
+description: "Your prompt is encrypted on your device. Solrouter's backend relays ciphertext it cannot read. An Intel TDX enclave decrypts it and runs the model on a Nosana GPU node."
+status: live
+checked: "2026-08-26"
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout';
 import { EncryptionFlow } from '@/components/diagrams/encryption-flow';
 
-Most AI providers see every word you send. Solrouter is built so that it cannot — even though it routes your traffic.
+Most AI providers see every word you send. Solrouter routes your traffic, but its backend cannot read it.
 
-When you send a message, your prompt is encrypted on your device before it leaves your application. The Solrouter backend never sees plaintext. It forwards an opaque encrypted blob to an Intel TDX Confidential VM (a Trusted Execution Environment, or TEE — hardware that isolates code and data even from the machine's owner), where only attested enclave code can decrypt and process your request.
+When you send a message, your prompt is encrypted on your device before it leaves your application. The Solrouter backend never sees plaintext. It forwards an opaque encrypted blob to an Intel TDX Confidential VM (a Trusted Execution Environment, or TEE: hardware that isolates code and data even from the machine's owner). Only the enclave holds the key that can decrypt your request.
 
-The enclave re-encrypts the response and returns it for you to decrypt locally. Unencrypted content never exists outside the enclave boundary.
+The enclave decrypts the prompt and calls the model on a Nosana GPU node. The enclave then encrypts the reply and returns it for you to decrypt locally. Plaintext exists in two places: inside the enclave, and on the Nosana GPU node during inference. Solrouter's backend is never one of them.
 
 ## Encryption Stack
 
-This section walks through the four layers of the pipeline. Each is built so that a breach at any single layer — including Solrouter's own infrastructure — still does not expose your data.
+This section walks through the four layers of the pipeline. A breach of Solrouter's own backend does not expose your prompt or the reply on the encrypted path.
 
 **Client-side encryption**
 
-Your prompt is encrypted before it leaves your device using Arcium's **RescueCipher**, a field-element symmetric cipher. The session key comes from an **X25519 key exchange** with the TEE's attested public key. The TEE generates its X25519 keypair inside the Confidential VM at boot and the private key never leaves the enclave, so only the enclave can derive the shared session secret. No one in the middle can.
+Your prompt is encrypted before it leaves your device using Arcium's **RescueCipher**, a field-element symmetric cipher. The session key comes from an **X25519 key exchange** with the TEE's public key, which the SDK fetches from `GET /tee/public-key`. The TEE generates its X25519 keypair inside the Confidential VM at boot. The private key never leaves the enclave, so only the enclave can derive the shared session secret. No one in the middle can.
 
 **Inference isolation**
 
-The Solrouter backend acts as a blind relay: it takes the encrypted blob and forwards it to an **Intel TDX Confidential VM**, a hardware-level Trusted Execution Environment where the host operating system and hypervisor cannot read enclave memory. Decryption, model inference, and response encryption all happen inside that isolated boundary — never on the open server.
+The Solrouter backend acts as a blind relay. It takes the encrypted blob and forwards it to an **Intel TDX Confidential VM**, a hardware-level Trusted Execution Environment. The host operating system and hypervisor cannot read enclave memory. Decryption and response encryption happen inside that isolated boundary.
+
+The model itself runs on a Nosana GPU node, not inside the enclave. The enclave sends the decrypted prompt to that node at the configured Nosana endpoint URL (HTTPS per the documented node URL, not re-verified) and receives the reply. The prompt and reply exist in plaintext in that node's memory during inference. The node operator could read the prompt at that moment. Solrouter does not control that hardware. The request is not linked to your identity on the node.
 
 **Transport**
 
-The channel between your client and the enclave is encrypted end-to-end. The backend infrastructure handles only ciphertext, never plaintext content.
+The channel between your client and the enclave is encrypted end-to-end. The backend never sees your prompt or the reply. It does see your API key, the model id, `chatId`, and any `systemPrompt` you set, in plaintext.
 
 **Verifiable attestation**
 
-You should not have to take our word that the right code is running. The enclave publishes an **Intel-signed TDX quote** that cryptographically binds its X25519 public key to the exact code measurement of the running image. Fetch the quote from `GET /tee/attestation` and verify for yourself that the enclave handling your request is the published, unmodified Solrouter code — not something we swapped in.
+You should not have to take our word that the right code is running. The enclave publishes an **Intel-signed TDX quote** that binds its X25519 public key to the code measurement of the running image. Fetch the quote from `GET /tee/attestation`. Verify Intel's signature chain and confirm that the key you encrypt to belongs to that enclave. Reference measurements to compare against: Soon. The product repository is private, so no reference values are published today.
 
 ## Request Flow
 
-To make the guarantees concrete, here is the complete path a privacy-mode request travels — and where, at each hop, your data stays encrypted:
+Here is the complete path a privacy-mode request travels, and where your data is encrypted at each hop.
 
 <EncryptionFlow />
 
-```text
-You (Browser / SDK)
-    │
-    ├── Arcium RescueCipher encrypts prompt client-side
-    │   with TEE's attested X25519 public key
-    │
-    ▼
-Solrouter Backend
-    │
-    ├── Cannot decrypt. Routes encrypted blob blindly
-    │
-    ▼
-Intel TDX Enclave
-    │
-    ├── Hardware-isolated decryption inside the enclave
-    ├── Runs the model on plaintext (in-enclave only)
-    ├── Encrypts response with the session's ephemeral key
-    │
-    ▼
-Solrouter Backend
-    │
-    ├── Still can't see anything
-    │
-    ▼
-You
-    │
-    └── Decrypt with your ephemeral private key
-```
+In words:
+
+1. Your device encrypts the prompt with RescueCipher. The key comes from an X25519 exchange with the TEE public key.
+2. The Solrouter backend receives the ciphertext. It cannot decrypt it. It forwards the blob to the Intel TDX enclave.
+3. The enclave decrypts the prompt inside hardware-isolated memory.
+4. The enclave calls the model on a Nosana GPU node. The prompt is plaintext on that node during inference.
+5. The enclave encrypts the reply with your session's ephemeral key.
+6. The Solrouter backend relays the encrypted reply. It still cannot read it.
+7. Your device decrypts the reply with your ephemeral private key.
 
 ## What Is Not (Yet) Encrypted
 
@@ -74,23 +59,23 @@ Privacy claims are easy to inflate, so here is exactly where the guarantee ends 
 
 <Callout type="warn" title="Not FHE inference">
   Solrouter is **not** running pure fully homomorphic encryption (FHE) inference
-  today. No production system runs LLM-scale inference under FHE in 2026 — the
+  today. No production system runs LLM-scale inference under FHE in 2026. The
   compute overhead is many orders of magnitude away from viable latency. Anyone
   claiming "FHE LLM inference" in production is overclaiming.
 
-  What Solrouter provides is Arcium-encrypted transport combined with Intel TDX
-  hardware isolation during compute, anchored by a real on-chain attestation
-  program on Solana mainnet. That is a meaningful and verifiable privacy
-  guarantee — it is simply not the same as FHE inference, and we will not claim
-  otherwise.
+  What Solrouter provides is Arcium-encrypted transport, Intel TDX hardware
+  isolation for decryption, and a Light Protocol compressed account on Solana
+  as a receipt for each inference sent through `POST /tee/process`. That is a meaningful and
+  verifiable privacy guarantee. It is not the same as FHE inference, and we
+  will not claim otherwise.
 </Callout>
 
-The honest summary: your prompt is encrypted in transit and isolated during compute inside a hardware-enforced enclave. The model runs on plaintext inside that enclave. That plaintext is inaccessible to Solrouter, the host, or anyone watching the network — but it is not processed under FHE.
+The honest summary: your prompt is encrypted in transit and decrypted inside a hardware-enforced enclave. The model runs on plaintext on a Nosana GPU node. That plaintext is inaccessible to Solrouter's backend and to anyone watching the network. The Nosana node operator could read it during inference. It is not processed under FHE.
 
 ## Roadmap
 
-The current TEE pipeline is a starting point, not the ceiling. Here is where the privacy model is headed and why your integration won't have to change to follow it.
+The current TEE pipeline is the first step. Here is where the privacy model is headed and why your integration will not have to change to follow it.
 
-Solrouter is built on Arcium's MXE (Multiparty eXecution Environment) substrate, which combines MPC, FHE, and ZK primitives. Choosing **RescueCipher** — a field-element cipher — was deliberate: the same encrypted payloads that flow through today's TEE pipeline can later be processed under MPC, FHE, or ZK circuits as Arcium's network matures, with no changes to the client encryption layer.
+Solrouter is built on Arcium's MXE (Multiparty eXecution Environment) substrate, which combines MPC, FHE, and ZK primitives. Choosing **RescueCipher**, a field-element cipher, was deliberate. As Arcium's network matures, the same encrypted payloads that flow through today's TEE pipeline can later run under MPC, FHE, or ZK circuits. The client encryption layer does not change.
 
-As the MXE network ships in production, more of the inference pipeline moves from TEE-isolated plaintext into cryptographic compute: MPC first, then FHE and ZK primitives where they make practical sense for latency and cost. When that shift happens, your integration stays the same — the encryption layer you use today is already compatible.
+As the MXE network ships in production, more of the inference pipeline moves from TEE-isolated plaintext into cryptographic compute. MPC comes first. FHE and ZK follow where latency and cost allow. When that shift happens, your integration stays the same. The encryption layer you use today is already compatible.

@@ -1,70 +1,37 @@
 ---
 title: "Skill Graphs"
 icon: Network
-description: "Skill graphs inject structured domain knowledge into Solrouter agent responses for DeFi, on-chain data, and market analysis — activated only when needed."
+description: "Skill graphs add domain knowledge for DeFi, on-chain data, and market analysis to the agent's system prompt when the prompt matches a node."
+status: live
+checked: "2026-08-26"
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout';
 
-An LLM asked about a DeFi protocol has to reconstruct specialist knowledge — risk frameworks, liquidity heuristics, evaluation criteria — from whatever it happened to absorb during training. That is slow and unreliable. Skill graphs fix this by handing the model that expertise as structured input, before it ever starts answering.
+A model asked about a DeFi protocol has to rebuild specialist knowledge (risk frameworks, liquidity heuristics, evaluation criteria) from its training data. Skill graphs hand the model that knowledge as structured text before it starts to answer.
 
-A skill graph is Solrouter's domain-knowledge layer. It sits between tool execution and LLM synthesis in the SERV pipeline. When your query matches the trigger conditions of one or more skill nodes, the engine walks the connected graph and injects the relevant expertise straight into the synthesis context.
+A skill graph is Solrouter's domain-knowledge layer. The engine runs on the plaintext `/agent` paths. When the prompt matches the trigger words of one or more nodes, the engine walks the connected graph and adds the node content to the system prompt.
 
-The payoff: the model writes from curated knowledge rather than guessing. You get more accurate, more nuanced answers on hard topics — and because the knowledge is injected only when it applies, there is no extra token overhead on queries that don't need it.
+The knowledge is added only when it applies. A prompt that matches no node gets no extra tokens.
 
-## Knowledge domains
+## Knowledge nodes
 
-This is the catalog of expertise the engine can draw on. Solrouter ships with 14 base knowledge nodes across four areas. Each node carries curated heuristics, definitions, risk frameworks, and evaluation criteria that the LLM uses during synthesis.
+The engine defines 44 node ids. Each node has a name, trigger words, an `edges` list of connected nodes, and a Markdown body with heuristics, definitions, and evaluation criteria.
 
-**DeFi & Markets**
-
-* **DeFi protocol analysis** — lending, borrowing, AMM mechanics, TVL interpretation, protocol risk
-* **Liquidity risk** — slippage, depth, impermanent loss, pool concentration
-* **Tokenomics** — emission schedules, vesting, buyback models, supply dynamics
-* **Market analysis** — price action, volume interpretation, trend identification
-* **On-chain signals** — transaction patterns, fee pressure, validator behavior, network health
-* **Whale tracking** — large-wallet behavior, accumulation/distribution signals
-
-**Portfolio & Wallets**
-
-* **Wallet analysis** — address clustering, activity patterns, counterparty relationships
-* **Portfolio risk assessment** — concentration risk, correlation, drawdown analysis
-
-**Technical & Research**
-
-* **Privacy / encryption technology** — MPC, ZK proofs, TEE architecture, FHE fundamentals
-* **Research methodology** — structured inquiry, source triangulation, claim verification
-* **Source evaluation** — credibility scoring, recency weighting, conflict detection
-* **Comparative analysis** — side-by-side frameworks, trade-off matrices, scoring rubrics
-
-**Ecosystem**
-
-* **Solana ecosystem knowledge** — native programs, validator economics, fee markets, SPL standards
-* **Solana DeFi landscape** — protocol relationships, liquidity flows, ecosystem interdependencies
+The node ids are: `research-core`, `source-eval`, `defi-analysis`, `liquidity-risk`, `token-economics`, `market-analysis`, `on-chain-analysis`, `wallet-analysis`, `privacy-research`, `risk-assessment`, `smart-contract-risk`, `comparative-analysis`, `data-synthesis`, `colosseum-research`, `colosseum-archives`, `arcium-mpc`, `solana-ecosystem`, `jupiter-defi`, `raydium-defi`, `orca-defi`, `meteora-defi`, `kamino-defi`, `sanctum-staking`, `pump-fun`, `lulo-lending`, `ranger-perps`, `prediction-markets`, `helius-infra`, `light-protocol-zk`, `metaplex-nfts`, `pyth-oracle`, `switchboard-oracle`, `squads-multisig`, `debridge-cross-chain`, `coingecko-analytics`, `solana-kit-dev`, `anchor-dev`, `pinocchio-dev`, `framework-kit-frontend`, `solana-testing`, `solana-security-audit`, `token2022-extensions`, `quicknode-infra`, and `magicblock-gaming`.
 
 ## Selective activation
 
-Domain knowledge is only worth injecting when the query actually calls for it — so the engine decides per query whether to use the skill graph at all. It checks the incoming query against each node's trigger conditions before traversing anything.
+The engine scores every node against the prompt. A node scores when the prompt contains one of its trigger words. The engine then walks the graph from the top three scoring nodes. It follows `edges` to a depth of 2 and stops at 5 nodes.
 
 <Callout>
-  Simple queries — price checks, swap quotes, balance lookups — skip skill-graph traversal entirely. Activating domain knowledge for a single `token_price` call would add latency and tokens with no quality benefit. SERV is designed to match overhead to complexity: the skill graph fires when it helps, and stays silent when it doesn't.
+  A prompt that matches no trigger word gets no skill-graph text and no extra tokens. The graph fires when it matches and stays silent when it does not.
 </Callout>
 
-When traversal does happen, the engine pulls only the nodes the query needs. A DeFi protocol comparison might walk `defi-analysis`, `liquidity-risk`, and `comparative-analysis` while leaving the wallet and privacy nodes untouched.
+When a walk happens, the engine adds only the nodes it reached. A DeFi protocol comparison might walk `defi-analysis`, `liquidity-risk`, and `comparative-analysis` and leave the wallet and privacy nodes alone.
 
 ## Skill graph in API responses
 
-You don't have to guess what the engine did — every response tells you. Each agent response includes a `skillGraph` object reporting exactly which nodes were traversed and how confident the engine was in the match.
+The `/agent` response does not include a `skillGraph` field. The engine computes the walked path and a relevance score, but the route does not send them. The traversal only shapes the system prompt.
 
-```json
-{
-  "skillGraph": {
-    "nodesTraversed": ["defi-analysis", "liquidity-risk", "comparative-analysis"],
-    "relevanceScore": 0.72
-  }
-}
-```
-
-**`nodesTraversed`** — the ordered list of skill nodes the engine walked before synthesis. Read it to see which domain lenses the agent applied to your query. An empty array means the query was handled without skill-graph activation.
-
-**`relevanceScore`** — a float between 0 and 1 measuring how strongly the query matched the traversed nodes. A higher score means a tight semantic match between the query and the activated domain knowledge; a lower score means the engine traversed cautiously on a weaker signal. The `0.72` above is a solid but not perfect match — typical for a broad comparative query that spans several DeFi topics.
+On the BRAID path, `braidOptions.includeTrace: true` returns a `braidTrace` object. That trace lists GRD nodes, not skill-graph nodes. See [POST /agent](/docs/api-reference/agent) for the response envelopes.

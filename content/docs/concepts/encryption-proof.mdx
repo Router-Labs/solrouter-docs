@@ -1,29 +1,32 @@
 ---
 title: "Encryption Proof"
 icon: Stamp
-description: "Every private inference writes an on-chain receipt signed inside the Intel TDX enclave. Paste the lock-icon link from any chat message — or an address, hash, or tx — and verify it yourself."
+description: "Each inference sent through POST /tee/process writes an on-chain receipt signed inside the Intel TDX enclave. Paste the lock-icon link from any chat message (or an address, hash, or tx) and verify it yourself."
+status: live
+checked: "2026-08-26"
 ---
 
 import { EncryptionProofVerifier } from '@/components/verify/encryption-proof-verifier';
 import { Callout } from 'fumadocs-ui/components/callout';
 import { Step, Steps } from 'fumadocs-ui/components/steps';
 
-[Attestation](/docs/concepts/attestation) proves the enclave is genuine. The **encryption proof** ties *your specific request* to that enclave: a TDX-attested enclave signs your exact ciphertext hash with a key that exists only inside the enclave, and writes the receipt to Solana. The backend relays it but can't forge it.
+[Attestation](/docs/concepts/attestation) proves the enclave is genuine. The **encryption proof** ties *your specific request* to that enclave. A TDX-attested enclave (a TEE, a trusted execution environment: a hardware-isolated virtual machine) signs your exact ciphertext hash with a key that exists only inside the enclave, and the receipt goes to Solana. The backend relays it. It cannot change it without breaking the signature. A verifier who also checks the per-request quote can detect a forged record.
 
-Each receipt is a **Light Protocol compressed account** — about **0.000005 SOL each, ~400× cheaper than a normal Solana PDA**. That cost gap is the whole reason a proof *per message* is viable: a standard PDA for every inference would be economically absurd at scale; compression makes it routine.
+Each receipt is a **Light Protocol compressed account**: about **0.000005 SOL each, about 400 times cheaper than a normal Solana PDA**. That cost gap is why a proof *per message* is viable. A standard PDA for every inference would cost too much at scale. Compression makes it routine.
 
 ## Verify a proof
 
-In chat, every private-mode reply has a **🔒 next to it — click it, copy the link, and paste it here.** You can also paste a Light attestation address, the commit-transaction signature, or the 64-character encrypted-prompt hash. The widget reads the on-chain record and verifies the enclave's ed25519 signature **in your browser** — no trust in Solrouter required.
+In chat, every private-mode reply has a **🔒 next to it. Click it, copy the link, and paste it here.** You can also paste a Light attestation address, the commit-transaction signature, or the 64-character encrypted-prompt hash. The widget fetches the record through `api.solrouter.com/attestation/*` and checks the enclave's ed25519 signature **in your browser**. Solrouter serves the record. The signature check proves the signer holds the key in `enclave_pubkey`. To prove that key lives in the enclave, do Step 4 below with the per-request quote.
 
 <EncryptionProofVerifier />
 
 ## Verifying from an agent or the SDK
 
-Chat hands you a clickable lock link. The **agent API and SDK** hand you the proof in the response payload instead — every private inference returns an `onchainAttestation` object:
+Chat hands you a clickable lock link. The REST endpoint `POST /tee/process` hands you the proof in the response payload instead. Every private inference that commits a receipt returns an `onchainAttestation` object:
 
 ```json
 {
+  "type": "light-compressed",
   "address": "12Qenx1LK3ddTX5F3Apm6HYFFjswL3acSYNYXqUHTAVn",  // Light compressed account
   "encryptedPromptHash": "5b17ccd7…",                          // sha256(ciphertext)
   "signature": "4RFJVwSC…",                                    // the commit transaction
@@ -31,7 +34,9 @@ Chat hands you a clickable lock link. The **agent API and SDK** hand you the pro
 }
 ```
 
-Verify it three equivalent ways — paste any of these into the widget above, or hit the public, CORS-open endpoints directly:
+The field is `null` when the commit failed. The `@solrouter/sdk` `chat()` response does not pass this object through today. It exposes `privacyAttestationId` only. To get the full object, call `POST /tee/process` over HTTP.
+
+Verify it three equivalent ways. Paste any of these into the widget above, or call the public endpoints directly:
 
 ```bash
 # by the commit-transaction signature (what `signature` / the 🔒 link points to)
@@ -44,25 +49,25 @@ curl https://api.solrouter.com/attestation/<address>
 curl https://api.solrouter.com/attestation/by-hash/<encryptedPromptHash>
 ```
 
-Each returns the full record with `version: "v2"` and every proof field below — ready to check, in your own code, against the enclave's signature.
+Each returns the full record with `version: "v2"` and every proof field below. You can check it in your own code against the enclave's signature.
 
 <Callout title="Why a tx signature works">
   The lock link is a transaction link (a compressed account can't be browsed on
   Solscan). The `by-tx` endpoint reads the commit transaction, pulls the
   encrypted-prompt hash out of its instruction data, and re-derives the
-  attestation address — so the link you already have is enough.
+  attestation address. So the link you already have is enough.
 </Callout>
 
 ## What the record stores, and what gets signed
 
-A v2 attestation lives under the Solrouter program `ATMRatMtsKX4bHax7U4FRdhbE4mjU4NKpDZGqZqAhBKb`. Its address is **deterministic** — `deriveAddressV2(["attestation_v2", sha256(ciphertext)], …)` — which is why a bare hash is enough to find it. Alongside the basics (`model`, `provider`, `timestamp`, `backend_saw_plaintext`, `tee_processed`) it stores the proof:
+A v2 attestation lives under the Solrouter program `ATMRatMtsKX4bHax7U4FRdhbE4mjU4NKpDZGqZqAhBKb`. Its address is **deterministic**: `deriveAddressV2(["attestation_v2", sha256(ciphertext)], …)`. That is why a bare hash is enough to find it. Alongside the basics (`model`, `provider`, `timestamp`, `backend_saw_plaintext`, `tee_processed`) it stores the proof:
 
 | Field | Meaning |
 | --- | --- |
 | `client_pubkey` | Your ephemeral X25519 key from the request |
 | `tee_pubkey` | The enclave's X25519 sealing key your ciphertext was sealed to |
 | `nonce` | The RescueCipher nonce |
-| `enclave_pubkey` | The enclave's ed25519 signing key — **bound inside the TDX quote** |
+| `enclave_pubkey` | The enclave's ed25519 signing key, **bound inside the per-request TDX quote** |
 | `enclave_sig_r` / `enclave_sig_s` | The two halves of the ed25519 signature |
 | `tdx_quote_hash` | `sha256` of the TDX quote that attests `enclave_pubkey` |
 
@@ -84,7 +89,7 @@ Inside the Confidential VM, the enclave signs this exact byte tuple:
   <Step>
 ### Read the record
 
-Use any of the `curl` calls above. You get back `version: "v2"` plus every field — `encryptedPromptHash` (hex); `teePubkey`, `nonce`, `clientPubkey`, `enclavePubkey`, `enclaveSigR`, `enclaveSigS` (base64).
+Use any of the `curl` calls above. You get back `version: "v2"` plus every field: `encryptedPromptHash` (hex); `teePubkey`, `nonce`, `clientPubkey`, `enclavePubkey`, `enclaveSigR`, `enclaveSigS` (base64).
   </Step>
 
   <Step>
@@ -96,24 +101,32 @@ Concatenate the tuple above from the record bytes (`encryptedPromptHash` decoded
   <Step>
 ### Check the signature
 
-Reassemble the 64-byte signature as `enclaveSigR ‖ enclaveSigS` and verify it over your message against `enclavePubkey` with any Ed25519 library. If a single byte was tampered — different ciphertext, swapped key, forged signer — it fails.
+Reassemble the 64-byte signature as `enclaveSigR ‖ enclaveSigS` and verify it over your message against `enclavePubkey` with any Ed25519 library. If a single byte was tampered (different ciphertext, swapped key, forged signer), it fails.
   </Step>
 
   <Step>
 ### (Optional) Anchor the signing key in hardware
 
-Confirm `enclave_pubkey` is the key bound into the TDX quote: fetch `GET /tee/attestation` and check the quote's `report_data` equals `sha256(tee_pubkey ‖ enclave_pubkey)`. That proves the signer is the attested enclave, not an impostor.
+Two quotes exist, and they pin different values in `report_data`:
+
+| Quote | Where you get it | `report_data` |
+| --- | --- | --- |
+| Service quote | `GET /tee/attestation` | `sha256(tee_pubkey)` |
+| Per-request quote | `attestation.tdxQuote` in a `POST /tee/process` response | `sha256(tee_pubkey ‖ enclave_pubkey)` |
+
+To confirm `enclave_pubkey` is bound to hardware, use the per-request quote. Compute `sha256(teePubkey ‖ enclavePubkey)` from the record and compare it with the quote's `report_data`. `GET /tee/attestation` proves only that the enclave owns the X25519 sealing key. The record's `tdx_quote_hash` is the sha256 of the per-request quote's JSON.
   </Step>
 </Steps>
 
-## Why the backend can't forge it
+## Why a forged receipt is detectable
 
-The ed25519 signing key is generated **inside** the enclave at boot and never leaves it. Its public half is committed into the TDX quote's `report_data`, so anyone can confirm the signer is the genuine, attested enclave. The backend relays the proof onto Solana but never holds the private key — it can publish a real receipt, and it has nothing to forge a fake one with.
+The ed25519 signing key is generated **inside** the enclave at boot and never leaves it. The backend signs and pays for the Solana transaction with the deployer wallet. It could commit a record that carries any ed25519 key and signature. The on-chain program stores those fields and does not check them. The browser widget checks the signature against the `enclave_pubkey` in the record. That check alone does not prove the signer is the enclave. To detect a forged record, also check that `enclave_pubkey` is bound into the per-request TDX quote (Step 4 above). A verifier who skips the quote check cannot tell a real enclave key from another key. Step 4 closes that gap.
 
 <Callout type="warn" title="What this does and doesn't prove">
-  A passing check proves an attested TDX enclave received and signed *your exact
-  ciphertext*, and that the record is committed on-chain. For the deepest level —
-  verifying Intel's full DCAP signature chain on the raw TDX quote — fetch the
+  A passing check proves the key named in the record signed *your exact
+  ciphertext*, and that the record is committed on-chain. The per-request
+  quote check (Step 4) proves that key belongs to an attested TDX enclave. For the deepest level,
+  verifying Intel's full DCAP signature chain on the raw TDX quote, fetch the
   live quote from `GET /tee/attestation` and run it through Intel's DCAP
   libraries. The on-chain record stores the quote's hash, not the full quote.
 </Callout>

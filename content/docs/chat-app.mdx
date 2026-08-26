@@ -1,43 +1,45 @@
 ---
 title: "Chat App"
 icon: MessageSquare
-description: "Solrouter Chat at solrouter.com/chat gives you encrypted AI chat with file attachments, image generation, and a RAG knowledge base — no email required."
+description: "Solrouter Chat at solrouter.com/chat is a wallet-based AI chat with an encryption toggle, file attachments, and a RAG knowledge base. No email required."
+status: live
+checked: "2026-08-26"
 ---
 
 import { Cards, Card } from 'fumadocs-ui/components/card';
 import { Callout } from 'fumadocs-ui/components/callout';
 import { Step, Steps } from 'fumadocs-ui/components/steps';
-import { Lock, Paperclip, Image as ImageIcon, Database } from 'lucide-react';
+import { Lock, Paperclip, Database } from 'lucide-react';
 
-Most AI chat tools want your email, store your conversations in plaintext, and lock you into a single model. Solrouter Chat at [solrouter.com/chat](https://solrouter.com/chat) takes the opposite stance: every conversation is end-to-end encrypted by default, and you never create an account.
+Most AI chat tools want your email, store your conversations in plaintext, and lock you into a single model. Solrouter Chat at [solrouter.com/chat](https://solrouter.com/chat) works differently. You never create an account. You can turn on Maximum Privacy Mode to encrypt each prompt before it leaves your browser.
 
-You connect a Solana wallet, top up a prepaid balance, and switch freely between models. Along the way you get file attachments, image and video generation, and a RAG knowledge base — all private, all in one interface.
+You connect a Solana wallet, top up a prepaid balance, and pick one of two open-weight models. You also get file attachments and a RAG knowledge base. Encryption is a toggle. It is off by default.
 
 ## Features
 
-Here is what you get out of the box, and why each one matters for keeping your data yours.
+Here is what you get, and what each feature does with your data.
 
 <Cards>
-  <Card title="Encrypted chat history" icon={<Lock />}>
-    Your conversations stay private even from us. Each message is encrypted end-to-end and stored only in encrypted form, so neither Solrouter nor anyone else can read your history.
+  <Card title="Encryption toggle" icon={<Lock />}>
+    **Persistent Privacy Mode** (default): your prompt goes to the Solrouter backend in plaintext, then to a Nosana GPU node. Chat history is stored encrypted at rest with AES-256-GCM. The backend holds the key, so this protects against a database dump, not against Solrouter.
+
+    **Maximum Privacy Mode** (toggle on): your prompt is encrypted in your browser. It is decrypted only inside the TEE (Trusted Execution Environment: hardware that isolates code and data from the machine's operator). Nothing is stored. History is lost on refresh.
   </Card>
 
   <Card title="File attachments" icon={<Paperclip />}>
-    Send documents along with your question. The file contents are encrypted together with your prompt before they ever leave your browser.
-  </Card>
-
-  <Card title="Image & video generation" icon={<ImageIcon />}>
-    Create visuals next to your text responses in the same window — no separate tool, no extra account.
+    Send images and documents with your question. Attachments are not encrypted in your browser. Images become data URLs. Documents upload to Cloudflare R2 through a presigned URL, and the backend parses them. Maximum Privacy Mode encrypts the text prompt only.
   </Card>
 
   <Card title="RAG knowledge base" icon={<Database />}>
-    RAG (Retrieval-Augmented Generation — answering from your own documents instead of only the model's training data) lets you upload files and query them in plain language. Your documents stay encrypted the whole time.
+    RAG (Retrieval-Augmented Generation: answering from your own documents instead of only the model's training data) lets you upload files. You then query them in plain language. The backend chunks and embeds your documents in plaintext. Embeddings are computed on Solrouter's own servers, so no third-party embedding API sees them. Stored chunks are not encrypted.
   </Card>
 </Cards>
 
+Image and video generation: Archived. It is disabled in the chat app.
+
 ## Getting started
 
-Four steps take you from a blank browser tab to your first private message.
+Four steps take you from a blank browser tab to your first message.
 
 <Steps>
   <Step>
@@ -49,7 +51,7 @@ Four steps take you from a blank browser tab to your first private message.
   <Step>
     ### Connect your Solana wallet
 
-    Click **Connect Wallet** and approve the request in your wallet. Your wallet is your identity here — no email address or personal information is required.
+    Click **Connect Wallet** and approve the request in your wallet. Your wallet is your identity here. No email address or personal information is required.
   </Step>
 
   <Step>
@@ -61,16 +63,18 @@ Four steps take you from a blank browser tab to your first private message.
   <Step>
     ### Select a model and start chatting
 
-    Pick a model from the selector and send your first message. Every request is encrypted by default — you do not have to turn anything on.
+    Pick a model from the selector and send your first message. To encrypt the prompt in your browser, turn on **Maximum Privacy Mode** first. It is off by default, and history is not kept while it is on.
+
+    If the GPU node was idle, the first reply can say "Nosana GPU node is warming up". Wait a moment and send the message again.
   </Step>
 </Steps>
 
 ## Supported models
 
-Solrouter routes to many models, and which ones support full privacy depends on where they run.
+The chat model picker lists two self-hosted open-weight models on the Nosana GPU network: `gpt-oss:20b` (Default, Live) and `qwen3.8:27b` (Uncensored, Live). No proprietary model is reachable in the chat app. Maximum Privacy Mode works with both models.
 
-For the full list of available models and their identifiers, see the [Supported Models](/docs/concepts/supported-models) page. Privacy mode is available for all self-hosted, open-weight models running on Solrouter's infrastructure.
+For model ids and their status, see the [Supported Models](/docs/concepts/supported-models) page.
 
 <Callout>
-  All chat history is encrypted — Solrouter cannot read your conversations. Your prompts and responses only exist in plaintext on your device and briefly inside the Intel TDX enclave during inference.
+  In Maximum Privacy Mode, Solrouter's backend cannot read your prompt. Plaintext exists on your device, inside the Intel TDX enclave, and on the Nosana GPU node that runs the model during inference. Solrouter does not control that node's hardware.
 </Callout>
