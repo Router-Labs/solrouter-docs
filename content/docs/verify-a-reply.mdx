@@ -1,0 +1,106 @@
+---
+title: "Check a reply yourself"
+icon: BadgeCheck
+description: "Paste the lock link from a private chat reply and watch the check pass in your browser. Then compare the live enclave key with the signed hardware note."
+status: live
+checked: "2026-08-26"
+statusNote: "The receipt check and the live key check run against api.solrouter.com today. Comparing the enclave against published reference measurements is Soon."
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+import { Cards, Card } from 'fumadocs-ui/components/card';
+import { EncryptionProofVerifier } from '@/components/verify/encryption-proof-verifier';
+import { KeyQuoteInspector } from '@/components/verify/key-quote-inspector';
+
+## The question
+
+"Solrouter says my message was handled inside a sealed computer. How do I know that is true?"
+
+You do not have to trust the claim. Every private reply comes with a receipt. The receipt lives on the Solana blockchain, and your browser can check it. This page has two checks. The first takes ten seconds. The second takes one click.
+
+## Check 1: the receipt for one reply
+
+When you send a message with Maximum Privacy Mode on, or through the Privacy SDK, the sealed computer (the enclave) signs a short receipt. The receipt says: "I received this exact scrambled message." Solrouter then writes the receipt to Solana. Solrouter cannot write a valid receipt on its own, because the signing key exists only inside the enclave.
+
+In the chat app, every private reply shows a lock icon. Click it and copy the link. Paste the link below. You can also paste the receipt address, the transaction signature, or the 64-character hash of your scrambled prompt.
+
+<EncryptionProofVerifier />
+
+What a passing check means:
+
+- A real Intel TDX enclave received your exact scrambled message and signed for it.
+- The receipt is on Solana, so nobody can quietly edit it later.
+- The signing key is named inside the enclave's hardware note (the attestation), so an impostor cannot sign in its place.
+
+What it does not mean:
+
+- It does not prove that the Solana program checked the signature. The program stores the receipt fields; your browser checks the signature.
+- It does not verify Intel's full signature chain on the hardware note. Check 3 below covers that.
+
+## Check 2: the live enclave key
+
+Your device encrypts every private message to the enclave's public key. This check confirms that the published key is the one named in the live hardware note.
+
+<KeyQuoteInspector />
+
+**In words**
+
+- Your browser fetches the published public key and the live hardware note from `api.solrouter.com`.
+- It computes the fingerprint (SHA-256) of the key.
+- It compares that fingerprint with the `report_data` field inside the note.
+- A match means: the key you encrypt to belongs to this exact enclave, not to a machine in the middle.
+
+<Callout title="The key changes on every reboot">
+The enclave makes a fresh key pair each time it starts. The private half never leaves the enclave. If you run this check on two days and see two keys, that is expected.
+</Callout>
+
+## Check 3: the deep checks
+
+These steps are for auditors and engineers. They use the same two endpoints plus Intel's tools.
+
+<Steps>
+  <Step>
+### Fetch the note and the key
+
+```bash
+curl https://api.solrouter.com/tee/public-key
+curl https://api.solrouter.com/tee/attestation
+```
+
+The first call returns `publicKey`, `publicKeySha256`, `algorithm`, and `teeType`. The second returns `teePublicKey`, `teePublicKeySha256`, `reportDataHex`, `tdxQuote`, and `generatedAt`. Both answered on 2026-08-26 with `teeType: "INTEL-TDX-PHALA"`.
+  </Step>
+
+  <Step>
+### Verify the quote signature
+
+Run the `tdxQuote.quote` bytes through Intel DCAP tools or a compatible TDX verifier. This proves the note came from real Intel TDX hardware, not from a simulator.
+  </Step>
+
+  <Step>
+### Check the report_data binding
+
+For `GET /tee/attestation`, `report_data` equals `sha256(X25519 public key)`. For the per-request note inside a `/tee/process` response, `report_data` equals `sha256(X25519 public key || ed25519 signing key)`. The two formulas are different on purpose: the second one also pins the key that signs receipts.
+  </Step>
+
+  <Step>
+### Verify one receipt by hand
+
+Read the receipt with `GET /attestation/by-tx/<signature>`. Rebuild the signed bytes: `"SOLR-ATTEST-v2"`, the SHA-256 of the scrambled prompt, the enclave sealing key, the nonce, your ephemeral key, then the model and provider names with one length byte each. Verify the 64-byte signature (`enclaveSigR` plus `enclaveSigS`) against `enclavePubkey` with any Ed25519 library.
+  </Step>
+
+  <Step>
+### Compare the program measurement (Soon)
+
+A full audit compares the measurements inside the note with published reference values for Solrouter's enclave image. Solrouter does not publish those values yet. Until it does, these checks prove real hardware and correct key binding, but not which image is running.
+  </Step>
+</Steps>
+
+## Read more
+
+<Cards>
+  <Card title="What is a TEE?" href="/docs/what-is-a-tee" description="The sealed room, in plain words." />
+  <Card title="TDX attestation" href="/docs/under-the-hood/attestation" description="How the note is produced, both report_data formulas, and what a verifier can and cannot check today." />
+  <Card title="On-chain encryption proof" href="/docs/under-the-hood/encryption-proof" description="The receipt format, the signed byte layout, and who signs and pays." />
+  <Card title="Proof lookups" href="/docs/api-reference/proof-lookups" description="The four endpoints that read receipts." />
+</Cards>

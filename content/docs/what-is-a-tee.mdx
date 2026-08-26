@@ -1,0 +1,81 @@
+---
+title: "What is a TEE?"
+icon: ShieldCheck
+description: "A TEE is a sealed part of a computer that the cloud operator cannot look into, and this page explains what that means for your prompt."
+status: live
+checked: "2026-08-26"
+statusNote: "Describes the Intel TDX enclave on Phala Cloud that answers at api.solrouter.com/tee/public-key today."
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Card, Cards } from 'fumadocs-ui/components/card';
+import { SealedRoom } from '@/components/diagrams/sealed-room';
+
+## The question
+
+You type a prompt. A computer somewhere works on it. Who can read the prompt while that happens?
+
+With a normal AI service, the answer is "the company that runs the server". Their staff can read it. Their logs can store it. A TEE changes that answer for one part of the path.
+
+TEE is short for Trusted Execution Environment. In plain words: a sealed part of a computer. The program inside can work on your data. The people who own the computer cannot look in. See the [glossary](/docs/glossary) for the short form of every term on this page.
+
+## The sealed room
+
+<SealedRoom />
+
+**In words**
+
+- A data center holds many computers. One of them runs Solrouter's private inference program.
+- That program lives in a sealed room called a Confidential VM. A VM is a virtual machine: one computer pretending to be a separate, smaller computer.
+- The room has one locked slot. Only data sealed to the room's public key can go in. Your device seals your prompt to that key before it leaves your machine.
+- The room has one window. Through it, anyone can read a signed note that says which program is running inside. That note is the attestation.
+- The operator of the data center stands outside. The CPU encrypts everything in the room's memory, so the operator cannot open the door.
+
+Where the analogy breaks: a real sealed room keeps everything inside. A TEE does not. The program inside can still send data out to other computers. The next sections say where Solrouter's program does that.
+
+## Two layers
+
+A TEE gives you two separate promises.
+
+### Layer 1: isolation
+
+The CPU chip encrypts the memory of the Confidential VM. The cloud operator, the host operating system, and any other program on the same machine see only scrambled bytes. This is why Solrouter can say its own backend and its cloud host never see your prompt in plain text.
+
+### Layer 2: attestation
+
+A sealed room could still hold the wrong program, one that copies your prompt somewhere. Attestation closes that gap.
+
+The chip signs a short note. The note says: "This exact program is running in this room right now." Anyone can fetch the note and check the signature against Intel's public records. Solrouter also puts a fingerprint of the room's public key inside the note. When you check the note, you also confirm the key belongs to this room. An impostor cannot fake that.
+
+Think of a tamper-evident seal on a package. The seal shows the package was not opened. It does not tell you what is inside. Attestation proves which program runs. It does not by itself prove the program is a good one. For that you need to compare the note against known reference values. Solrouter does not publish those values yet. Reference measurements: Soon.
+
+## What a TEE does not do
+
+A TEE stops outsiders from looking in. It does not stop the program inside from talking out.
+
+Solrouter's program inside the enclave decrypts your prompt. It then sends the plain-text prompt to a Nosana GPU node, a separate computer that runs the language model. That node is outside the sealed room. The node can see your prompt and the reply during inference. Solrouter does not control that hardware. The request is not linked to your identity on the node.
+
+Solrouter's own deployment file states the same limit. It claims "Solrouter never sees your prompt or searches" and adds "NOT no one sees them".
+
+<Callout type="warn" title="One sentence to remember">
+Solrouter's backend and its cloud host cannot read your prompt. The Nosana GPU node that runs the model can, while it works on it.
+</Callout>
+
+The page [What is private here](/docs/what-is-private) has the full table of who can see what.
+
+## How Solrouter uses one
+
+Solrouter runs its enclave as an Intel TDX Confidential VM on Phala Cloud. TDX is Intel's name for this kind of sealed VM. Phala Cloud is the hosting service that provides the TDX machines.
+
+When the enclave boots, it makes a fresh key pair inside the sealed room. The private half never leaves. The public half is published at `GET https://api.solrouter.com/tee/public-key`. That reply names the enclave type as `INTEL-TDX-PHALA`. The key changes on every reboot, so a copied key from last week is useless.
+
+The signed note comes from `GET https://api.solrouter.com/tee/attestation`. Solrouter's program asks the Phala guest agent inside the same Confidential VM for it, then passes it to you unchanged.
+
+## Check it yourself
+
+You do not have to take Solrouter's word for any of this.
+
+<Cards>
+  <Card title="Check a reply yourself" href="/docs/verify-a-reply" description="Paste a lock link and see the check pass. Then compare the live key with the signed note." />
+  <Card title="Attestation, in depth" href="/docs/under-the-hood/attestation" description="The two note formats, how to verify Intel's signature chain, and what is still missing." />
+</Cards>

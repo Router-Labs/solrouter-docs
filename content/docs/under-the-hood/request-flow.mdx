@@ -1,0 +1,44 @@
+---
+title: "The TEE request flow"
+icon: Workflow
+description: "What happens to one encrypted request, hop by hop, with the exact payload at each step."
+status: live
+checked: "2026-08-26"
+---
+
+import { RequestFlowStepper } from '@/components/diagrams/request-flow-stepper';
+import { EncryptionFlow } from '@/components/diagrams/encryption-flow';
+
+This page follows one `client.chat()` call through the SDK, the Solrouter backend, the Intel TDX enclave, the Nosana GPU node, and back. Use the step list to walk the map. Each step names its payload and source file.
+
+<RequestFlowStepper />
+
+**In words**
+
+1. `GET /tee/public-key` returns `{publicKey, publicKeySha256, algorithm, teeType}`. The SDK caches it for the life of the process (`be:packages/sdk/src/encryption.ts:55-75`).
+2. The SDK makes an ephemeral X25519 keypair and derives the shared secret with the enclave key.
+3. RescueCipher encrypts the prompt in packed-31 form. The bundle is `{ciphertext, nonce, publicKey, version: '2.0-packed31'}`.
+4. `POST /tee/process` with a Bearer key. What leaves the machine: the ciphertext bundle plus, in plaintext, the API key, model id, `chatId`, and the optional `systemPrompt`, `useRAG`, `ragCollection`, `useLiveSearch` (`be:packages/sdk/src/client.ts:180-193`).
+5. The backend forwards `{encryptedPrompt, model, privacyAttestationId}` unchanged (`be:routes/tee.js:44-53`).
+6. The CVM derives the shared secret with its X25519 private key and decrypts.
+7. The CVM calls the configured Nosana endpoint at `/v1/chat/completions` with the plaintext prompt. HTTPS per the documented node URL, not re-verified (`be:tee-service/src/index.js:461-473`).
+8. The CVM encrypts the reply to your key, signs the `SOLR-ATTEST-v2` tuple, and requests a tappd quote with `report_data = sha256(x25519 || ed25519)`.
+9. The backend commits the compressed receipt and returns `{success, encryptedResponse, attestation, encryptionProof, requestId, metadata, backendRole: 'BLIND_RELAY', onchainAttestation, privacyProof}` (`be:routes/tee.js:84-101`).
+10. The SDK decrypts `encryptedResponse` with the session private key.
+
+## The short picture
+
+<EncryptionFlow />
+
+**In words**
+
+- Your device encrypts. The backend relays ciphertext. The enclave decrypts. The Nosana node runs the model in plaintext. The reply returns encrypted.
+
+## Key custody
+
+- Your device: an ephemeral X25519 private key per session. Never sent.
+- Solrouter backend: no key on this path.
+- Enclave: an X25519 sealing key and an ed25519 signing key, generated at boot and never exported (`be:tee-service/src/index.js:76-91`).
+- Nosana node: no key. It receives plaintext from the enclave.
+
+Source: `be:routes/tee.js:33-101`, `be:tee-service/src/index.js:76-101,217-238,461-473`, `be:packages/sdk/src/encryption.ts:52-142`.

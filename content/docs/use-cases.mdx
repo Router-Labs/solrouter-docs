@@ -1,0 +1,234 @@
+---
+title: "Use cases"
+icon: Compass
+description: "What people, developers, agents, traders, and teams do with Solrouter today, and what is still on the way."
+status: mixed
+checked: "2026-08-26"
+statusNote: "Each card carries its own Status word. The Live cards for privacy modes, memory, guest mode, and team accounts depend on the owner's browser check in PR 5 (design decisions 12 and 13)."
+---
+
+import { Cards, Card } from 'fumadocs-ui/components/card';
+import { Callout } from 'fumadocs-ui/components/callout';
+import {
+  FileText,
+  Code,
+  PenLine,
+  History,
+  Brain,
+  UserX,
+  Paperclip,
+  BadgeCheck,
+  Shield,
+  Plug,
+  Route,
+  Lock,
+  Wallet,
+  Coins,
+  ArrowLeftRight,
+  Repeat,
+  Globe,
+  FolderOpen,
+  Users,
+} from 'lucide-react';
+
+Every card below starts with one Status word that we checked against the code
+on 2026-08-26. **Live** works today, **Soon** exists in code but is not switched
+on or not confirmed end to end, and **Archived** was removed.
+
+Many cards mention a sealed machine. That is a TEE (Trusted Execution
+Environment): a computer that its own operator cannot look inside while it
+runs. [What is a TEE?](/docs/what-is-a-tee) explains it with a picture. Other
+terms, such as [wallet](/docs/glossary), [x402](/docs/glossary), and
+[mixer](/docs/glossary), are in the [Glossary](/docs/glossary).
+
+<Callout title="What private means here">
+  When encryption is on, Solrouter's own servers never see your words in
+  readable form. The GPU computer that runs the AI model does see them while it
+  writes the answer. Solrouter does not own that computer. Read
+  [What is private here](/docs/what-is-private) for the full picture.
+</Callout>
+
+## For people
+
+These are for anyone who uses the chat app at solrouter.com. Encryption in the
+chat app is a switch called Maximum Privacy mode. It is off when you first
+open the app. While it is on, the app keeps no history.
+
+<Cards>
+  <Card icon={<FileText />} title="Summarise a contract off the record" href="/docs/products/chat-app">
+    **Live.** You want a summary of a contract, but you do not want an AI
+    company to keep a copy. Turn on Maximum Privacy mode and paste the text,
+    because an attached file is not encrypted.
+  </Card>
+  <Card icon={<Code />} title="Review code without sharing it" href="/docs/products/chat-app">
+    **Live.** You want feedback on code that is not public. Turn on Maximum
+    Privacy mode and paste the code, and Solrouter's servers never see it in
+    readable form.
+  </Card>
+  <Card icon={<PenLine />} title="Draft a reply nobody else gets to read" href="/docs/products/chat-app">
+    **Live.** You want help with a sensitive message, such as a letter to a
+    doctor or a lawyer. Turn on Maximum Privacy mode, write the draft, and
+    close the tab, because nothing is saved.
+  </Card>
+  <Card icon={<History />} title="Keep your history, or keep nothing" href="/docs/products/chat-app">
+    **Live.** Some chats should survive a reload and others should leave no
+    trace. Persistent mode saves history encrypted with a key that Solrouter
+    holds, and Maximum Privacy mode saves nothing at all.
+  </Card>
+  <Card icon={<Brain />} title="Memory that only your wallet can unlock" href="/docs/products/chat-app">
+    **Live.** You want the assistant to remember facts across chats without
+    Solrouter holding a readable profile of you. Your wallet signs a fixed
+    message to make the key, so Solrouter stores only a locked blob.
+  </Card>
+  <Card icon={<UserX />} title="Try it with no wallet and no account" href="/docs/products/chat-app">
+    **Live.** You will not connect a wallet before you have seen the product
+    work. Open the guest page and send up to five free messages a day.
+  </Card>
+  <Card icon={<Paperclip />} title="Attach a file to a chat" href="/docs/products/chat-app">
+    **Live.** You want to ask about a PDF, a spreadsheet, or a screenshot. You
+    can attach it, but attachments are not encrypted, and documents are stored
+    in readable form on a file server.
+  </Card>
+  <Card icon={<BadgeCheck />} title="Check that a reply came from the sealed machine" href="/docs/verify-a-reply">
+    **Live.** A privacy promise on a web page is not proof. Click the lock link
+    under a reply, or paste it into the checker, and see the receipt on the
+    Solana blockchain.
+  </Card>
+</Cards>
+
+**Archived.** Image and video generation was switched off in the chat app, and
+the services that made them were removed.
+
+## For developers
+
+These are for people who write code and want to add private AI to their own
+app, editor, or backend.
+
+<Cards>
+  <Card icon={<Shield />} title="Encrypted chat from your own app" href="/docs/products/privacy-sdk">
+    **Live.** Every mainstream AI service can read what your app sends it, so
+    you cannot promise your users privacy. Install `@solrouter/sdk`, call
+    `client.chat()`, and the prompt is encrypted on your machine before it
+    leaves.
+  </Card>
+  <Card icon={<Plug />} title="Private research inside Claude Desktop or Cursor" href="/docs/products/mcp-server">
+    **Live.** Research done through a normal assistant shows the model provider
+    which tokens and wallets you look at. Paste one config block, and only
+    the synthesis step runs encrypted; web searches and price lookups stay
+    readable.
+  </Card>
+  <Card icon={<Route />} title="Research with fixed steps instead of a free-running agent" href="/docs/under-the-hood/agent-reasoning">
+    **Live.** A normal agent asks the model what to do at every step, which is
+    slow and hard to predict. Send `reasoning: 'braid'` and the agent walks a
+    fixed diagram of steps, but on this path your prompt travels in readable
+    form.
+  </Card>
+  <Card icon={<Lock />} title="Run the whole agent loop inside the sealed machine" href="/docs/api-reference/agent">
+    **Live** over the REST endpoint, and Soon in the SDK. An agent that searches
+    the web and reads prices normally shows every question to the server. Send
+    an encrypted prompt to `POST /agent`, and the loop runs inside the sealed
+    machine with five approved tools.
+  </Card>
+  <Card icon={<Wallet />} title="Pay per call with no email, card, or KYC" href="/docs/account/api-key">
+    **Live.** Signing up for an AI service means handing over your identity and
+    a card. Connect a Solana wallet, make an API key, and top up a balance in
+    USDC or $ROUTER.
+  </Card>
+</Cards>
+
+## For agents
+
+These are for software agents that hold a Solana wallet and act on their own,
+with no person to manage keys.
+
+<Cards>
+  <Card icon={<Coins />} title="Pay per call with no API key at all (x402)" href="/docs/products/agent-privacy-api">
+    **Live.** An agent that starts on demand has no person to sign up or hold a
+    key. The first call gets a price back, the agent pays a small amount of
+    USDC, and the call goes through.
+  </Card>
+  <Card icon={<ArrowLeftRight />} title="One private swap from the agent's own wallet" href="/docs/products/agent-privacy-api">
+    **Soon.** On Solana every transfer is public, so anyone can link the paying
+    wallet to where the money went. The agent signs one funding step, and
+    Solrouter routes the swap through a mixer so the two ends are not linked.
+  </Card>
+  <Card icon={<Repeat />} title="Repeated private swaps from a managed wallet" href="/docs/products/agent-privacy-api">
+    **Soon.** A long-running agent should not sign a fresh funding step for
+    every trade. Solrouter creates a wallet for the agent, keeps its key locked
+    on the server, and runs each swap on request.
+  </Card>
+  <Card icon={<Globe />} title="Plain HTTP calls and self-discovery" href="/docs/api-reference/inference">
+    **Live.** Not every language has an SDK, and some agents find services on
+    their own. Call the OpenAI-style endpoint directly, and read the discovery
+    documents that describe every route and price.
+  </Card>
+</Cards>
+
+## For traders
+
+These are for people who trade on Solana and want their intent and their wallet
+links kept out of provider logs.
+
+<Cards>
+  <Card icon={<ArrowLeftRight />} title="Swap privately from inside the chat" href="/docs/products/chat-app">
+    **Soon.** A trader wants to swap without the public ledger linking their
+    main wallet to the destination. Type the swap in chat, and a widget walks
+    you through a mixer step and the swap with your own wallet signing.
+  </Card>
+</Cards>
+
+**Soon.** Phoenix Copilot: describe a trading strategy in plain English and
+test it against past prices inside the sealed machine.
+
+**Soon.** RouterChan: trade from a Telegram app with a managed wallet and hard
+spending limits.
+
+## For teams
+
+These are for small companies that want private AI over their own documents
+with shared billing.
+
+<Cards>
+  <Card icon={<FolderOpen />} title="Ask questions over your own documents" href="/docs/products/chat-app">
+    **Live.** You want answers grounded in your contracts, specs, or research
+    instead of the model's general knowledge. Upload files to a knowledge base,
+    but know that the stored pieces are not encrypted at rest.
+  </Card>
+  <Card icon={<Users />} title="Team accounts with invites and shared funds" href="/docs/products/chat-app">
+    **Live.** A company cannot run private AI on one person's wallet. Create an
+    organization, invite members by link, and see usage per member on one
+    shared balance.
+  </Card>
+</Cards>
+
+## All use cases at a glance
+
+<div className="overflow-x-auto">
+
+| Use case | Who | Status | Page |
+| --- | --- | --- | --- |
+| Summarise a contract off the record | People | Live | [Chat app](/docs/products/chat-app) |
+| Review code without sharing it | People | Live | [Chat app](/docs/products/chat-app) |
+| Draft a reply nobody else gets to read | People | Live | [Chat app](/docs/products/chat-app) |
+| Keep your history, or keep nothing | People | Live | [Chat app](/docs/products/chat-app) |
+| Memory that only your wallet can unlock | People | Live | [Chat app](/docs/products/chat-app) |
+| Try it with no wallet and no account | People | Live | [Chat app](/docs/products/chat-app) |
+| Attach a file to a chat | People | Live, not encrypted | [Chat app](/docs/products/chat-app) |
+| Check that a reply came from the sealed machine | People | Live | [Check a reply yourself](/docs/verify-a-reply) |
+| Image and video generation | People | Archived | none |
+| Encrypted chat from your own app | Developers | Live | [Privacy SDK](/docs/products/privacy-sdk) |
+| Private research inside Claude Desktop or Cursor | Developers | Live | [MCP server](/docs/products/mcp-server) |
+| Research with fixed steps (BRAID) | Developers | Live, readable prompt | [Agent endpoint and guided reasoning](/docs/under-the-hood/agent-reasoning) |
+| Run the whole agent loop inside the sealed machine | Developers | Live over REST, Soon in the SDK | [POST /agent](/docs/api-reference/agent) |
+| Pay per call with no email, card, or KYC | Developers | Live | [Get an API key](/docs/account/api-key), [Pricing and balance](/docs/account/pricing) |
+| Pay per call with no API key at all (x402) | Agents | Live | [Agent Privacy API](/docs/products/agent-privacy-api) |
+| One private swap from the agent's own wallet | Agents | Soon | [Agent Privacy API](/docs/products/agent-privacy-api) |
+| Repeated private swaps from a managed wallet | Agents | Soon | [Agent Privacy API](/docs/products/agent-privacy-api) |
+| Plain HTTP calls and self-discovery | Agents | Live | [Inference endpoints](/docs/api-reference/inference), [Discovery documents](/docs/api-reference/discovery) |
+| Swap privately from inside the chat | Traders | Soon | [Chat app](/docs/products/chat-app) |
+| Phoenix Copilot | Traders | Soon | none yet |
+| RouterChan Telegram app | Traders | Soon | none yet |
+| Ask questions over your own documents | Teams | Live, not encrypted at rest | [Chat app](/docs/products/chat-app) |
+| Team accounts with invites and shared funds | Teams | Live | [Chat app](/docs/products/chat-app) |
+
+</div>
