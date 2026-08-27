@@ -22,7 +22,7 @@ Here are the three building blocks that make the guarantee work, and what each o
 The first line of defense is simple: encrypt before you transmit. The SDK encrypts your prompt in the browser or in your server process before it sends anything.
 
 * **`RescueCipher`**: Arcium's field-element symmetric cipher. Arcium chose it for compatibility with MPC, FHE, and ZK computation, so the same encrypted payload can be processed under any of those paradigms as Arcium's network matures.
-* **`X25519` key exchange**: your SDK session generates an ephemeral (single-use, per-session) X25519 keypair. The SDK derives the shared secret from your ephemeral private key and the TEE public key. The SDK fetches that key from `GET /tee/public-key`. It does not fetch or verify the attestation quote. Verification is a manual step; see [Attestation](/docs/concepts/attestation).
+* **`X25519` key exchange**: your SDK session generates an ephemeral (single-use, per-session) X25519 keypair. The SDK derives the shared secret from your ephemeral private key and the TEE public key. The SDK fetches that key from `GET /tee/public-key`. It does not fetch or verify the attestation quote. Verification is a manual step; see [Attestation](/docs/how-it-works/attestation).
 * **TEE-generated keypair**: the TEE's own X25519 keypair is generated inside the Confidential VM at boot time. The private key never leaves the enclave, not even to Solrouter's own infrastructure.
 
 ### Inference isolation
@@ -40,7 +40,7 @@ Encryption only helps if there is no gap where plaintext leaks in transit betwee
 * Your prompt and the reply are encrypted end-to-end between your client and the enclave. The request metadata (API key, model id, `chatId`, and any `systemPrompt`) reaches the backend in plaintext.
 * The Solrouter backend is a **blind relay**. It forwards encrypted blobs without being able to decrypt them. It never has the keys.
 
-The full request path, hop by hop, is on [How It Works](/docs/concepts/how-it-works#request-flow).
+The full request path, hop by hop, is on [How It Works](/docs/how-it-works/request-flow).
 
 ## Why RescueCipher?
 

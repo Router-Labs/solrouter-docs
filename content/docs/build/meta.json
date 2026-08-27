@@ -1,0 +1,12 @@
+{
+  "title": "Build on Solrouter",
+  "icon": "Code",
+  "pages": [
+    "quickstart",
+    "privacy-sdk",
+    "mcp-server",
+    "agent-privacy-api",
+    "agent-tools-sdk",
+    "api-key"
+  ]
+}

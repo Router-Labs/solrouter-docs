@@ -4,175 +4,129 @@ icon: BookA
 description: "Plain-language definitions of every term used in these docs, in alphabetical order, each with a link to the page that explains it."
 status: live
 checked: "2026-08-26"
-statusNote: "Definitions match the code and the live API on the checked date. Where a term names a feature, its own status (Live, Soon, Archived) is given in the entry."
+statusNote: "Definitions match the code and live API on the checked date. Where a term names a feature, its status (Live, Soon, Archived) is in the entry."
 ---
 
-This page defines each term in plain words first. The technical name comes after. Every entry links to the page that explains the idea in full.
-
-Some entries use an analogy. Each analogy also says where it stops being accurate.
-
+This page defines each term in plain words first, then the technical name. Every entry links to the page that explains it in full. Some entries use an analogy and say where it stops being accurate.
 ## A
+**A2A agent card.** A small public file that lists what an AI agent can do, in a format other agents read. Solrouter serves one at `/.well-known/agent-card.json` (Live). See [Discovery documents](/docs/api-reference/overview).
 
-**A2A agent card.** A small public file that describes what an AI agent can do, in a format other agents can read. Solrouter serves one at `/.well-known/agent-card.json` (Live). See [Discovery documents](/docs/api-reference/discovery).
+**/agent endpoint.** The address (`POST /agent`) where a program sends a research question and gets a tool-built answer. By default it runs a tool loop: the model picks a tool, runs it, and repeats up to 8 times. See [Agent endpoint and guided reasoning](/docs/how-it-works/agent-reasoning).
 
-**/agent endpoint.** The address (`POST /agent`) where a program sends a research question and gets back an answer built with tools. By default it runs a tool loop. The model decides what to look up, runs a tool, and repeats up to 8 times. See [Agent endpoint and guided reasoning](/docs/under-the-hood/agent-reasoning).
+**Agent Privacy API.** A separate set of endpoints under `/agents/v1` for autonomous software agents. It covers private token swaps (Soon) and pay-per-call encrypted answers with no account (Live). It is not the `/agent` endpoint above. See [Agent Privacy API](/docs/build/agent-privacy-api).
 
-**Agent Privacy API.** A separate set of endpoints under `/agents/v1` built for autonomous software agents. It covers private token swaps (Soon) and pay-per-call encrypted answers with no account (Live). It is not the same thing as the `/agent` endpoint above. See [Agent Privacy API](/docs/products/agent-privacy-api).
+**Agent Tools SDK.** A planned code package, `@solrouter/agent-tools`, that would wrap the Agent Privacy API. It is not on npm yet (Soon). See [Agent Tools SDK](/docs/build/agent-tools-sdk).
 
-**Agent Tools SDK.** A planned code package, `@solrouter/agent-tools`, that would wrap the Agent Privacy API for developers. It is not published on npm yet (Soon). See [Agent Tools SDK](/docs/products/agent-tools-sdk).
+**Anonymity set.** The group of deposits a mixer cannot tell apart from yours. A bigger group gives more privacy. `GET /agents/v1/anonymity-set` reports the size for an amount bucket (Live). See [Private swaps internals](/docs/build/agent-privacy-api).
 
-**Anonymity set.** The group of deposits a mixer cannot tell apart from yours. A bigger group gives more privacy. `GET /agents/v1/anonymity-set` reports the size for a given amount bucket (Live). See [Private swaps internals](/docs/under-the-hood/private-swaps).
+**API key.** A secret string that starts with `sk_solrouter_`. Send it with a request so Solrouter knows which prepaid balance to charge. Treat it like a password. See [Get an API key](/docs/build/api-key).
 
-**API key.** A secret string that starts with `sk_solrouter_`. You send it with a request so Solrouter knows which prepaid balance to charge. Treat it like a password. See [Get an API key](/docs/account/api-key).
+**Arcium.** The company whose software library Solrouter uses to encrypt prompts on your device. The chat app labels this "encrypted with Arcium". Arcium also runs a network for computing on encrypted data, which Solrouter does not use for inference today. See [RescueCipher and X25519](/docs/how-it-works/encryption).
 
-**Arcium.** The company whose software library Solrouter uses to encrypt prompts on your device. The chat app labels this "encrypted with Arcium". Arcium also runs a network for computing on encrypted data, which Solrouter does not use for inference today. See [RescueCipher and X25519](/docs/under-the-hood/encryption).
-
-**Attestation.** A signed statement from the computer chip itself. It says two things. A real Intel chip runs this sealed program, and the program owns this public key. Think of it as a tamper-evident seal on a package. The analogy breaks here. The seal proves the hardware and the key. Solrouter has not published reference values, so you cannot yet prove which program image is inside. See [What is a TEE?](/docs/what-is-a-tee) and [TDX attestation](/docs/under-the-hood/attestation).
-
+**Attestation.** A signed statement from the computer chip. It says a real Intel chip runs this sealed program, and the program owns this public key. Think of it as a tamper-evident seal. The seal proves the hardware and the key. Solrouter has not published reference values, so you cannot yet prove which program image is inside. See [What is a TEE?](/docs/how-it-works/what-is-a-tee) and [TDX attestation](/docs/how-it-works/attestation).
 ## B
+**Backend.** The ordinary Solrouter servers that receive your request, charge your balance, and forward the encrypted message to the enclave. On the encrypted path the backend holds no key and cannot read your prompt. It is a blind courier. See [What is private here](/docs/use/what-is-private).
 
-**Backend.** The ordinary Solrouter servers that receive your request, charge your balance, and forward the encrypted message to the enclave. On the encrypted path the backend holds no key and cannot read your prompt. It is a blind courier. See [What is private here](/docs/what-is-private).
-
-**BRAID.** Solrouter's guided reasoning feature. A normal agent asks the model what to do at each step. BRAID instead follows a fixed plan (a GRD) and gathers data with tools. Then it calls the model once to write the answer. You request it with `reasoning: 'braid'`. Older material calls this SERV. See [Agent endpoint and guided reasoning](/docs/under-the-hood/agent-reasoning).
-
+**BRAID.** Solrouter's guided reasoning feature. A normal agent asks the model what to do at each step. BRAID instead follows a fixed plan (a GRD), gathers data with tools, then calls the model once to write the answer. Request it with `reasoning: 'braid'`. Older material calls this SERV. See [Agent endpoint and guided reasoning](/docs/how-it-works/agent-reasoning).
 ## C
+**Ciphertext and plaintext.** Plaintext is text anyone can read. Ciphertext is the scrambled form that only a key holder can turn back into text. On the encrypted path your prompt leaves your device as ciphertext. See [What is private here](/docs/use/what-is-private).
 
-**Ciphertext and plaintext.** Plaintext is text anyone can read. Ciphertext is the scrambled form that only a key holder can turn back into text. On the encrypted path your prompt leaves your device as ciphertext. See [What is private here](/docs/what-is-private).
-
-**Confidential VM (CVM).** A virtual computer whose memory the chip encrypts. The owner of the physical machine cannot look inside it. Solrouter's enclave is a CVM on Intel TDX hardware hosted by Phala. See [What is a TEE?](/docs/what-is-a-tee).
-
+**Confidential VM (CVM).** A virtual computer whose memory the chip encrypts, so the owner of the physical machine cannot look inside. Solrouter's enclave is a CVM on Intel TDX hardware hosted by Phala. See [What is a TEE?](/docs/how-it-works/what-is-a-tee).
 ## D
+**DEK and KEK.** Two keys for managed swap wallets. The DEK (data encryption key) locks one wallet's secret. The KEK (key encryption key) is a wrapping key the backend holds, and it locks the DEK. Both are handled in the backend process, not the enclave. See [Private swaps internals](/docs/build/agent-privacy-api).
 
-**DEK and KEK.** Two keys used for managed swap wallets. The DEK (data encryption key) locks one wallet's secret. The KEK (key encryption key) is a wrapping key the backend holds, and it locks the DEK. Both are handled in the backend process, not in the enclave. See [Private swaps internals](/docs/under-the-hood/private-swaps).
-
-**Discovery documents.** Public files a program can fetch to learn what Solrouter offers and what each call costs, without reading these docs. They include the A2A agent card, the x402 manifest, an OpenAPI file (a machine-readable list of endpoints), and `/agents/v1/capabilities`. All are Live. See [Discovery documents](/docs/api-reference/discovery).
-
+**Discovery documents.** Public files a program can fetch to learn what Solrouter offers and what each call costs. They include the A2A agent card, the x402 manifest, an OpenAPI file (a machine-readable list of endpoints), and `/agents/v1/capabilities`. All are Live. See [Discovery documents](/docs/api-reference/overview).
 ## E
+**ed25519 signature.** A digital signature scheme. The enclave creates an ed25519 signing key at boot and signs the encryption proof for each private reply. The signature lets anyone check that the enclave, not the backend, produced the receipt. See [On-chain encryption proof](/docs/how-it-works/proof).
 
-**ed25519 signature.** A digital signature scheme. The enclave creates an ed25519 signing key at boot and uses it to sign the encryption proof for each private reply. The signature lets anyone check that the enclave, and not the backend, produced the receipt. See [On-chain encryption proof](/docs/under-the-hood/encryption-proof).
+**Enclave.** The sealed program that decrypts your prompt. In these docs "enclave" and "Confidential VM" mean the same running service. Picture a locked room with one mail slot: encrypted letters in, encrypted replies out. The analogy breaks here: the enclave sends your decrypted prompt to a GPU computer outside the room to run the model. See [What is a TEE?](/docs/how-it-works/what-is-a-tee).
 
-**Enclave.** The sealed program that decrypts your prompt. In these docs "enclave" and "Confidential VM" mean the same running service. Picture a locked room with one mail slot: encrypted letters go in, encrypted replies come out. The analogy breaks here: the enclave sends your decrypted prompt to a GPU computer outside the room to run the model. See [What is a TEE?](/docs/what-is-a-tee).
-
-**Encryption proof.** A receipt for one private reply, written to the Solana blockchain. The enclave signs a summary of your encrypted prompt, and Solrouter stores it in a compressed account. Anyone with the lock link can check it. It proves the enclave handled that exact ciphertext. It does not prove what the model said. See [Check a reply yourself](/docs/verify-a-reply).
-
+**Encryption proof.** A receipt for one private reply, written to the Solana blockchain. The enclave signs a summary of your encrypted prompt, and Solrouter stores it in a compressed account. Anyone with the lock link can check it. It proves the enclave handled that exact ciphertext, not what the model said. See [Check a reply yourself](/docs/verify).
 ## F
+**Facilitator (x402).** The third-party service that checks and settles a pay-per-call payment. In production the manifest names Coinbase's facilitator. See [x402 payments](/docs/build/api-key).
 
-**Facilitator (x402).** The third-party service that checks and settles a pay-per-call payment. In production the manifest names Coinbase's facilitator. See [x402 payments](/docs/under-the-hood/x402).
+**FDV (fully diluted valuation).** The value of every token that will ever exist, at today's price. Solrouter's fundraising sells tokens in steps tied to FDV bands. See [$ROUTER token](/docs/token).
 
-**FDV (fully diluted valuation).** The value of every token that will ever exist, at today's price. Solrouter's fundraising sells tokens in steps tied to FDV bands. See [$ROUTER token](/docs/account/token).
-
-**FHE, MPC, and ZK.** Three families of maths for working with data while it stays encrypted. Solrouter does not use any of them to run the model today. The cipher it uses was chosen so a future move in that direction would not change the client side. See [RescueCipher and X25519](/docs/under-the-hood/encryption).
-
+**FHE, MPC, and ZK.** Three families of maths for working with data while it stays encrypted. Solrouter does not use any of them to run the model today. It chose the cipher so a future move in that direction would not change the client side. See [RescueCipher and X25519](/docs/how-it-works/encryption).
 ## G
+**GRD (Guided Reasoning Diagram).** A fixed plan for one kind of question. It tells BRAID which tools to run and in what order. Six exist: comparison, DeFi analysis, general research, market overview, token research, and wallet analysis. See [Agent endpoint and guided reasoning](/docs/how-it-works/agent-reasoning).
 
-**GRD (Guided Reasoning Diagram).** A fixed plan for one kind of question. It tells BRAID which tools to run and in what order. Six exist: comparison, DeFi analysis, general research, market overview, token research, and wallet analysis. See [Agent endpoint and guided reasoning](/docs/under-the-hood/agent-reasoning).
-
-**Guest mode.** Using the chat app without a wallet. Guests get 5 free messages per day per network address. See [Chat app](/docs/products/chat-app).
-
+**Guest mode.** Using the chat app without a wallet. Guests get 5 free messages per day per network address. See [Chat app](/docs/use/chat-app).
 ## I
+**Intel DCAP.** Intel's free software for checking that a TDX quote came from real Intel hardware. A security researcher can run it against the quote Solrouter returns. See [Check a reply yourself](/docs/verify).
 
-**Intel DCAP.** Intel's free software for checking that a TDX quote came from real Intel hardware. A security researcher can run it against the quote Solrouter returns. See [Check a reply yourself](/docs/verify-a-reply).
-
-**Intel TDX.** The Intel chip feature that creates Confidential VMs and signs attestation quotes. TDX stands for Trust Domain Extensions. Solrouter's enclave reports its type as `INTEL-TDX-PHALA`. See [What is a TEE?](/docs/what-is-a-tee).
-
+**Intel TDX.** The Intel chip feature that creates Confidential VMs and signs attestation quotes. TDX stands for Trust Domain Extensions. Solrouter's enclave reports its type as `INTEL-TDX-PHALA`. See [What is a TEE?](/docs/how-it-works/what-is-a-tee).
 ## J
-
-**Jupiter.** A Solana service that finds the best price across many exchanges for a token swap. The private swap worker uses Jupiter for the swap step (Soon). See [Private swaps internals](/docs/under-the-hood/private-swaps).
-
+**Jupiter.** A Solana service that finds the best price across many exchanges for a token swap. The private swap worker uses Jupiter for the swap step (Soon). See [Private swaps internals](/docs/build/agent-privacy-api).
 ## L
+**Lamports.** The smallest unit of SOL, Solana's native coin. One SOL is one billion lamports. API amounts use these base units, so `10000000` means 0.01 SOL. See [Agent Privacy API](/docs/build/agent-privacy-api).
 
-**Lamports.** The smallest unit of SOL, Solana's native coin. One SOL is one billion lamports. API amounts are given in these base units, so `10000000` means 0.01 SOL. See [Agent Privacy API](/docs/products/agent-privacy-api).
+**Light Protocol compressed account.** A cheap record on the Solana blockchain. Solrouter stores each encryption proof in one. Older material called this record a "PDA"; the current record is a compressed account. Its address comes from the hash of your ciphertext. See [On-chain encryption proof](/docs/how-it-works/proof).
 
-**Light Protocol compressed account.** A cheap kind of record on the Solana blockchain. Solrouter stores each encryption proof in one. Older Solrouter material called this record a "PDA". The current record is a compressed account. Its address is derived from the hash of your ciphertext. See [On-chain encryption proof](/docs/under-the-hood/encryption-proof).
-
-**Liquidity pool.** A shared pot of two tokens on an exchange that lets people trade one for the other at any time. Part of the $ROUTER supply is placed in one at launch. See [$ROUTER token](/docs/account/token).
-
+**Liquidity pool.** A shared pot of two tokens on an exchange that lets people trade one for the other at any time. Part of the $ROUTER supply is placed in one at launch. See [$ROUTER token](/docs/token).
 ## M
+**Managed wallet (Mode A).** A swap mode where Solrouter creates and holds a wallet for your agent. You fund it once and run swaps from it. Solrouter holds the key, so this is custody, not self-custody. Swap execution is Soon. See [Agent Privacy API](/docs/build/agent-privacy-api).
 
-**Managed wallet (Mode A).** A swap mode where Solrouter creates and holds a wallet for your agent. You fund it once and run swaps from it. Solrouter holds the key, so this is custody, not self-custody. Swap execution is Soon. See [Agent Privacy API](/docs/products/agent-privacy-api).
+**Maximum Privacy Mode.** A chat app setting. When on, your messages are encrypted on your device and never stored. Refresh the page and the conversation is gone. It is off by default. See [Chat app](/docs/use/chat-app).
 
-**Maximum Privacy Mode.** A chat app setting. When it is on, your messages are encrypted on your device and never stored. Refresh the page and the conversation is gone. It is off by default. See [Chat app](/docs/products/chat-app).
+**MCP (Model Context Protocol).** A standard that lets desktop AI apps such as Claude Desktop or Cursor call outside tools. Solrouter's MCP server adds its tools to those apps (Live). Only some of those tools use the encrypted path. See [MCP server](/docs/build/mcp-server).
 
-**MCP (Model Context Protocol).** A standard that lets desktop AI apps such as Claude Desktop or Cursor call outside tools. Solrouter's MCP server adds its tools to those apps (Live). Only some of those tools use the encrypted path. See [MCP server](/docs/products/mcp-server).
+**Memory (wallet-encrypted).** A chat app feature that remembers facts across conversations. The facts are encrypted with a key made from your wallet's signature, so only your wallet can unlock them. The backend stores only the sealed form. See [Chat app](/docs/use/chat-app).
 
-**Memory (wallet-encrypted).** A chat app feature that remembers facts across conversations. The facts are encrypted with a key made from your wallet's signature, so only your wallet can unlock them. The backend stores only the sealed form. See [Chat app](/docs/products/chat-app).
+**Mint address.** The unique on-chain address that identifies one token type on Solana, such as USDC or $ROUTER. Swap requests name tokens by mint address. See [Agent Privacy API](/docs/build/agent-privacy-api).
 
-**Mint address.** The unique on-chain address that identifies one token type on Solana, such as USDC or $ROUTER. Swap requests name tokens by mint address. See [Agent Privacy API](/docs/products/agent-privacy-api).
-
-**Mixer.** A shared on-chain pool. It breaks the link between the wallet that puts money in and the wallet that takes it out. Picture many people dropping same-size envelopes into one box, then each taking one out. The analogy breaks here. The fact that you used the box is public. Amounts at the edges of the pool are visible. Solrouter uses the Umbra mixer (Soon). See [Private swaps internals](/docs/under-the-hood/private-swaps).
-
+**Mixer.** A shared on-chain pool that breaks the link between the wallet that puts money in and the one that takes it out. Picture people dropping same-size envelopes into one box, then each taking one out. The analogy breaks here: using the box is public, and amounts at the edges of the pool are visible. Solrouter uses the Umbra mixer (Soon). See [Private swaps internals](/docs/build/agent-privacy-api).
 ## N
+**Nonce.** A random number used once per encrypted message, so two identical prompts never make the same ciphertext. The nonce is stored in the encryption proof. See [RescueCipher and X25519](/docs/how-it-works/encryption).
 
-**Nonce.** A random number used once per encrypted message so two identical prompts never produce the same ciphertext. The nonce is stored in the encryption proof. See [RescueCipher and X25519](/docs/under-the-hood/encryption).
+**Nosana GPU node.** A rented computer with a graphics card on the Nosana network. It runs the AI model. The enclave sends it your decrypted prompt over an encrypted connection. The model runs outside the enclave, so the node operator could read the prompt at that moment. Solrouter does not control that hardware, and the request is not tied to your identity there. See [What is private here](/docs/use/what-is-private).
 
-**Nosana GPU node.** A rented computer with a graphics card on the Nosana network. It runs the AI model. The enclave sends it your decrypted prompt over an encrypted connection. The model runs outside the enclave, so the node operator could read the prompt during that moment. Solrouter does not control that hardware, and the request is not tied to your identity there. See [What is private here](/docs/what-is-private).
-
-**Nosana job.** One running task on the Nosana network. Solrouter runs each model as its own job, so each model has its own node and address. After idle time a node can answer "Nosana GPU node is warming up"; wait and retry. See [Models and Nosana nodes](/docs/under-the-hood/models).
-
+**Nosana job.** One running task on the Nosana network. Solrouter runs each model as its own job, so each model has its own node and address. After idle time a node can answer "Nosana GPU node is warming up"; wait and retry. See [Models and Nosana nodes](/docs/how-it-works/models).
 ## O
+**Ollama.** Free software that runs open-weight models and answers requests in the common OpenAI format. Each Nosana node runs Ollama to serve its model. See [Models and Nosana nodes](/docs/how-it-works/models).
 
-**Ollama.** Free software that runs open-weight models on a computer and answers requests in the common OpenAI format. Each Nosana node runs Ollama to serve its model. See [Models and Nosana nodes](/docs/under-the-hood/models).
+**One-shot swap (Mode B).** A swap mode where your agent keeps its own wallet. Solrouter returns an unsigned funding transaction, your agent signs it, and a worker does the rest. Swap execution is Soon. See [Agent Privacy API](/docs/build/agent-privacy-api).
 
-**One-shot swap (Mode B).** A swap mode where your agent keeps its own wallet. Solrouter returns an unsigned funding transaction, your agent signs it, and a worker does the rest. Swap execution is Soon. See [Agent Privacy API](/docs/products/agent-privacy-api).
-
-**Open-weight model.** An AI model whose files are public, so anyone can download and run it on their own hardware. This is what makes private hosting possible. Solrouter runs `gpt-oss:20b` (Live), `qwen3.8:27b` (Live), and `gemma4:31b` (Soon). See [Models and Nosana nodes](/docs/under-the-hood/models).
-
+**Open-weight model.** An AI model whose files are public, so anyone can download and run it on their own hardware. This is what makes private hosting possible. Solrouter runs `gpt-oss:20b` (Live), `qwen3.8:27b` (Live), and `gemma4:31b` (Soon). See [Models and Nosana nodes](/docs/how-it-works/models).
 ## P
+**Persistent Privacy Mode.** The chat app default. Messages are encrypted for transport, then saved so your history survives a reload. Saved history is encrypted at rest with a key the backend holds. That protects against a stolen database copy, but does not hide history from Solrouter. See [Chat app](/docs/use/chat-app).
 
-**Persistent Privacy Mode.** The chat app default. Messages are encrypted for transport, then saved so your history survives a reload. Saved history is encrypted at rest with a key the backend holds. That protects against a stolen database copy. It does not hide history from Solrouter. See [Chat app](/docs/products/chat-app).
+**Phala dStack.** The hosting platform that runs Solrouter's Confidential VM on Intel TDX hardware. It also provides the small service (tappd) that hands out attestation quotes. See [TDX attestation](/docs/how-it-works/attestation).
 
-**Phala dStack.** The hosting platform that runs Solrouter's Confidential VM on Intel TDX hardware. It also provides the small service (tappd) that hands out attestation quotes. See [TDX attestation](/docs/under-the-hood/attestation).
+**Plaintext mode.** Sending a prompt with `encrypted: false` in the SDK. The prompt travels unencrypted through the backend to the same models. You give up every privacy guarantee, and it unlocks no other model. See [Privacy SDK](/docs/build/privacy-sdk).
 
-**Plaintext mode.** Sending a prompt with `encrypted: false` in the SDK. The prompt travels unencrypted through Solrouter's backend to the same models. You give up every privacy guarantee. It does not unlock any other model. See [Privacy SDK](/docs/products/privacy-sdk).
-
-**Prepaid balance.** Money you add to your Solrouter account before use, in USDC or $ROUTER. Each call deducts from it. Adding money is called a top-up. See [Pricing and balance](/docs/account/pricing).
-
+**Prepaid balance.** Money you add to your Solrouter account before use, in USDC or $ROUTER. Each call deducts from it. Adding money is called a top-up. See [Pricing and balance](/docs/use/pricing).
 ## Q
-
-**Quote (TDX quote).** The signed attestation document produced by the Intel chip through Phala's dStack service. It carries a `report_data` field that pins the enclave's public key. `GET /tee/attestation` returns one (Live). A reply's quote is `null` with a `tdxQuoteError` when the enclave cannot reach dStack. See [TDX attestation](/docs/under-the-hood/attestation).
-
+**Quote (TDX quote).** The signed attestation document produced by the Intel chip through Phala's dStack service. Its `report_data` field pins the enclave's public key. `GET /tee/attestation` returns one (Live). A reply's quote is `null` with a `tdxQuoteError` when the enclave cannot reach dStack. See [TDX attestation](/docs/how-it-works/attestation).
 ## R
+**RAG (retrieval-augmented generation).** Asking questions over your own uploaded documents. The chat app splits documents into pieces and finds the relevant pieces before the model answers. Those pieces are stored unencrypted on the backend. See [Chat app](/docs/use/chat-app) and [Data at rest](/docs/use/what-is-private).
 
-**RAG (retrieval-augmented generation).** Asking questions over your own uploaded documents. The chat app splits documents into pieces and finds the relevant pieces before the model answers. Those pieces are stored unencrypted on the backend. See [Chat app](/docs/products/chat-app) and [Data at rest](/docs/under-the-hood/data-at-rest).
+**report_data.** A 64-byte field inside a TDX quote that the enclave fills before the chip signs it. Solrouter puts a hash of its public key there. Two formulas exist: `GET /tee/attestation` pins the X25519 key alone, and per-reply quotes pin the X25519 key with the ed25519 signing key. See [TDX attestation](/docs/how-it-works/attestation).
 
-**report_data.** A 64-byte field inside a TDX quote that the enclave fills before the chip signs it. Solrouter puts a hash of its public key there. Two formulas exist. `GET /tee/attestation` pins the X25519 key alone. Per-reply quotes pin the X25519 key together with the ed25519 signing key. See [TDX attestation](/docs/under-the-hood/attestation).
+**RescueCipher.** The cipher (scrambling method) from Arcium that Solrouter uses to encrypt your prompt on your device. It works on numbers in a mathematical field instead of raw bytes, so the SDK packs 31 bytes into each number. See [RescueCipher and X25519](/docs/how-it-works/encryption).
 
-**RescueCipher.** The cipher (scrambling method) from Arcium that Solrouter uses to encrypt your prompt on your device. It works on numbers in a mathematical field instead of raw bytes. That is why the SDK packs 31 bytes into each number. See [RescueCipher and X25519](/docs/under-the-hood/encryption).
-
-**$ROUTER.** Solrouter's own token on Solana. You can pay for calls with it instead of USDC. Solrouter can buy it back and burn it with revenue; the configured ratios are not published. See [$ROUTER token](/docs/account/token).
-
+**$ROUTER.** Solrouter's own token on Solana. You can pay for calls with it instead of USDC. Solrouter can buy it back and burn it with revenue; the configured ratios are not published. See [$ROUTER token](/docs/token).
 ## S
+**SERV.** The older name for the guided reasoning feature now called BRAID. It is not the "OpenServ" line in the token allocation table, which names a token drop to that community. See [Agent endpoint and guided reasoning](/docs/how-it-works/agent-reasoning).
 
-**SERV.** The older name for the guided reasoning feature now called BRAID. It is not the same as the "OpenServ" line in the token allocation table, which names a token drop to that community. See [Agent endpoint and guided reasoning](/docs/under-the-hood/agent-reasoning).
+**Skill graph.** A set of 44 linked notes with expert knowledge on Solana, DeFi, and research method. When your question matches a note's trigger words, the `/agent` endpoint adds that note to the model's instructions. It runs on the plaintext path only. See [Agent endpoint and guided reasoning](/docs/how-it-works/agent-reasoning).
 
-**Skill graph.** A set of 44 linked notes with expert knowledge on Solana, DeFi, and research method. When your question matches a note's trigger words, the `/agent` endpoint adds that note to the model's instructions. It runs on the plaintext path only. See [Agent endpoint and guided reasoning](/docs/under-the-hood/agent-reasoning).
-
-**Solana wallet.** An app that holds your Solana keys and signs actions for you. Solrouter uses your wallet as your login. There is no email and no identity check. Phantom, Solflare, or a Privy embedded wallet all work. See [Get an API key](/docs/account/api-key).
-
+**Solana wallet.** An app that holds your Solana keys and signs actions for you. Solrouter uses your wallet as your login, with no email and no identity check. Phantom, Solflare, or a Privy embedded wallet all work. See [Get an API key](/docs/build/api-key).
 ## T
+**tappd.** The small program inside a Phala dStack CVM that asks the Intel chip for a quote. Solrouter's enclave talks to it over a local socket. When the socket is missing, quote requests fail with `tdx_quote_unavailable`. See [TDX attestation](/docs/how-it-works/attestation).
 
-**tappd.** The small program inside a Phala dStack CVM that asks the Intel chip for a quote. Solrouter's enclave talks to it over a local socket. When the socket is missing, quote requests fail with `tdx_quote_unavailable`. See [TDX attestation](/docs/under-the-hood/attestation).
+**TEE (Trusted Execution Environment).** A sealed area of a computer where code and data are hidden from the machine's owner. Solrouter's TEE is an Intel TDX Confidential VM. Picture a sealed room: the landlord owns the building but cannot see inside. The analogy breaks here: the model runs on a separate GPU computer outside the room. See [What is a TEE?](/docs/how-it-works/what-is-a-tee).
 
-**TEE (Trusted Execution Environment).** A sealed area of a computer where code and data are hidden from the machine's owner. Solrouter's TEE is an Intel TDX Confidential VM. Picture a sealed room: the landlord owns the building but cannot see inside. The analogy breaks here: the model runs on a separate GPU computer outside the room. See [What is a TEE?](/docs/what-is-a-tee).
-
-**TGE (token generation event).** The moment a token first goes live and can be traded. Vesting schedules count from this date. See [$ROUTER token](/docs/account/token).
-
+**TGE (token generation event).** The moment a token first goes live and can be traded. Vesting schedules count from this date. See [$ROUTER token](/docs/token).
 ## U
+**Umbra.** The Solana privacy protocol whose mixer Solrouter uses for private swaps (Soon). The MCP tools that start with `umbra_` move real funds. See [Private swaps internals](/docs/build/agent-privacy-api).
 
-**Umbra.** The Solana privacy protocol whose mixer Solrouter uses for private swaps (Soon). The MCP tools that start with `umbra_` move real funds. See [Private swaps internals](/docs/under-the-hood/private-swaps).
-
-**USDC.** A digital dollar on Solana. One USDC is meant to stay worth one US dollar. Solrouter prices calls in USDC and accepts it for top-ups and pay-per-call payments. See [Pricing and balance](/docs/account/pricing).
-
+**USDC.** A digital dollar on Solana, meant to stay worth one US dollar. Solrouter prices calls in USDC and accepts it for top-ups and pay-per-call payments. See [Pricing and balance](/docs/use/pricing).
 ## V
-
-**Vesting (cliff and linear).** Rules for when locked tokens become spendable. A cliff is a waiting period with no release. Linear vesting releases an equal amount at each step after that. See [$ROUTER token](/docs/account/token).
-
+**Vesting (cliff and linear).** Rules for when locked tokens become spendable. A cliff is a waiting period with no release. Linear vesting then releases an equal amount at each step. See [$ROUTER token](/docs/token).
 ## W
-
-**Wallet address.** The public name of a wallet, a long string of letters and numbers. You can share it to receive funds. It reveals nothing secret, but everything sent to it is visible on the public ledger. See [Get an API key](/docs/account/api-key).
-
+**Wallet address.** The public name of a wallet, a long string of letters and numbers. You can share it to receive funds. It reveals nothing secret, but everything sent to it is visible on the public ledger. See [Get an API key](/docs/build/api-key).
 ## X
+**X25519.** A method for two parties to agree on a shared secret key without ever sending it. Your device makes a fresh, single-use keypair per session and combines it with the enclave's public key. The enclave's key is made at boot and changes on every restart. It is also called the sealing key. See [RescueCipher and X25519](/docs/how-it-works/encryption).
 
-**X25519.** A method for two parties to agree on a shared secret key without ever sending it. Your device makes a fresh, single-use keypair per session and combines it with the enclave's public key. The enclave's key is made at boot and changes on every restart. The enclave's X25519 key is also called the sealing key. See [RescueCipher and X25519](/docs/under-the-hood/encryption).
-
-**x402.** A way to pay for one web request at the moment you make it. It uses the HTTP status code 402 ("payment required"). The server answers with a price, your agent pays in USDC, and the request goes through. No account and no API key is needed. Encrypted x402 inference costs 0.005 USDC per call (Live). See [x402 payments](/docs/under-the-hood/x402).
+**x402.** A way to pay for one web request at the moment you make it, using HTTP status code 402 ("payment required"). The server answers with a price, your agent pays in USDC, and the request goes through. No account or API key is needed. Encrypted x402 inference costs 0.005 USDC per call (Live). See [x402 payments](/docs/build/api-key).

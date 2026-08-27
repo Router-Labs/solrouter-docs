@@ -1,5 +1,0 @@
-{
-  "title": "Under the hood",
-  "icon": "Cpu",
-  "pages": ["index", "request-flow", "agent-reasoning"]
-}

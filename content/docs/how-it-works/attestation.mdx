@@ -93,44 +93,6 @@ POST https://api.solrouter.com/attestation/derive
 
 The `umbra_attestation` MCP tool is a different thing. It returns the settlement record of a private-swap session from `GET /agents/v1/attestations/:sessionId`. It does not read inference receipts.
 
-## Verification flow
+## Verify it yourself
 
-Here is the end-to-end check, from fetching the key to confirming the on-chain anchor. Each step builds on the last, and the final one is optional.
-
-<Steps>
-  <Step>
-### Fetch the public key
-
-Call `GET https://api.solrouter.com/tee/public-key` and store the returned X25519 public key.
-  </Step>
-
-  <Step>
-### Fetch the attestation quote
-
-Call `GET https://api.solrouter.com/tee/attestation` to retrieve the Intel TDX quote.
-  </Step>
-
-  <Step>
-### Verify the quote signature
-
-Use Intel DCAP or a compatible TEE verification library to validate the quote's signature chain back to Intel's root certificate. This proves the hardware is real.
-  </Step>
-
-  <Step>
-### Check report_data
-
-Decode `publicKey` from Step 1 from base64 and hash the 32 raw bytes with sha256. The hex digest must equal `reportDataHex` and `publicKeySha256`. This binds the public key to the verified enclave, so you know you encrypted to the right key.
-  </Step>
-
-  <Step>
-### Compare code measurements (Soon)
-
-This step needs published reference measurements. Solrouter does not publish them yet. Until then, you can prove genuine hardware and key binding, but not which image is running.
-  </Step>
-
-  <Step>
-### Check the on-chain anchor (optional)
-
-Take `onchainAttestation.signature` from your `/tee/process` response and call `GET https://api.solrouter.com/attestation/by-tx/:sig`. You can also look up `onchainAttestation.address` directly on a Solana explorer.
-  </Step>
-</Steps>
+The full check, from the live key through the Intel DCAP signature chain to the on-chain anchor, runs in your browser on [Check a reply yourself](/docs/verify). Auditors will find the by-hand steps there too.

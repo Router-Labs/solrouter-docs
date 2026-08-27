@@ -1,0 +1,9 @@
+{
+  "title": "Use Solrouter",
+  "icon": "MessageSquare",
+  "pages": [
+    "chat-app",
+    "what-is-private",
+    "pricing"
+  ]
+}

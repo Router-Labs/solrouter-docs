@@ -1,18 +1,14 @@
 {
   "pages": [
-    "---Start here---",
     "index",
-    "what-is-a-tee",
-    "what-is-private",
-    "verify-a-reply",
     "use-cases",
-    "quickstart",
+    "verify",
+    "use",
+    "build",
+    "how-it-works",
+    "---Reference---",
+    "api-reference",
     "glossary",
-    "chat-app",
-    "concepts",
-    "develop",
-    "payments",
-    "under-the-hood",
-    "api-reference"
+    "token"
   ]
 }

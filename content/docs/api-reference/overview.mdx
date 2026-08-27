@@ -33,12 +33,12 @@ All requests require a Bearer token in the `Authorization` header. You generate 
 Authorization: Bearer sk_solrouter_...
 ```
 
-For agents that do not hold an API key, Solrouter also supports **x402 per-call USDC payment** on Solana mainnet. The live manifest advertises Coinbase (`api.cdp.coinbase.com/x402`) as the facilitator. The manifest does not show which facilitator settles payments. See the [Authentication](/docs/api-reference/authentication) page for full details on both methods.
+For agents that do not hold an API key, Solrouter also supports **x402 per-call USDC payment** on Solana mainnet. The live manifest advertises Coinbase (`api.cdp.coinbase.com/x402`) as the facilitator. The manifest does not show which facilitator settles payments. See the [Authentication](/docs/build/api-key) page for full details on both methods.
 
 ## Endpoints
 
 <Cards>
-  <Card title="Encrypted Chat" icon={<MessageSquare />} href="/docs/develop/privacy-sdk">
+  <Card title="Encrypted Chat" icon={<MessageSquare />} href="/docs/build/privacy-sdk">
     Status: Live. **POST /api/v1/chat/completions** takes an API key and requires `encryptedPrompt` and `model`; it returns 400 `bad_request` without them. `GET /api/v1/models`, `/api/v1/balance`, and `/api/v1/usage` sit beside it. `@solrouter/sdk` calls **POST /tee/process** and encrypts client-side. Keyless agents pay per call on `POST /api/v1/x402/chat/completions`.
   </Card>
 
@@ -47,10 +47,10 @@ For agents that do not hold an API key, Solrouter also supports **x402 per-call 
   </Card>
 
   <Card title="TEE Attestation" icon={<ShieldCheck />} href="/docs/api-reference/tee/public-key">
-    Status: Live. **GET /tee/public-key** returns the enclave's live X25519 public key. **GET /tee/attestation** returns the TDX quote when the CVM can reach the dStack agent; otherwise `tdxQuote` is null and `tdxQuoteError` says why. See the [attestation guide](/docs/concepts/attestation) for the verification flow.
+    Status: Live. **GET /tee/public-key** returns the enclave's live X25519 public key. **GET /tee/attestation** returns the TDX quote when the CVM can reach the dStack agent; otherwise `tdxQuote` is null and `tdxQuoteError` says why. See the [attestation guide](/docs/how-it-works/attestation) for the verification flow.
   </Card>
 
-  <Card title="Agent Privacy API" icon={<Lock />} href="/docs/develop/private-swaps">
+  <Card title="Agent Privacy API" icon={<Lock />} href="/docs/build/agent-privacy-api">
     **/agents/v1/**\* is the agent-first surface for private on-chain swaps, managed wallets, and x402-paywalled encrypted inference. Discovery, quote, and anonymity-set reads are Live. Swap execution is Soon. Full OpenAPI spec at `/agents/v1/openapi.json`.
   </Card>
 </Cards>
@@ -81,4 +81,4 @@ All endpoints return JSON. A top-level `success` field exists on `POST /agent` a
 
 The TEE key and attestation reads, x402 inference, the discovery documents, and `/agents/v1` responses have no `success` field. They return the result object directly, or an `error` field with a non-2xx status.
 
-For error codes on authentication, see the [Authentication](/docs/api-reference/authentication) page, which covers `401`, `402`, and `403` responses.
+For error codes on authentication, see the [Authentication](/docs/build/api-key) page, which covers `401`, `402`, and `403` responses.

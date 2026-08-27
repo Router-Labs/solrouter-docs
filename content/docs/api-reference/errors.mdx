@@ -1,0 +1,24 @@
+---
+title: "Errors"
+icon: TriangleAlert
+description: "The HTTP status codes the Solrouter API returns, what each one means, and how to fix it."
+status: live
+checked: "2026-08-26"
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+Every endpoint returns standard HTTP status codes. The common ones are below. Endpoint-specific errors are listed on each endpoint's reference page.
+
+| Status | Meaning | Fix |
+| --- | --- | --- |
+| `400` Bad Request | A required field is missing. The x402 and `/api/v1/chat/completions` routes require `encryptedPrompt` and `model`. | Send every required field. |
+| `401` Unauthorized | The `Authorization` header is missing, or the key does not begin with `sk_solrouter_`. | Send `Authorization: Bearer sk_solrouter_...`. |
+| `402` Payment Required | Your prepaid balance is empty, or the route is x402-paywalled and no payment was attached. | Top up at [solrouter.com/sdk](https://solrouter.com/sdk), or pay per call with x402 and retry. |
+| `403` Forbidden | Which endpoints return 403, and when, is not determined. The API-key check itself returns 401, not 403. | Not applicable. |
+| `502` TEE unreachable | The backend could not reach the enclave. | Retry. If it persists, the enclave is down. |
+| `503` TDX quote unavailable | The enclave is up but could not produce an attestation quote. | Retry. The reply path still works; only the quote is missing. |
+
+<Callout type="warn">
+  Never expose your API key in client-side code or public repositories. Anyone with your key can spend your prepaid balance. If a key leaks, rotate it at [solrouter.com/sdk](https://solrouter.com/sdk).
+</Callout>

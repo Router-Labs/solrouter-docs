@@ -10,7 +10,7 @@ statusNote: "The @solrouter/agent-tools package is not on npm yet."
 import { Callout } from 'fumadocs-ui/components/callout';
 
 <Callout type="warn">
-  `@solrouter/agent-tools` is not published on npm. The package exists in the Solrouter repository at version 1.0.0, but you cannot install it today. The code samples on this page show the planned API. To use the Agent Privacy API now, call `POST /agents/v1/*` over HTTP or use the `umbra_*` tools in the [MCP server](/docs/develop/mcp-server).
+  `@solrouter/agent-tools` is not published on npm. The package exists in the Solrouter repository at version 1.0.0, but you cannot install it today. The code samples on this page show the planned API. To use the Agent Privacy API now, call `POST /agents/v1/*` over HTTP or use the `umbra_*` tools in the [MCP server](/docs/build/mcp-server).
 </Callout>
 
 An AI agent that swaps tokens on Solana leaves a link from payer to destination. To break that link you normally wire up quoting, signing, mixing, and settlement yourself. `@solrouter/agent-tools` will do that work. It gives your agent typed tools for the Agent Privacy API (`/agents/v1`). The agent can quote, run, and settle private swaps, and call encrypted inference.
@@ -20,7 +20,7 @@ It ships with a Vercel AI SDK adapter, so you can drop it into an agent without 
 ## What to use today
 
 - **HTTP.** Call the Agent Privacy API directly. Quotes and anonymity-set reads are live at `GET /agents/v1/quote` and `GET /agents/v1/anonymity-set`. Swap execution routes are Soon.
-- **MCP.** The [MCP server](/docs/develop/mcp-server) wraps the same routes as `umbra_*` tools for Claude Desktop and Cursor.
+- **MCP.** The [MCP server](/docs/build/mcp-server) wraps the same routes as `umbra_*` tools for Claude Desktop and Cursor.
 
 ## Vercel AI SDK quickstart (Soon)
 

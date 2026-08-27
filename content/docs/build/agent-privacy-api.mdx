@@ -1,5 +1,5 @@
 ---
-title: "Private Swaps"
+title: "Agent Privacy API"
 icon: ArrowRightLeft
 description: "The Agent Privacy API (/agents/v1) gives AI agents private token swaps on Solana in two modes, plus pay-per-call encrypted inference over x402."
 status: mixed
@@ -10,15 +10,9 @@ statusNote: "Swap execution is Soon: no mainnet swap run is on record. Discovery
 import { Callout } from 'fumadocs-ui/components/callout';
 import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
 
-When an autonomous agent moves tokens on Solana, the transaction graph exposes who paid whom. Anyone can trace the link between the funding source and the destination. The Agent Privacy API (`/agents/v1`) exists to break that link.
+When an agent moves tokens on Solana, the transaction graph shows who paid whom. Anyone can trace the funding source to the destination. The Agent Privacy API (`/agents/v1`) breaks that link. It serves two agent needs: private on-chain swaps and encrypted inference. The main Solrouter SDK covers encrypted chat and research. One agent type swaps tokens privately. The other has no API key and pays per inference call with x402, a pay-per-request HTTP standard. The Solrouter backend and a swap worker run the swaps. The TEE (trusted execution environment, a hardware-isolated enclave) does not. Only the x402 inference endpoint on this page uses the encrypted TEE path.
 
-This is a dedicated, agent-first surface for two things: privacy-preserving on-chain actions and encrypted inference. The main Solrouter SDK covers encrypted chat and research. This API serves two kinds of agent. One needs to swap tokens privately. The other has no API key and pays per inference call with x402, a pay-per-request HTTP standard.
-
-The Solrouter backend and a swap worker run the swaps. The TEE (trusted execution environment, a hardware-isolated enclave) does not. Only the x402 inference endpoint on this page uses the encrypted TEE path.
-
-<Callout>
-  No sanctions screening runs today. Agents are responsible for their own compliance.
-</Callout>
+<Callout>No sanctions screening runs today. Agents are responsible for their own compliance.</Callout>
 
 ## Feature status
 
@@ -33,25 +27,19 @@ The Solrouter backend and a swap worker run the swaps. The TEE (trusted executio
 
 ## Execution modes
 
-How you run a private swap depends on one question: does your agent keep its own funded wallet with Solrouter, or does it sign each operation on the fly? The API supports both. Pick the mode that matches how your agent already works.
+Pick a mode by one question: does your agent keep a funded wallet with Solrouter, or sign each operation on the fly? The API supports both.
 
-<Callout type="warn">
-  Both swap modes are Soon. The code path exists, but no mainnet swap run is on record as of 2026-08-26. The samples below show the request shapes the routes accept today.
-</Callout>
+<Callout type="warn">Both swap modes are Soon. The code path exists, but no mainnet swap run is on record as of 2026-08-26. The samples below show the request shapes the routes accept today.</Callout>
 
 <Tabs items={["Mode A: Managed wallet", "Mode B: One-shot swap"]}>
   <Tab value="Mode A: Managed wallet">
-    Use this mode when you want to fund once and forget the setup. Your agent provisions a long-lived managed Umbra wallet through the API, funds it a single time, then runs as many private swaps as it needs. No repeated wallet provisioning.
+    Fund once and forget the setup. Your agent provisions a long-lived managed Umbra wallet through the API, funds it once, then runs as many private swaps as it needs. Use it for agents that swap often, accumulate balance, or run on a schedule. Wallet routes require an API key.
 
     **How custody works:**
 
     * Solrouter holds the wallet keypair. The per-wallet Data Encryption Key (DEK) is wrapped with a Key Encryption Key (KEK) that the backend reads from `WALLET_VAULT_KEK`.
-    * The DEK is unwrapped inside the backend API and the swap worker for the duration of an operation, then wiped.
+    * The DEK is unwrapped inside the backend API and the swap worker for one operation, then wiped.
     * The wallet vault runs in the backend process, not inside a TEE.
-
-    **When to use it:** agents that run frequent swaps, need to accumulate balance over time, or operate on a recurring schedule. The managed wallet removes the overhead of signing a new funding transaction on every operation.
-
-    Wallet routes require an API key.
 
     ```bash
     # Provision a managed wallet for this agent
@@ -76,17 +64,17 @@ How you run a private swap depends on one question: does your agent keep its own
   </Tab>
 
   <Tab value="Mode B: One-shot swap">
-    Use this mode when your agent already has its own wallet and you would rather not hold a balance with Solrouter. Nothing is provisioned: your agent receives an unsigned funding transaction, signs it with its own wallet, submits the signature, and the worker handles the rest.
+    Use this mode when your agent has its own wallet and holds no balance with Solrouter. Nothing is provisioned. Your agent gets an unsigned funding transaction, signs it, submits the signature, and the worker handles the rest. Good for stateless agents and single-operation workflows.
 
     **The 7-step pipeline:**
 
-    1. Agent requests a one-shot session, providing payer pubkey, mints, amount, and destination
+    1. Agent requests a one-shot session with payer pubkey, mints, amount, and destination
     2. API returns an unsigned funding transaction
     3. Agent signs the transaction with its own wallet and broadcasts it
     4. Agent submits the transaction signature to the API to start execution
     5. Worker runs the Umbra mixer round-trip to break the on-chain link
     6. Jupiter aggregator executes the swap
-    7. Worker forwards the proceeds to the destination address, with no on-chain connection to the original payer
+    7. Worker forwards the proceeds to the destination, with no on-chain link to the payer
 
     ```bash
     # 1. Create the session
@@ -110,16 +98,14 @@ How you run a private swap depends on one question: does your agent keep its own
     # 4. Poll until state is settled
     curl "https://api.solrouter.com/agents/v1/sessions/SESSION_ID"
     ```
-
-    **When to use it:** stateless agents, single-operation workflows, or any agent that already manages its own wallet and prefers not to maintain a separate funded balance with Solrouter.
   </Tab>
 </Tabs>
 
-**What Solrouter stores per session:** `from_mint`, `to_mint`, `amount_base_units`, `destination_pubkey`, `payer_user_id`, `ephemeral_pubkey`, the wrapped ephemeral key, `final_tx_sig`, and `actual_out`. Solrouter's backend can read every one of these columns. Retention period: not published.
+**What Solrouter stores per session:** `from_mint`, `to_mint`, `amount_base_units`, `destination_pubkey`, `payer_user_id`, `ephemeral_pubkey`, the wrapped ephemeral key, `final_tx_sig`, and `actual_out`. Solrouter's backend can read every column. Retention period: not published.
 
 ## Discovery endpoints
 
-So your agent does not have to hardcode URLs, the API publishes its own configuration. A2A-compatible agents (the Agent-to-Agent interop protocol) and x402-aware runtimes read these endpoints to self-configure at runtime.
+So your agent does not hardcode URLs, the API publishes its own configuration. A2A-compatible agents (the Agent-to-Agent interop protocol) and x402-aware runtimes read these endpoints to self-configure at runtime.
 
 | Endpoint                       | Description                                                       | Status |
 | ------------------------------ | ----------------------------------------------------------------- | ------ |
@@ -132,14 +118,12 @@ The manifest is served by the API host: `https://api.solrouter.com/.well-known/x
 
 ## x402 encrypted inference
 
-Not every agent has an API key, and account creation is friction you may not want. For those cases Solrouter exposes a pay-per-call encrypted inference endpoint. Your agent pays in USDC on Solana mainnet, with no account and no key management.
-
-x402 is the standard. The live manifest advertises Coinbase (`api.cdp.coinbase.com/x402`) as the facilitator. The manifest shows `X402_FACILITATOR_URL` when it is set, or a built-in default when it is not. It does not show which facilitator settles payments. pay.sh is a catalog that lists the endpoint.
+Not every agent has an API key, and account creation is friction. For those cases Solrouter exposes a pay-per-call encrypted inference endpoint. Your agent pays in USDC on Solana mainnet, with no account and no key management. x402 is the standard. The live manifest advertises Coinbase (`api.cdp.coinbase.com/x402`) as the facilitator. The manifest shows `X402_FACILITATOR_URL` when set, or a built-in default when not. It does not show which facilitator settles payments. pay.sh is a catalog that lists the endpoint.
 
 * **Endpoint:** `POST /api/v1/x402/chat/completions`
 * **Pricing:** \$0.005 per call, settled via x402 USDC on Solana mainnet
 * **Encryption:** Arcium-encrypted prompt in, encrypted response out. The same TEE path as the SDK.
-* **Discovery:** `/.well-known/x402`. Any x402-aware agent runtime can auto-discover pricing and payment instructions.
+* **Discovery:** `/.well-known/x402`. Any x402-aware runtime can auto-discover pricing and payment instructions.
 
 ```bash
 # x402 paywalled encrypted inference. No API key needed.
@@ -153,10 +137,6 @@ curl -X POST "https://api.solrouter.com/api/v1/x402/chat/completions" \
 
 Call the endpoint without payment and the server replies `402 Payment Required` with the price, the network, and the `payTo` address. An x402-aware runtime signs a USDC payment payload with the agent's wallet key and retries with the `X-PAYMENT` header. Solrouter's server sends that payload to its facilitator to verify and settle the transfer, then returns 200. The agent never talks to the facilitator.
 
-<Callout>
-  The paywall charges \$0.005 per call. The response body of this endpoint currently reports `paid.amount: 0.02`. This is a backend follow-up; the manifest price is the one charged.
-</Callout>
+<Callout>The paywall charges \$0.005 per call. The response body currently reports `paid.amount: 0.02`. This is a backend follow-up; the manifest price is the one charged.</Callout>
 
-<Callout>
-  This endpoint returns the encrypted reply only. It does not commit an on-chain receipt. Receipts are created for `POST /tee/process`, the route the SDK uses. See [Encryption Proof](/docs/concepts/encryption-proof).
-</Callout>
+<Callout>This endpoint returns the encrypted reply only. It does not commit an on-chain receipt. Receipts are created for `POST /tee/process`, the route the SDK uses. See [Encryption Proof](/docs/how-it-works/proof).</Callout>

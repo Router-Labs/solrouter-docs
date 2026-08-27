@@ -1,0 +1,69 @@
+---
+title: "Agent reasoning"
+icon: BrainCircuit
+description: "The three ways a request runs through POST /agent, the guided-reasoning path, and the skill graph that shapes the answer."
+status: live
+checked: "2026-08-26"
+---
+
+import { SkillGraphMap } from '@/components/diagrams/skill-graph-map';
+import { Callout } from 'fumadocs-ui/components/callout';
+
+`POST /agent` has three paths. The request body picks the path. Older material calls the guided path SERV; the code, the SDK option, and the API value call it BRAID.
+
+## Three paths
+
+| Path | Trigger | Where it runs | Model calls |
+| --- | --- | --- | --- |
+| Tool loop (default) | `useTools: true` | Backend | Up to 8 (`MAX_ITERATIONS = 8`) |
+| Guided reasoning (BRAID) | `reasoning: 'braid'` | Backend | One synthesis call |
+| Encrypted agent mode | `encryptedPrompt` | Inside the enclave | Loop inside the enclave |
+
+The encrypted path is Live for REST callers who send `encryptedPrompt`, and Soon for the SDK. The chat app's agent mode runs the plaintext tool loop.
+
+## The tool loop
+
+The default path is a standard loop. The model picks a tool, the backend runs it, the model reads the result, and it repeats up to eight times. The last call has no tools, so the model must write the answer. The backend registers 18 tools:
+
+- **Web:** `web_search`, `scrape_url`, `crawl_url`
+- **On-chain and markets:** `solana_balance`, `token_price`, `swap_quote`, `trending_tokens`
+- **Research:** `deepwiki`, `colosseum_search`, `colosseum_archives`
+- **Paid APIs:** `paysh_search_apis`, `paysh_call_api`
+- **Connected accounts:** `github_list_repos`, `github_issues`, `github_read_file`, `notion_search`, `notion_get_page`, `notion_query_database`
+
+The encrypted path runs a 5-tool allowlist inside the enclave: `web_search` (SearXNG in the same enclave), `token_price`, `trending_tokens`, `swap_quote`, and `solana_balance`. Every other tool fails closed in that mode.
+
+## Guided reasoning (BRAID)
+
+A standard loop asks the model what to do at every step, one model call per step. BRAID splits the two jobs an agent does: deciding what data to gather, and writing the answer. It walks a Guided Reasoning Diagram (GRD), a fixed graph that sets which tools run and in what order, then calls the model once at the end to write the reply.
+
+A query passes through four stages:
+
+1. **Intent detection.** Keyword rules map the prompt to one of six GRDs (`comparison`, `defi-analysis`, `general-research`, `market-overview`, `token-research`, `wallet-analysis`). No model call.
+2. **GRD execution.** BRAID walks the graph node by node. Branch nodes use a rule first; when no rule applies, the model answers a short one-word question to pick the branch.
+3. **Skill-graph injection.** If the prompt matches skill nodes, their notes are added to the synthesis prompt.
+4. **Synthesis.** BRAID calls the model once to turn the collected data into a reply.
+
+A swap prompt with two known tokens, or a prompt with three or more known tokens, skips the walk and calls the tools directly before the same single synthesis call.
+
+BRAID spends one synthesis call plus the occasional one-word branch call, instead of one model call per step. That is the whole mechanism behind the cost and latency claim. No benchmark numbers are published.
+
+<Callout title="Use it">
+  Send `reasoning: 'braid'` to `POST /agent`, or `client.chat(prompt, { reasoning: 'braid' })` in the SDK. The SDK path is plaintext today (`encrypted: false`). See [POST /agent](/docs/api-reference/agent) for the `braidTrace` envelope.
+</Callout>
+
+## The skill graph
+
+Before the synthesis call, the engine matches your query against 44 knowledge nodes. It scores every node against the prompt, walks the graph from the top three scoring nodes, follows edges to a depth of 2, and stops at 5 nodes. The reached nodes add domain notes to the system prompt. A prompt that matches no node gets no extra tokens, and the response never returns the walked path.
+
+Click a node to see its edges. The highlighted path is a DeFi protocol comparison.
+
+<SkillGraphMap />
+
+**The 44 nodes, by cluster**
+
+- **Research and analysis (15):** research-core, source-eval, defi-analysis, liquidity-risk, token-economics, market-analysis, on-chain-analysis, wallet-analysis, privacy-research, risk-assessment, smart-contract-risk, comparative-analysis, data-synthesis, colosseum-research, colosseum-archives.
+- **Ecosystem (2):** arcium-mpc, solana-ecosystem.
+- **DeFi protocols (10):** jupiter-defi, raydium-defi, orca-defi, meteora-defi, kamino-defi, sanctum-staking, pump-fun, lulo-lending, ranger-perps, prediction-markets.
+- **Infrastructure and oracles (8):** helius-infra, light-protocol-zk, metaplex-nfts, pyth-oracle, switchboard-oracle, squads-multisig, debridge-cross-chain, coingecko-analytics.
+- **Solana development (9):** solana-kit-dev, anchor-dev, pinocchio-dev, framework-kit-frontend, solana-testing, solana-security-audit, token2022-extensions, quicknode-infra, magicblock-gaming.

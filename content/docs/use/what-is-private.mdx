@@ -1,0 +1,152 @@
+---
+title: "What is private here"
+icon: EyeOff
+description: "Who can read your prompt, your files, and your history, and what Solrouter keeps on its servers."
+status: mixed
+checked: "2026-08-26"
+statusNote: "Each row states its own Live or Soon status."
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Cards, Card } from 'fumadocs-ui/components/card';
+import { Lock, ShieldCheck, BookOpen, MessageSquare } from 'lucide-react';
+import { PlaintextZones } from '@/components/diagrams/plaintext-zones';
+import { PrivacyMatrix } from '@/components/diagrams/privacy-matrix';
+
+## The question
+
+"If I type something private into Solrouter, who can read it?"
+
+With encryption on, Solrouter's own servers cannot read your prompt or the reply. The prompt is opened only inside a sealed computer (a TEE) and on the rented GPU machine that runs the AI model. Your attached files, your knowledge base, and your saved chat history do not get that protection, and the tables below show exactly where each one is readable.
+
+Encryption is a toggle in the chat app. It is off by default. The Privacy SDK encrypts by default. The page [Chat app](/docs/use/chat-app) explains the toggle. This page explains what each setting exposes.
+
+## Who is who
+
+The matrix shows five parties. You are the sixth: your own device always reads your own words. Here is each party in plain words.
+
+- **You.** Your browser, or the program that uses the SDK.
+- **Network observer.** Anyone who watches the connection between you and Solrouter. For example, your internet provider or the owner of a public Wi-Fi.
+- **Solrouter backend.** Solrouter's own servers. They check your login, take payment, store your history, and pass messages along.
+- **CVM cloud host (Phala).** The company that owns the physical machine where the sealed computer runs. The sealed computer is a Confidential Virtual Machine (CVM). The processor encrypts its memory, so the machine owner cannot read it. See [What is a TEE?](/docs/how-it-works/what-is-a-tee).
+- **Nosana GPU host.** The operator of the graphics-card machine that runs the AI model. Solrouter rents it from the Nosana network. Solrouter does not control that hardware.
+- **Solana observer.** Anyone who reads the public Solana blockchain. Solrouter posts a receipt there for each encrypted request.
+
+Each cell says what that party can see. The legend under the matrix explains every word.
+
+## Who can see what
+
+Rows here describe the encrypted path: the Privacy SDK with its default settings, or the chat app with Maximum Privacy Mode on. Amber cells mark the only places a party can read your words. Every row is Live.
+
+<PrivacyMatrix
+  parties={["Network observer", "Solrouter backend", "CVM cloud host (Phala)", "Nosana GPU host", "Solana observer"]}
+  rows={[
+    { what: "Prompt text", cells: ["ct", "ct", "ct", "pt", "ha"] },
+    { what: "Reply text", cells: ["ct", "ct", "ct", "pt", "no"] },
+    { what: "Attached files", cells: ["no", "no", "no", "no", "no"] },
+    { what: "Knowledge-base documents", cells: ["ct", "pt", "no", "no", "no"] },
+    { what: "Chat history (Persistent mode)", cells: ["ct", "re", "no", "pt", "no"] },
+    { what: "Chat history (Maximum Privacy mode)", cells: ["no", "no", "no", "no", "no"] },
+    { what: "Memory", cells: ["ct", "ct", "ct", "pt", "no"] },
+    { what: "Wallet address", cells: ["no", "pt", "no", "no", "no"] },
+    { what: "Model name", cells: ["no", "pt", "me", "pt", "pt"] },
+    { what: "That you used Solrouter", cells: ["me", "pt", "me", "me", "me"] },
+    { what: "Encrypted-prompt hash", cells: ["no", "ha", "no", "no", "ha"] },
+    { what: "Web searches (agent mode)", cells: ["ct", "ct", "me", "pt", "no"] },
+  ]}
+/>
+
+**Notes**
+
+- **Nosana GPU host, readable.** The model runs there in plaintext for the length of one request. Solrouter rents the machine and does not control it. The request is not linked to your identity.
+- **Chat history, at rest.** Persistent mode stores each message encrypted with AES-256-GCM under a key the backend holds. That protects against a stolen database copy, not against Solrouter. On this path the backend also reads the prompt in plaintext on the way in.
+- **Knowledge-base documents.** Files are split and embedded on the server as plain text, not encrypted at rest. Whether the deployed app isolates collections per user is not determined.
+- **Attached files.** The encrypted path sends the text prompt only. Attachments travel on the default path below.
+- **Web searches** is the encrypted agent path: a REST call to `/agent` with `encryptedPrompt`, Live for REST and Soon for the SDK. Search runs through SearXNG inside the enclave, which then queries public engines. Those engines receive the search text.
+- The enclave logs the first 50 characters of each reply. Who can read that log is not determined.
+
+## Default chat (toggle off)
+
+This is the chat app with the toggle off, the SDK with `encrypted: false`, and guest chat. There is no client-side encryption, so the backend and the model node read your words. Only the rows that change from the matrix above are shown. Status: Live.
+
+<PrivacyMatrix
+  parties={["Network observer", "Solrouter backend", "CVM cloud host (Phala)", "Nosana GPU host", "Solana observer"]}
+  rows={[
+    { what: "Prompt text", cells: ["ct", "pt", "no", "pt", "no"] },
+    { what: "Reply text", cells: ["ct", "pt", "no", "pt", "no"] },
+    { what: "Attached files", cells: ["ct", "pt", "no", "pt", "no"] },
+    { what: "Knowledge-base documents", cells: ["ct", "pt", "no", "pt", "no"] },
+    { what: "Memory", cells: ["ct", "pt", "no", "pt", "no"] },
+    { what: "Web searches", cells: ["ct", "pt", "no", "pt", "no"] },
+  ]}
+  legend={false}
+/>
+
+On this path attachments and knowledge-base files reach the backend and the model node in plaintext. Documents upload to Cloudflare R2 through a short-lived link, and the backend extracts their text. Live search and the `web_search` tool use Brave, with DuckDuckGo and Wikipedia as fallbacks, so those services receive the search text.
+
+## Where your words are readable
+
+The strip below follows one encrypted request from your device to the Solana receipt. Green zones hold your words in readable form. Grey zones hold only ciphertext or a hash. The amber zone is the rented GPU machine.
+
+<PlaintextZones />
+
+**In words**
+
+- Your device: your words are readable here. Your browser or program scrambles them before they leave.
+- Network: ciphertext only. A watcher sees size and timing.
+- Solrouter backend: ciphertext only. It checks your login, bills you, and passes the blob along.
+- TDX CVM: your words are readable here, inside memory that the processor encrypts. The machine owner cannot open it.
+- Nosana GPU node: your words are readable here while the model runs. Solrouter does not control this machine. The request is not linked to you.
+- Solana: hash only. A receipt proves a request happened and names the model. It does not hold your words.
+
+<Callout type="warn" title="Not FHE inference">
+  Solrouter does not run fully homomorphic encryption (FHE) inference. FHE means a computer works on scrambled data without ever unscrambling it. No production system runs AI models of this size under FHE in 2026. The compute cost is many orders of magnitude away from usable speed. Anyone who claims "FHE LLM inference" in production is overclaiming.
+
+  What Solrouter provides is encryption on your device, a hardware-isolated CVM that unscrambles the prompt, a model that runs on a rented Nosana GPU node, and a receipt on Solana for each encrypted request. That is a real and checkable guarantee. It is not FHE, and we will not claim otherwise.
+</Callout>
+
+## What we keep
+
+Retention periods are not published. Each row states what is stored, in what form, who holds the key, and how to remove it. Rows are Live unless marked.
+
+<div className="overflow-x-auto">
+
+| What | Where | Format | Key holder | How to delete | Retention |
+| --- | --- | --- | --- | --- | --- |
+| Chat rows (`enc:v1:`) | Solrouter's database, tables `chat_messages` and `chats` (message text, chat title, search and knowledge-base context, pitch-deck cards) | Scrambled with AES-256-GCM, stored as text with the prefix `enc:v1:` | Solrouter backend, from `CHAT_CONTENT_KEK` or `WALLET_VAULT_KEK` in the server settings | Deleting a chat in the app marks it archived. The rows stay in the database. A hard delete path: not determined | not published |
+| Memory envelope (`umem:v1:`) | Solrouter's database, table `user_memory`, one row per user | Scrambled in your browser with AES-256-GCM, stored as text with the prefix `umem:v1:`. Solrouter cannot read it | You. The key comes from your wallet signature and is never stored | "Forget all" in the app removes the row (`DELETE /memory`) | not published |
+| Knowledge-base chunks | Files on the backend server disk, one JSON file per collection under `data/vectors/` | Plain text chunks plus embedding vectors. Not encrypted | none | Delete the whole collection (`DELETE /rag/collections/:name`). Delete of one document: not determined | not published |
+| Uploaded files (R2) | A Cloudflare R2 bucket, key `documents/` plus a timestamp and a random id | The original file. Not encrypted by Solrouter | none | not determined. The code has upload and download, no delete | not published |
+| Usage log | Solrouter's database, table `api_usage` | Plain rows: key id, user id, model, token counts, cost, request id, time. No prompt text | none | not determined | not published |
+| Swap session rows (Soon) | Solrouter's database, table `agent_swap_sessions` | Plain rows: mode, state, tokens, amount, destination address, transaction ids, payer id, webhook URL. The one-shot signer key is scrambled and set to null when the swap ends | Solrouter backend, `WALLET_VAULT_KEK`, for the signer key only | not determined. The API has read and webhook routes, no delete | not published. Pending sessions expire after 7 days |
+| Guest per-IP counter | Backend process memory, not a database | Your internet address, a message count, and a reset time | none | No route. The entry resets 24 hours after first use and vanishes when the server restarts | not published |
+
+</div>
+
+Guest chat sends your prompt in plaintext to the backend and then to the model node. It stores no chat rows.
+
+## Short answers
+
+- "Can Solrouter read my prompt?" With the toggle on, or with the SDK default, no. With the toggle off, yes.
+- "Can Solrouter read my history?" In Persistent mode, yes. It holds the key. In Maximum Privacy mode there is no history.
+- "Can Solrouter read my memory?" No. Only your wallet can unlock it.
+- "Can Solrouter read my uploaded documents?" Yes. They are stored as plain text and plain files.
+- "Can anyone else read my prompt?" The operator of the Nosana GPU node could, while the model runs. No one else.
+- "Is my wallet address public?" It is not on the Solana receipt. Solrouter's backend knows it.
+
+## Next
+
+<Cards>
+  <Card title="Chat app" icon={<MessageSquare />} href="/docs/use/chat-app">
+    Where the Privacy Mode toggle is and what each mode keeps.
+  </Card>
+  <Card title="Check a reply yourself" icon={<ShieldCheck />} href="/docs/verify">
+    Paste the lock link from a reply and see the receipt check pass.
+  </Card>
+  <Card title="What is a TEE?" icon={<Lock />} href="/docs/how-it-works/what-is-a-tee">
+    The sealed-room picture and where it breaks.
+  </Card>
+  <Card title="Glossary" icon={<BookOpen />} href="/docs/glossary">
+    Every term on this page in one line each.
+  </Card>
+</Cards>

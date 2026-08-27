@@ -15,27 +15,34 @@ Most AI chat tools want your email, store your conversations in plaintext, and l
 
 You connect a Solana wallet, top up a prepaid balance, and pick one of two open-weight models. You also get file attachments and a RAG knowledge base. Encryption is a toggle. It is off by default.
 
-## Features
+## Two privacy modes
 
-Here is what you get, and what each feature does with your data.
+Encryption is a toggle, off by default. Here is what each mode does with your prompt and your history.
+
+| | Persistent (default) | Maximum Privacy (on) |
+| --- | --- | --- |
+| Prompt to the backend | plaintext | encrypted in your browser |
+| Opened where | backend, then the Nosana node | only the enclave, then the Nosana node |
+| Chat history | stored, encrypted at rest under a key Solrouter holds | not stored, lost on refresh |
+| Best for | everyday chats | sensitive prompts |
+
+For exactly who can read what, see [What is private here](/docs/use/what-is-private).
+
+## Features
 
 <Cards>
   <Card title="Encryption toggle" icon={<Lock />}>
-    **Persistent Privacy Mode** (default): your prompt goes to the Solrouter backend in plaintext, then to a Nosana GPU node. Chat history is stored encrypted at rest with AES-256-GCM. The backend holds the key, so this protects against a database dump, not against Solrouter.
-
-    **Maximum Privacy Mode** (toggle on): your prompt is encrypted in your browser. It is decrypted only inside the TEE (Trusted Execution Environment: hardware that isolates code and data from the machine's operator). Nothing is stored. History is lost on refresh.
+    Turn on Maximum Privacy Mode to encrypt each prompt before it leaves your browser. Off by default.
   </Card>
-
   <Card title="File attachments" icon={<Paperclip />}>
-    Send images and documents with your question. Attachments are not encrypted in your browser. Images become data URLs. Documents upload to Cloudflare R2 through a presigned URL, and the backend parses them. Maximum Privacy Mode encrypts the text prompt only.
+    Send images and documents with your question. Attachments are not encrypted, only the text prompt is.
   </Card>
-
   <Card title="RAG knowledge base" icon={<Database />}>
-    RAG (Retrieval-Augmented Generation: answering from your own documents instead of only the model's training data) lets you upload files. You then query them in plain language. The backend chunks and embeds your documents in plaintext. Embeddings are computed on Solrouter's own servers, so no third-party embedding API sees them. Stored chunks are not encrypted.
+    Upload files and ask questions grounded in them. Stored chunks are not encrypted at rest.
   </Card>
 </Cards>
 
-Image and video generation: Archived. It is disabled in the chat app.
+Image and video generation is Archived. It is disabled in the chat app.
 
 ## Getting started
 
@@ -73,7 +80,7 @@ Four steps take you from a blank browser tab to your first message.
 
 The chat model picker lists two self-hosted open-weight models on the Nosana GPU network: `gpt-oss:20b` (Default, Live) and `qwen3.8:27b` (Uncensored, Live). No proprietary model is reachable in the chat app. Maximum Privacy Mode works with both models.
 
-For model ids and their status, see the [Supported Models](/docs/concepts/supported-models) page.
+For model ids and their status, see the [Supported Models](/docs/how-it-works/models) page.
 
 <Callout>
   In Maximum Privacy Mode, Solrouter's backend cannot read your prompt. Plaintext exists on your device, inside the Intel TDX enclave, and on the Nosana GPU node that runs the model during inference. Solrouter does not control that node's hardware.

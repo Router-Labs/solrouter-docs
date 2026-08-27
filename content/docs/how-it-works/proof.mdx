@@ -1,0 +1,52 @@
+---
+title: "On-chain proof"
+icon: Stamp
+description: "Each private inference writes a receipt to Solana, signed inside the enclave. This page explains what the receipt stores and why the backend cannot forge it."
+status: live
+checked: "2026-08-26"
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+[Attestation](/docs/how-it-works/attestation) proves the enclave is genuine. The **encryption proof** ties *your specific request* to that enclave. Inside the enclave, a key that exists nowhere else signs the hash of your exact ciphertext, and the receipt goes to Solana. The backend relays it and cannot change it without breaking the signature.
+
+Each receipt is a **Light Protocol compressed account**: about 0.000005 SOL each, roughly 400 times cheaper than a normal Solana PDA. That cost gap is why a proof per message is viable.
+
+## What the record stores
+
+A v2 attestation lives under the Solrouter program `ATMRatMtsKX4bHax7U4FRdhbE4mjU4NKpDZGqZqAhBKb`. Its address is deterministic: `deriveAddressV2(["attestation_v2", sha256(ciphertext)])`, so a bare ciphertext hash is enough to find it. Alongside `model`, `provider`, `timestamp`, `backend_saw_plaintext`, and `tee_processed`, it stores the proof:
+
+| Field | Meaning |
+| --- | --- |
+| `client_pubkey` | Your ephemeral X25519 key from the request |
+| `tee_pubkey` | The enclave's X25519 sealing key your ciphertext was sealed to |
+| `nonce` | The RescueCipher nonce |
+| `enclave_pubkey` | The enclave's ed25519 signing key, bound inside the per-request TDX quote |
+| `enclave_sig_r` / `enclave_sig_s` | The two halves of the ed25519 signature |
+| `tdx_quote_hash` | `sha256` of the TDX quote that attests `enclave_pubkey` |
+
+Inside the enclave, the signature covers this exact byte tuple:
+
+```
+"SOLR-ATTEST-v2"
+  ‖ sha256(ciphertext)   // 32  your encrypted prompt
+  ‖ tee_pubkey           // 32  the sealing key
+  ‖ nonce                // 16
+  ‖ client_pubkey        // 32  your request key
+  ‖ len(model) ‖ model
+  ‖ len(provider) ‖ provider
+```
+
+A `POST /tee/process` reply returns this record under `onchainAttestation` (`address`, `signature`, `explorerUrl`), or `null` if the commit failed. The SDK exposes `privacyAttestationId` only; call the REST route for the full object.
+
+## Why a forged receipt is detectable
+
+The ed25519 signing key is generated inside the enclave at boot and never leaves it. The backend pays for the Solana transaction with its deployer wallet, so it could commit a record carrying any key and signature. The on-chain program stores those fields without checking them. The safeguard is the per-request TDX quote: its `report_data` equals `sha256(tee_pubkey ‖ enclave_pubkey)`, so `enclave_pubkey` is pinned to attested hardware. A verifier who checks that binding can tell a real enclave key from a forged one.
+
+<Callout type="warn" title="What a passing check proves">
+  A passing signature check proves the key in the record signed your exact ciphertext, and that the record is on-chain. The per-request quote check proves that key belongs to an attested TDX enclave. The deepest level, Intel's full DCAP chain on the raw quote, needs the live quote from `GET /tee/attestation`.
+</Callout>
+
+## Check one yourself
+
+Paste a lock link, address, transaction, or ciphertext hash into the verifier on [Check a reply yourself](/docs/verify), or read a receipt directly through the [proof-lookup endpoints](/docs/how-it-works/attestation#on-chain-attestation-anchor).
