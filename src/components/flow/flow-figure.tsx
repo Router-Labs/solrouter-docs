@@ -34,7 +34,7 @@ export function FlowFigure({
   nodes,
   edges,
   width = 880,
-  height = 440,
+  height = 480,
   steps,
 }: FlowFigureProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -97,7 +97,7 @@ export function FlowFigure({
       <div
         role="img"
         aria-label={ariaLabel}
-        className={`h-[380px] w-full md:h-[440px] ${reducedMotion ? 'flow-reduced-motion' : ''}`}
+        className={`h-[420px] w-full md:h-[480px] ${reducedMotion ? 'flow-reduced-motion' : ''}`}
       >
         <FlowCanvas
           nodes={viewNodes}
@@ -127,15 +127,11 @@ export function FlowFigure({
                   <dd>{selected.data.detail.status}</dd>
                 </>
               ) : null}
-              <dt className="font-medium">Source</dt>
-              <dd>
-                <code className="text-xs">{selected.data.detail.source}</code>
-              </dd>
               {selected.data.detail.href ? (
                 <>
                   <dt className="font-medium">Deep dive</dt>
                   <dd>
-                    <a href={selected.data.detail.href}>{selected.data.detail.href}</a>
+                    <a href={selected.data.detail.href}>Open page →</a>
                   </dd>
                 </>
               ) : null}
@@ -153,9 +149,6 @@ export function FlowFigure({
               Step {stepIndex + 1} of {steps?.length}: {step.label}
             </div>
             <code className="mt-1 block text-xs whitespace-pre-wrap">{step.payload}</code>
-            <div className="mt-1 text-xs text-fd-muted-foreground">
-              Source: <code>{step.source}</code>
-            </div>
           </div>
         ) : null}
       </div>

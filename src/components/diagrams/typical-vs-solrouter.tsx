@@ -1,87 +1,149 @@
+'use client';
+
+import {
+  Handle,
+  MarkerType,
+  Position,
+  ReactFlow,
+  ReactFlowProvider,
+  type Edge,
+  type Node,
+  type NodeProps,
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
 import { Eye, EyeOff, KeyRound, Lock, Server, User, Zap, type LucideIcon } from 'lucide-react';
-import type { ReactNode } from 'react';
 
-function Stage({
-  icon: Icon,
-  title,
-  sub,
-  accent = false,
-}: {
-  icon: LucideIcon;
-  title: string;
-  sub: string;
+type ChipData = {
+  icon: keyof typeof ICONS;
+  label: string;
   accent?: boolean;
-}) {
-  return (
-    <div className="flex flex-1 flex-col items-center gap-2 rounded-xl border border-fd-border bg-fd-card p-3 text-center">
-      <div
-        className={`flex h-9 w-9 items-center justify-center rounded-lg ${
-          accent ? 'bg-fd-primary/15 text-fd-primary' : 'bg-fd-muted text-fd-muted-foreground'
-        }`}
-      >
-        <Icon className="h-5 w-5" aria-hidden />
-      </div>
-      <div className="text-sm font-medium text-fd-foreground">{title}</div>
-      <div className="text-xs leading-snug text-fd-muted-foreground">{sub}</div>
-    </div>
-  );
-}
+  danger?: boolean;
+};
+type LaneData = { label: string };
 
-function Wire({ label, open = false }: { label: string; open?: boolean }) {
-  const Icon = open ? Eye : Lock;
+const ICONS = { User, Eye, EyeOff, Server, Lock, KeyRound, Zap } satisfies Record<string, LucideIcon>;
+
+const CHIP_W = 150;
+const CHIP_H = 52;
+
+function ChipNode({ data }: NodeProps<Node<ChipData>>) {
+  const Icon = ICONS[data.icon];
+  const tone = data.accent
+    ? 'border-fd-primary/40 bg-fd-primary/10'
+    : data.danger
+      ? 'border-amber-500/40 bg-amber-500/10'
+      : 'border-fd-border bg-fd-card';
+  const iconTone = data.accent
+    ? 'text-fd-primary'
+    : data.danger
+      ? 'text-amber-600 dark:text-amber-300'
+      : 'text-fd-muted-foreground';
   return (
     <div
-      className={`flex shrink-0 flex-row items-center justify-center gap-1 px-1 py-1 md:flex-col ${
-        open ? 'text-fd-muted-foreground' : 'text-fd-primary'
-      }`}
+      className={`flex items-center gap-2 rounded-xl border px-3 text-fd-foreground ${tone}`}
+      style={{ width: CHIP_W, height: CHIP_H }}
     >
-      <Icon className="h-4 w-4" aria-hidden />
-      <span className="text-[10px] font-medium uppercase tracking-wide">{label}</span>
+      <Handle type="target" position={Position.Left} className="!opacity-0" />
+      <Icon className={`h-4 w-4 shrink-0 ${iconTone}`} aria-hidden />
+      <span className="text-xs font-semibold leading-tight">{data.label}</span>
+      <Handle type="source" position={Position.Right} className="!opacity-0" />
     </div>
   );
 }
 
-function Row({ title, children }: { title: string; children: ReactNode }) {
+function LaneNode({ data }: NodeProps<Node<LaneData>>) {
   return (
-    <div>
-      <div className="mb-2 text-xs font-medium uppercase tracking-wide text-fd-muted-foreground">{title}</div>
-      <div className="flex flex-col items-stretch gap-2 md:flex-row md:items-center">{children}</div>
+    <div className="text-[11px] font-semibold uppercase tracking-wide text-fd-muted-foreground">
+      {data.label}
     </div>
   );
 }
+
+const nodeTypes = { chip: ChipNode, lane: LaneNode };
+
+function chip(id: string, x: number, y: number, data: ChipData): Node<ChipData> {
+  return { id, type: 'chip', position: { x, y }, data, width: CHIP_W, height: CHIP_H, draggable: false, selectable: false };
+}
+function lane(id: string, x: number, y: number, label: string): Node<LaneData> {
+  return { id, type: 'lane', position: { x, y }, data: { label }, draggable: false, selectable: false };
+}
+
+const AMBER = '#d97706';
+const GREEN = '#059669';
+
+function wire(id: string, source: string, target: string, label: string, safe: boolean): Edge {
+  const color = safe ? GREEN : AMBER;
+  return {
+    id,
+    source,
+    target,
+    label,
+    type: 'smoothstep',
+    style: { stroke: color, strokeWidth: 1.5 },
+    labelStyle: { fill: color, fontSize: 11, fontWeight: 600 },
+    labelBgStyle: { fill: 'var(--color-fd-background)' },
+    labelBgPadding: [4, 2],
+    labelBgBorderRadius: 4,
+    markerEnd: { type: MarkerType.ArrowClosed, color, width: 16, height: 16 },
+  };
+}
+
+const nodes: Node[] = [
+  lane('lane1', 0, -42, 'Typical AI API'),
+  chip('you1', 0, 0, { icon: 'User', label: 'You' }),
+  chip('prov', 240, 0, { icon: 'Eye', label: 'Provider server', danger: true }),
+  chip('model1', 480, 0, { icon: 'Server', label: 'Model' }),
+
+  lane('lane2', 0, 108, 'Solrouter, encryption on'),
+  chip('you2', 0, 150, { icon: 'Lock', label: 'You', accent: true }),
+  chip('backend', 220, 150, { icon: 'EyeOff', label: 'Solrouter backend' }),
+  chip('enclave', 440, 150, { icon: 'KeyRound', label: 'TDX enclave', accent: true }),
+  chip('gpu', 660, 150, { icon: 'Zap', label: 'Nosana GPU' }),
+];
+
+const edges: Edge[] = [
+  wire('e1', 'you1', 'prov', 'plaintext', false),
+  wire('e2', 'prov', 'model1', 'plaintext', false),
+  wire('e3', 'you2', 'backend', 'ciphertext', true),
+  wire('e4', 'backend', 'enclave', 'ciphertext', true),
+  wire('e5', 'enclave', 'gpu', 'plaintext / TLS', false),
+];
 
 /**
- * Before and after picture. Row 1: a typical AI API, where the provider's
- * server reads the prompt. Row 2: Solrouter with encryption on, where the
- * backend relays ciphertext and only the TDX enclave opens it.
+ * Before and after, as a React Flow graph. Row 1: a typical AI API reads your
+ * prompt in plaintext. Row 2: Solrouter relays ciphertext and only the enclave
+ * opens it. The plaintext/ciphertext state lives on the edges, not in the boxes.
  */
 export function TypicalVsSolrouter() {
   return (
     <figure
       role="img"
-      aria-label="Two rows. In a typical AI API your prompt travels in plaintext to the provider server, which can read, store, and train on it, then to the model. With Solrouter and encryption on, your device encrypts the prompt, the Solrouter backend sees only ciphertext and your wallet, the TDX enclave opens it, the Nosana GPU node runs the model, and the reply comes back encrypted to you."
-      className="my-6 flex flex-col gap-6 rounded-2xl border border-fd-border bg-fd-card/40 p-5"
+      aria-label="Two rows. In a typical AI API your prompt travels in plaintext to the provider server, which reads it, then to the model. With Solrouter and encryption on, your device sends ciphertext, the Solrouter backend relays it without reading it, the TDX enclave opens it, and the Nosana GPU node runs the model over TLS."
+      className="my-6 rounded-2xl border border-fd-border bg-fd-card/40 p-4"
     >
-      <Row title="Typical AI API">
-        <Stage icon={User} title="You" sub="Type the prompt" />
-        <Wire label="plaintext" open />
-        <Stage icon={Eye} title="Provider server" sub="Reads, stores, trains" />
-        <Wire label="plaintext" open />
-        <Stage icon={Server} title="Model" sub="Answers" />
-      </Row>
-      <Row title="Solrouter, encryption on">
-        <Stage icon={Lock} title="You" sub="Encrypted here" accent />
-        <Wire label="ciphertext" />
-        <Stage icon={EyeOff} title="Solrouter backend" sub="Sees ciphertext and your wallet" />
-        <Wire label="ciphertext" />
-        <Stage icon={KeyRound} title="TDX enclave" sub="Opens it here" accent />
-        <Wire label="plaintext over TLS" open />
-        <Stage icon={Zap} title="Nosana GPU node" sub="Runs the model" />
-        <Wire label="ciphertext" />
-        <Stage icon={User} title="Back to you" sub="Only your device can read the reply" accent />
-      </Row>
-      <figcaption className="text-center text-xs text-fd-muted-foreground">
-        The reply is encrypted inside the enclave before it travels back. The backend never sees the text.
+      <div className="h-[260px] w-full">
+        <ReactFlowProvider>
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            nodeTypes={nodeTypes}
+            fitView
+            fitViewOptions={{ padding: 0.12 }}
+            nodesDraggable={false}
+            nodesConnectable={false}
+            elementsSelectable={false}
+            zoomOnScroll={false}
+            zoomOnPinch={false}
+            zoomOnDoubleClick={false}
+            panOnDrag={false}
+            panOnScroll={false}
+            preventScrolling={false}
+            proOptions={{ hideAttribution: true }}
+          />
+        </ReactFlowProvider>
+      </div>
+      <figcaption className="mt-1 text-center text-xs text-fd-muted-foreground">
+        The reply returns encrypted from the enclave. The backend never sees the text.
       </figcaption>
     </figure>
   );

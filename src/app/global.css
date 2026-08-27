@@ -118,3 +118,25 @@ html > body[data-scroll-locked] {
 .flow-reduced-motion .react-flow__edge-path {
   transition: none;
 }
+
+/* --- Card polish -------------------------------------------------------- */
+/* Fumadocs Card titles are <h3>, so the global serif-heading rule rendered
+   them as tiny 14px display serif with no hierarchy. Give cards a body-font
+   title, real weight, and more breathing room. */
+a.bg-fd-card {
+  padding: 1.25rem;
+}
+a.bg-fd-card h3 {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.35;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+a.bg-fd-card > div:first-child {
+  margin-bottom: 0.85rem;
+}
+/* More air between cards in a grid. */
+div:has(> a.bg-fd-card) {
+  gap: 1.25rem;
+}
