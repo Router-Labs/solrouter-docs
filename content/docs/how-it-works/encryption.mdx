@@ -1,0 +1,102 @@
+---
+title: "Encryption"
+icon: Lock
+description: "Solrouter encrypts prompts on your device with Arcium RescueCipher and X25519 key exchange. Only an Intel TDX enclave can decrypt them. Solrouter's backend never sees plaintext."
+status: live
+checked: "2026-08-26"
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+When you send a prompt to an AI provider, you normally trust that provider to read it, store it, and not misuse it. Solrouter removes that trust requirement for its own backend. Your prompt is encrypted on your own device before it leaves, and Solrouter's backend never holds the key to read it.
+
+Solrouter encrypts your prompts and responses with Arcium's `RescueCipher` cipher and `X25519` key exchange. X25519 lets two parties agree on a shared secret without sending it. The ciphertext travels through Solrouter's backend untouched. It is decrypted only inside a hardware-isolated Intel TDX Confidential VM, a TEE. A TEE (Trusted Execution Environment) is hardware that isolates code and data from the machine's owner. Solrouter's backend is a blind relay: it routes encrypted blobs it cannot read, and the private key that could decrypt them never leaves the enclave.
+
+## Encryption components
+
+Here are the three building blocks that make the guarantee work, and what each one does.
+
+### Client-side encryption
+
+The first line of defense is simple: encrypt before you transmit. The SDK encrypts your prompt in the browser or in your server process before it sends anything.
+
+* **`RescueCipher`**: Arcium's field-element symmetric cipher. Arcium chose it for compatibility with MPC, FHE, and ZK computation, so the same encrypted payload can be processed under any of those paradigms as Arcium's network matures.
+* **`X25519` key exchange**: your SDK session generates an ephemeral (single-use, per-session) X25519 keypair. The SDK derives the shared secret from your ephemeral private key and the TEE public key. The SDK fetches that key from `GET /tee/public-key`. It does not fetch or verify the attestation quote. Verification is a manual step; see [Attestation](/docs/how-it-works/attestation).
+* **TEE-generated keypair**: the TEE's own X25519 keypair is generated inside the Confidential VM at boot time. The private key never leaves the enclave, not even to Solrouter's own infrastructure.
+
+### Inference isolation
+
+Your data has to be decrypted somewhere to run the model. The question is *where*, and who can see it. With Solrouter, decryption happens inside an attested enclave. The model runs on a Nosana GPU node that the enclave calls.
+
+* **Intel TDX Confidential VM**: a hardware-enforced TEE. Memory is encrypted by the CPU and inaccessible to the host OS, hypervisor, and any Solrouter process running outside the enclave.
+* **Where plaintext exists**: the enclave decrypts your prompt, then calls the model on a Nosana GPU node (HTTPS per the documented node URL, not re-verified). The prompt and reply exist in plaintext in that node's memory during inference. The node runs outside the TDX enclave. The node operator could read the prompt at that moment; Solrouter does not control that hardware. The request is not linked to your identity on the node. When the reply returns to the enclave, it is encrypted with your session's ephemeral key before it leaves.
+* **No backend access**: no Solrouter employee, server process, or privileged operator on the backend can read your prompt or response. The hardware enforces this.
+
+### Transport
+
+Encryption only helps if there is no gap where plaintext leaks in transit between you and the enclave. There is none.
+
+* Your prompt and the reply are encrypted end-to-end between your client and the enclave. The request metadata (API key, model id, `chatId`, and any `systemPrompt`) reaches the backend in plaintext.
+* The Solrouter backend is a **blind relay**. It forwards encrypted blobs without being able to decrypt them. It never has the keys.
+
+The full request path, hop by hop, is on [How It Works](/docs/how-it-works/request-flow).
+
+## Why RescueCipher?
+
+You might wonder why Solrouter does not use a familiar cipher like AES. The answer is about where your data can go next.
+
+Most symmetric ciphers (AES-GCM, ChaCha20) are designed for classical computation. They are efficient on CPUs and GPUs but are not naturally compatible with the algebraic structures that MPC, FHE, and ZK proofs operate over.
+
+RescueCipher is a **field-element cipher**. It operates natively over the same finite-field arithmetic that MPC, FHE, and ZK systems use. That gives you three things:
+
+* The same encrypted payload you send today can, in principle, be processed directly under MPC or FHE computation without re-encryption.
+* As Arcium's MXE (Multiparty eXecution Environment) network ships support for more cryptographic compute primitives, Solrouter's encryption layer does not need to change.
+* You get a smooth upgrade path: stronger cryptographic compute guarantees over time, zero migration work on your side.
+
+This is why Arcium chose RescueCipher as the cipher for its MXE substrate, and why Solrouter uses it today, even before full MPC/FHE inference is live.
+
+## What encryption does NOT cover (yet)
+
+Privacy claims in this space are often inflated, so here is the honest line on what Solrouter does and does not do today.
+
+<Callout>
+  Solrouter is **not** running pure FHE (Fully Homomorphic Encryption) inference today, and no production system does. LLM-scale FHE inference is many orders of magnitude away from viable latency. Anyone claiming "FHE LLM inference" in production is overclaiming.
+
+  What Solrouter offers today is **client-side encryption + hardware TEE isolation for decryption**, which is a real and meaningful guarantee. Arcium's MXE is a hybrid of MPC + FHE + ZK primitives, and RescueCipher is designed to work with all three. As Arcium's network matures, more of the inference pipeline will move from TEE-isolated plaintext into cryptographic compute: MPC first, then FHE/ZK where they are practical. The client encryption layer stays unchanged throughout.
+</Callout>
+
+To be precise about what is and is not guaranteed today:
+
+| Property                                   | Today                                                          |
+| ------------------------------------------ | -------------------------------------------------------------- |
+| Client-side encryption before transmission | Live: RescueCipher + X25519                                     |
+| Plaintext hidden from Solrouter backend    | Live: decryption happens only inside the Intel TDX enclave      |
+| Plaintext hidden from the Nosana GPU node  | No: the model runs on plaintext on that node during inference   |
+| Intel-signed TDX quote you can fetch       | Live: `GET /tee/attestation`                                    |
+| Published reference measurements           | Soon: the repository is private, no reference values yet        |
+| MPC-based inference                        | Soon: Arcium MXE roadmap                                        |
+| Full FHE inference                         | Not in production anywhere today                                |
+
+## Encryption options in the SDK
+
+Encryption is on by default in `@solrouter/sdk`. You do not have to do anything to get it. You can turn it off for a plaintext path, but you give up every privacy guarantee on this page when you do. The plaintext path sends your prompt to the same self-hosted Nosana models. It does not unlock any other model.
+
+<Tabs items={["Encrypted (default)", "Plaintext (opt-out)"]}>
+  <Tab value="Encrypted (default)">
+    ```typescript
+    // Default: fully encrypted (recommended)
+    const response = await client.chat('Your prompt', { encrypted: true });
+    ```
+  </Tab>
+  <Tab value="Plaintext (opt-out)">
+    ```typescript
+    // Plaintext path: no encryption guarantees
+    const response = await client.chat('Your prompt', { encrypted: false });
+    ```
+  </Tab>
+</Tabs>
+
+<Callout type="warn">
+  When you set `encrypted: false`, your prompt and response travel in plaintext through Solrouter's infrastructure. Use the plaintext path only for non-sensitive workloads.
+</Callout>

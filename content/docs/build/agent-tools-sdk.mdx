@@ -1,0 +1,95 @@
+---
+title: "Agent Tools SDK"
+icon: Bot
+description: "Typed tools for the Solrouter Agent Privacy API with a Vercel AI SDK adapter. The package is not on npm yet. Use the HTTP API or the MCP tools today."
+status: soon
+checked: "2026-08-26"
+statusNote: "The @solrouter/agent-tools package is not on npm yet."
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+<Callout type="warn">
+  `@solrouter/agent-tools` is not published on npm. The package exists in the Solrouter repository at version 1.0.0, but you cannot install it today. The code samples on this page show the planned API. To use the Agent Privacy API now, call `POST /agents/v1/*` over HTTP or use the `umbra_*` tools in the [MCP server](/docs/build/mcp-server).
+</Callout>
+
+An AI agent that swaps tokens on Solana leaves a link from payer to destination. To break that link you normally wire up quoting, signing, mixing, and settlement yourself. `@solrouter/agent-tools` will do that work. It gives your agent typed tools for the Agent Privacy API (`/agents/v1`). The agent can quote, run, and settle private swaps, and call encrypted inference.
+
+It ships with a Vercel AI SDK adapter, so you can drop it into an agent without an orchestration layer. Not on the AI SDK? The raw `TOOLS` (JSON Schema definitions) and the `callTool()` function are also exported, so any function-calling framework works.
+
+## What to use today
+
+- **HTTP.** Call the Agent Privacy API directly. Quotes and anonymity-set reads are live at `GET /agents/v1/quote` and `GET /agents/v1/anonymity-set`. Swap execution routes are Soon.
+- **MCP.** The [MCP server](/docs/build/mcp-server) wraps the same routes as `umbra_*` tools for Claude Desktop and Cursor.
+
+## Vercel AI SDK quickstart (Soon)
+
+This will be the fastest path: let an LLM decide when to swap, and let the adapter handle the plumbing. Pass `aiSdkTools(solrouter)` into `generateText` or `streamText`. The adapter wires up the tool schemas, validates the model's arguments, and returns results to the model.
+
+```typescript
+import { generateText } from "ai";
+import { SolrouterAgentClient } from "@solrouter/agent-tools";
+import { aiSdkTools } from "@solrouter/agent-tools/ai-sdk";
+
+const solrouter = new SolrouterAgentClient({
+  apiKey: process.env.SOLROUTER_API_KEY,
+});
+
+const result = await generateText({
+  model: yourModel, // any AI SDK model provider
+  tools: aiSdkTools(solrouter),
+  prompt: "Privately swap 0.01 SOL to USDC and send the USDC to AAA...XXX",
+});
+```
+
+## Direct usage, no LLM (Soon)
+
+Sometimes you do not want a model in the loop. You want to drive the privacy pipeline yourself in code. Mode B one-shot swaps do that. Your agent signs the funding transaction with its own wallet. Solrouter then runs the mixer round trip, the Jupiter swap, and the forward to the destination.
+
+```typescript
+import { SolrouterAgentClient } from "@solrouter/agent-tools";
+
+const client = new SolrouterAgentClient({ apiKey: "sk_solrouter_..." });
+
+const session = await client.swapOneshot({
+  payerPubkey: "...",
+  fromMint: "So11111111111111111111111111111111111111112",   // SOL
+  toMint:   "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",   // USDC
+  amount: "10000000",
+  destinationPubkey: "...",  // use a fresh address
+});
+
+// Sign session.fundingTx with your wallet, broadcast, then:
+await client.swapOneshotExecute(session.sessionId, fundingTxSig);
+const settled = await client.pollUntilSettled(session.sessionId);
+```
+
+## Authentication modes
+
+How your agent proves it can pay shapes how you deploy it, so pick the mode that fits before you build. The Agent Privacy API supports two.
+
+* **API key.** Include `Authorization: Bearer sk_solrouter_...` in every request. Usage bills against your prepaid balance in USDC or `$ROUTER`. Best when your agent is long-lived and you have already funded an account.
+* **x402 (keyless).** Pay per call in USDC on Solana mainnet through an x402 facilitator, with no account at all. The live manifest advertises Coinbase (`api.cdp.coinbase.com/x402`). The manifest shows `X402_FACILITATOR_URL` when it is set, or a built-in default when it is not. It does not show which facilitator settles payments. Discover pricing and payment endpoints at [`/.well-known/x402`](https://api.solrouter.com/.well-known/x402).
+
+<Callout>
+  x402 fits agents that run without a pre-registered API key, for example autonomous agents that start on demand and pay for exactly the calls they make. No balance top-up or account creation is required. The agent still holds a wallet private key to sign payments.
+</Callout>
+
+## Available tools
+
+These are the building blocks your agent will call, through `aiSdkTools()` or the raw `TOOLS` / `callTool()` exports. Each one maps to one step of the private-swap or encrypted-inference flow. The Status column describes the API route behind the tool, not the package.
+
+| Tool                         | Description                                                                          | Status |
+| ---------------------------- | ------------------------------------------------------------------------------------ | ------ |
+| `umbra_quote`                | Quote a private swap with anonymity-set sizing                                       | Live   |
+| `umbra_anonymity_set`        | Inspect the current anonymity set for a mint pair                                    | Live   |
+| `umbra_swap_oneshot`         | Open a one-shot swap session. The agent signs the funding transaction                | Soon   |
+| `umbra_swap_oneshot_execute` | Submit the signed funding transaction to start execution                             | Soon   |
+| `umbra_session_status`       | Poll session state until `settled`                                                   | Soon   |
+| `umbra_create_wallet`        | Provision a managed wallet for an agent                                              | Soon   |
+| `umbra_swap_managed`         | Run a swap from a managed wallet                                                     | Soon   |
+| `umbra_encrypt`              | Convert a balance to an encrypted balance on the same wallet                         | Soon   |
+| `umbra_shield`               | Mixer round trip, withdraw, then forward to a fresh address                          | Soon   |
+| `umbra_balance`              | Read the encrypted balance of a managed wallet                                       | Soon   |
+| `umbra_attestation`          | Read the settlement record of a swap session (`GET /agents/v1/attestations/:sessionId`) | Soon   |
+| `private_inference_paid`     | x402-paywalled encrypted inference, no API key                                       | Live   |

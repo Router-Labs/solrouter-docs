@@ -8,9 +8,11 @@
     "start": "next start",
     "types:check": "fumadocs-mdx && next typegen && tsc --noEmit",
     "postinstall": "fumadocs-mdx",
-    "lint": "eslint"
+    "lint": "eslint",
+    "check": "node scripts/check-docs.mjs"
   },
   "dependencies": {
+    "@xyflow/react": "12.11.5",
     "fumadocs-core": "16.9.3",
     "fumadocs-mdx": "15.0.11",
     "fumadocs-openapi": "^10.10.3",

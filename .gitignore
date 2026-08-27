@@ -24,3 +24,5 @@ yarn-error.log*
 .env*.local
 .vercel
 next-env.d.ts
+# local issue tracker (wayfinder map, never published)
+.scratch/

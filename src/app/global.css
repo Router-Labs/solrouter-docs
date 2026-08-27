@@ -94,3 +94,49 @@ html > body[data-scroll-locked] {
     scroll-behavior: auto !important;
   }
 }
+
+.react-flow {
+  --xy-edge-stroke-default: var(--color-fd-muted-foreground);
+  --xy-edge-stroke-selected-default: var(--color-fd-primary);
+  --xy-edge-stroke-width-default: 1.5;
+  --xy-node-background-color-default: var(--color-fd-card);
+  --xy-node-border-default: 1px solid var(--color-fd-border);
+  --xy-node-color-default: var(--color-fd-foreground);
+  --xy-controls-button-background-color-default: var(--color-fd-card);
+  --xy-controls-button-background-color-hover-default: var(--color-fd-accent);
+  --xy-controls-button-color-default: var(--color-fd-foreground);
+  --xy-controls-button-border-color-default: var(--color-fd-border);
+  --xy-attribution-background-color-default: transparent;
+}
+
+/* The stepper thickens one edge. Animate it, unless the reader asked for reduced motion. */
+.react-flow__edge-path {
+  transition:
+    stroke-width 150ms ease,
+    stroke 150ms ease;
+}
+.flow-reduced-motion .react-flow__edge-path {
+  transition: none;
+}
+
+/* --- Card polish -------------------------------------------------------- */
+/* Fumadocs Card titles are <h3>, so the global serif-heading rule rendered
+   them as tiny 14px display serif with no hierarchy. Give cards a body-font
+   title, real weight, and more breathing room. */
+a.bg-fd-card {
+  padding: 1.25rem;
+}
+a.bg-fd-card h3 {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.35;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+a.bg-fd-card > div:first-child {
+  margin-bottom: 0.85rem;
+}
+/* More air between cards in a grid. */
+div:has(> a.bg-fd-card) {
+  gap: 1.25rem;
+}

@@ -1,0 +1,86 @@
+---
+title: "MCP Server"
+icon: Plug
+description: "Use Solrouter's encrypted chat and Agent Privacy API tools from Claude Desktop or Cursor with @solrouter/mcp-server. Some tool calls leave your machine in plaintext."
+status: mixed
+checked: "2026-08-26"
+statusNote: "The server is on npm. Encrypted chat is live. Swap execution tools are Soon. Read the status word beside each tool."
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+You already work inside Claude Desktop or Cursor. The Solrouter MCP server lets you run Solrouter's encrypted chat and Agent Privacy API tools right there. You need no separate app.
+
+MCP (Model Context Protocol, an open standard for connecting AI clients to external tools) is the bridge. The server runs on your machine as `npx @solrouter/mcp-server`. It holds your API key and encrypts prompts for the `encrypted_chat` tool and for the AI synthesis step of the research tools. Other calls leave your machine in plaintext. The tables below say which.
+
+## Configuration
+
+This is the one-time setup that registers Solrouter as a tool provider in your client.
+
+Add the following block to your MCP configuration file. For **Claude Desktop**, that file is `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS (or the equivalent path on Windows). For **Cursor**, add it under `mcpServers` in `~/.cursor/mcp.json`.
+
+```json
+{
+  "mcpServers": {
+    "solrouter": {
+      "command": "npx",
+      "args": ["@solrouter/mcp-server"],
+      "env": {
+        "SOLROUTER_API_KEY": "sk_solrouter_...",
+        "SOLROUTER_API_URL": "https://api.solrouter.com"
+      }
+    }
+  }
+}
+```
+
+Set `SOLROUTER_API_URL`. Without it, the server defaults to a Render host, not `api.solrouter.com`. Set `BRAVE_API_KEY` too: `private_research` and `private_token_analysis` fail without it. `HELIUS_RPC_URL` is optional (default: `https://api.mainnet-beta.solana.com`).
+
+Save the config, then restart Claude Desktop or reload the Cursor window. The Solrouter tools appear in the tool list. There is nothing else to install.
+
+## Privacy and research tools
+
+Use these tools for encrypted AI inference or on-chain research from inside your client. Only the AI step is encrypted. The data-gathering steps call third parties directly from your machine in plaintext.
+
+| Tool | Description | Leaves your machine in plaintext |
+| --- | --- | --- |
+| `encrypted_chat` (Live) | Encrypted AI query through `/tee/process` | Nothing. The prompt is encrypted on your machine |
+| `private_research` (Live) | Web search, DEX data, and on-chain lookups, then an encrypted AI synthesis | Query to Brave; token symbols to DexScreener; wallet addresses to the Solana RPC |
+| `private_token_analysis` (Live) | DEX data, price, and web results for one token, then an encrypted AI synthesis | The token to DexScreener, CoinGecko, and Brave |
+| `private_wallet_audit` (Live) | Holdings of one wallet, then an encrypted AI synthesis | The wallet address to the Solana RPC and DexScreener |
+| `list_models` (Live) | Models from `GET /api/v1/models` with pricing | Nothing sensitive |
+| `account_balance` (Live) | Your credit balance from `GET /api/v1/balance` | Nothing sensitive |
+
+## Agent and swap helper tools
+
+These tools call the Solrouter backend in plaintext or return text without any network call.
+
+| Tool | Description | Leaves your machine in plaintext |
+| --- | --- | --- |
+| `agent_run` (Live) | Tool-augmented agent completion through `POST /agent` (web search, Solana data, paid APIs) | Your prompt, to the Solrouter backend |
+| `umbra_describe` (Live) | Explains private swaps. Makes no network call | Nothing |
+| `umbra_anonymity_stats` (Soon) | Deposit count for one denomination bucket from `GET /umbra/anonymity-set` | The bucket and network |
+| `umbra_initiate_private_swap_widget` (Soon) | Returns a directive that tells the Solrouter web chat to show the swap widget. Executes nothing | Suggested tokens and network |
+
+## Agent Privacy API tools
+
+These tools wrap `POST` and `GET /agents/v1/*` over HTTPS with your API key. Swap parameters travel in plaintext to the Solrouter backend. Swap execution is Soon. Tools marked Soon can move real funds once they go live, so read the session state before you act on it.
+
+| Tool | Description |
+| --- | --- |
+| `umbra_quote` (Live) | Quote a private swap with anonymity-set sizing |
+| `umbra_anonymity_set` (Live) | Inspect the current anonymity set for a mint pair |
+| `umbra_swap_oneshot` (Soon) | Open a one-shot swap session. The agent signs the funding transaction |
+| `umbra_swap_oneshot_execute` (Soon) | Submit the signed funding transaction to start execution |
+| `umbra_session_status` (Soon) | Poll session state until `settled` |
+| `umbra_create_wallet` (Soon) | Provision a managed wallet for an agent |
+| `umbra_swap_managed` (Soon) | Run a swap from a managed wallet |
+| `umbra_encrypt` (Soon) | Convert a balance to an encrypted balance on the same wallet |
+| `umbra_shield` (Soon) | Mixer round trip, withdraw, then forward to a fresh address |
+| `umbra_balance` (Soon) | Read the encrypted balance of a managed wallet |
+| `umbra_attestation` (Soon) | Read the settlement record of a swap session (`GET /agents/v1/attestations/:sessionId`) |
+| `private_inference_paid` (Live) | x402-paywalled encrypted inference, no API key. You supply the encrypted prompt yourself |
+
+<Callout>
+  Not every request through the MCP server is encrypted. `encrypted_chat` and the AI synthesis step of the three research tools use the Privacy SDK path: RescueCipher and Intel TDX. The Solrouter backend never sees that plaintext. Web search (Brave), DexScreener, CoinGecko, and Solana RPC lookups go from your machine to those third parties in plaintext. `agent_run` and the `umbra_*` tools send their inputs to the Solrouter backend in plaintext.
+</Callout>

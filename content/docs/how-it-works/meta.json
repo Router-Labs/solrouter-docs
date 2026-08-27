@@ -1,0 +1,14 @@
+{
+  "title": "How it works",
+  "icon": "Layers",
+  "pages": [
+    "index",
+    "what-is-a-tee",
+    "request-flow",
+    "encryption",
+    "attestation",
+    "proof",
+    "agent-reasoning",
+    "models"
+  ]
+}

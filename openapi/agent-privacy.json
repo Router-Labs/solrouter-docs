@@ -122,7 +122,7 @@
           "bucketed": true,
           "bucketLabel": "USDC_1",
           "nearestBucket": "USDC_1",
-          "privacyNotes": "amount snaps to standard denomination — strong anonymity-set"
+          "privacyNotes": "amount snaps to a standard denomination, a strong anonymity set"
         }
       },
       "Session": {
@@ -252,7 +252,7 @@
           "Swaps"
         ],
         "summary": "Quote a private swap",
-        "description": "Price a private swap before executing it. Returns the expected output after Solrouter's spread plus anonymity-set guidance — whether the amount snaps to a standard denomination bucket (strong privacy) or is an off-bucket amount with a unique on-chain fingerprint.",
+        "description": "Price a private swap before executing it. Returns the expected output after Solrouter's spread plus anonymity-set guidance: whether the amount snaps to a standard denomination bucket (strong privacy) or is an off-bucket amount with a unique on-chain fingerprint.",
         "parameters": [
           {
             "name": "fromMint",
@@ -333,7 +333,7 @@
           "Swaps"
         ],
         "summary": "Pool depth for a denomination bucket",
-        "description": "Inspect the anonymity set for a standard denomination bucket before swapping — how many recent deposits share that bucket. A deeper pool means a larger crowd to hide in.",
+        "description": "Inspect the anonymity set for a standard denomination bucket before swapping: how many recent deposits share that bucket. A deeper pool means a larger crowd to hide in.",
         "parameters": [
           {
             "name": "bucket",
@@ -404,7 +404,7 @@
           "Swaps"
         ],
         "summary": "Begin a one-shot ephemeral-wallet private swap (Mode B)",
-        "description": "Start a private swap that runs through a throwaway ephemeral wallet — no managed custody. Solrouter returns an unsigned `fundingTx`; the agent signs and broadcasts it, then calls `POST /swaps/oneshot/{id}/execute` to kick off the swap orchestrator.",
+        "description": "Start a private swap that runs through a throwaway ephemeral wallet, with no managed custody. Solrouter returns an unsigned `fundingTx`; the agent signs and broadcasts it, then calls `POST /swaps/oneshot/{id}/execute` to kick off the swap orchestrator.",
         "requestBody": {
           "required": true,
           "content": {
@@ -623,7 +623,7 @@
           "Managed Wallets"
         ],
         "summary": "Provision a managed Umbra wallet (Mode A)",
-        "description": "Create a Solrouter-custodied Umbra wallet. The keypair is generated server-side and envelope-encrypted (AES-256-GCM) — the agent never holds private keys. Fund the returned `umbraAddress`, then run swaps and encrypted-balance operations against the wallet id.",
+        "description": "Create a Solrouter-custodied Umbra wallet. The keypair is generated server-side and envelope-encrypted (AES-256-GCM), so the agent never holds private keys. Fund the returned `umbraAddress`, then run swaps and encrypted-balance operations against the wallet id.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -1095,7 +1095,7 @@
         "tags": [
           "Private Balance"
         ],
-        "summary": "Shield + unlink — mixer round-trip to a fresh address",
+        "summary": "Shield + unlink: mixer round-trip to a fresh address",
         "description": "Four txs, ~60s. Public balance enters the Umbra mixer, a claim breaks the on-chain link, then withdraw + transfer delivers to a FRESH destination. Source and destination both appear on-chain but with no link between them. Use when you want destination unlinkability without converting tokens.",
         "parameters": [
           {

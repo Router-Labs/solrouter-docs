@@ -1,12 +1,17 @@
 import { defineConfig, defineDocs } from 'fumadocs-mdx/config';
 import { metaSchema, pageSchema } from 'fumadocs-core/source/schema';
+import { z } from 'zod';
 
-// You can customize Zod schemas for frontmatter and `meta.json` here
-// see https://fumadocs.dev/docs/mdx/collections
+// Frontmatter schema. Every hand-written page carries a status and the date it
+// was last checked against code or a live endpoint. See README "Status policy".
 export const docs = defineDocs({
   dir: 'content/docs',
   docs: {
-    schema: pageSchema,
+    schema: pageSchema.extend({
+      status: z.enum(['live', 'soon', 'archived', 'mixed']).optional(),
+      checked: z.string().optional(),
+      statusNote: z.string().optional(),
+    }),
     postprocess: {
       includeProcessedMarkdown: true,
     },

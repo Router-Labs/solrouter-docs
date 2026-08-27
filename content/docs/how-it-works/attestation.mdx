@@ -1,0 +1,98 @@
+---
+title: "Attestation"
+icon: BadgeCheck
+description: "Fetch the Intel-signed TDX quote from the Solrouter enclave, check that it binds the key you encrypt to, and look up the on-chain receipt for each private inference."
+status: mixed
+checked: "2026-08-26"
+statusNote: "The quote endpoints and on-chain receipts are live. Reference measurements to compare against are not published yet."
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+When you send a prompt to a private inference service, how do you know it ran where the service claims? How do you know the code is the published code and not a tampered copy that logs your data? Solrouter answers that with attestation: hardware-signed proof you can check yourself.
+
+The Solrouter TEE (Trusted Execution Environment: hardware that isolates code and data even from the machine's owner) publishes an Intel-signed TDX quote. That quote binds the enclave's public key to the code measurement running inside the Confidential VM. Each `/tee/process` response also carries a quote when the CVM can reach the dStack agent. Otherwise the `attestation.tdxQuote` field is `null` and `attestation.tdxQuoteError` says why. You never have to take Solrouter's word for it: fetch the quote, verify Intel's signature chain, and confirm on-chain that your inference has a receipt.
+
+## Live attestation endpoints
+
+These two endpoints hand you the raw material for verification. Query them any time to retrieve the current attestation data.
+
+### Get the TEE public key
+
+```bash
+GET https://api.solrouter.com/tee/public-key
+```
+
+This returns the X25519 public key currently active inside the Confidential VM. The SDK uses this key to encrypt prompts client-side. The enclave generates it at boot, so only the enclave holds the matching private key. The key changes on every CVM boot. Nobody on the host, including Solrouter, can decrypt traffic sealed to it.
+
+### Get the TDX attestation quote
+
+```bash
+GET https://api.solrouter.com/tee/attestation
+```
+
+This returns the Intel TDX attestation quote, the hardware-signed proof that ties everything together. The response includes `teePublicKey`, `teePublicKeySha256`, `reportDataHex`, and `tdxQuote`. Its `report_data` is `sha256(teePublicKey)`, which binds the public key you fetched above to the enclave that produced the quote. Verify the quote and you confirm two things:
+
+1. The host CPU is a genuine Intel TDX-capable processor.
+2. The public key was generated inside that specific enclave instance.
+
+Confirming that the enclave runs the published Solrouter code needs reference measurements. Those are not published yet (see below).
+
+### Two report_data formulas
+
+Solrouter produces two kinds of quote. They pin different data, so check the right formula for the quote you hold.
+
+| Quote                                            | `report_data`                              |
+| ------------------------------------------------ | ------------------------------------------ |
+| `GET /tee/attestation`                           | `sha256(X25519 public key)`                |
+| `attestation.tdxQuote` in a `/tee/process` reply | `sha256(X25519 public key ‖ ed25519 public key)` |
+
+The ed25519 key is a signing key the enclave also generates at boot. The enclave uses it to sign the encryption proof that goes on-chain.
+
+## What you can verify
+
+Attestation only matters if you can check the claims independently. Here is what the quote lets you prove on your own today, and what it does not yet.
+
+* **Intel root chain**: the TDX quote is signed by an Intel-issued key. Verifying the signature chain confirms the hardware is a genuine TDX CPU, not a simulated or spoofed environment. Live.
+* **Public key binding**: `report_data` commits to the enclave's public key. So you can confirm the key you encrypted to belongs to this enclave instance. An interceptor cannot substitute its own key. Live.
+* **Code measurements**: the `tdxQuote` field is the dStack guest agent's response, passed through unparsed. Solrouter does not publish a parser or reference values for the measurements inside it. The product repository is private. Reference measurements: Soon.
+
+<Callout title="Tip">
+  Advanced users can verify the full Intel TDX quote chain independently using Intel's DCAP (Data Center Attestation Primitives) libraries or a third-party TEE verification service. The quote Solrouter returns is a standard TDX quote, no proprietary format.
+</Callout>
+
+## On-chain attestation anchor
+
+Off-chain verification proves the enclave is genuine, but it lives in a response you have to trust Solrouter to keep. For a record nobody can quietly edit later, Solrouter anchors attestation data to Solana. Cluster: the commit code targets mainnet; the program deployment on mainnet has not been re-measured.
+
+The Solrouter attestation program is deployed at:
+
+```
+ATMRatMtsKX4bHax7U4FRdhbE4mjU4NKpDZGqZqAhBKb
+```
+
+Each inference sent through `POST /tee/process` gets a **Light Protocol compressed account** on Solana. Solrouter's deployer wallet commits it after the CVM signs the proof. This is automatic; you do not publish anything. The account address is derived from the seeds `attestation_v2` and `sha256(encryptedPrompt)`, so anyone who holds the ciphertext can derive the same address. The `/tee/process` response reports it under `onchainAttestation` with `address`, `signature`, and `explorerUrl`. If the commit fails, the inference still succeeds and `onchainAttestation` is `null`.
+
+To read a receipt back, use the public attestation endpoints. They read from the Solana ledger through a Photon indexer.
+
+```bash
+# By the commit transaction signature from onchainAttestation.signature
+GET https://api.solrouter.com/attestation/by-tx/:sig
+
+# By sha256 of the encrypted prompt
+GET https://api.solrouter.com/attestation/by-hash/:hash
+
+# By the compressed account address from onchainAttestation.address
+GET https://api.solrouter.com/attestation/:address
+
+# Derive hash and address from a ciphertext you hold
+POST https://api.solrouter.com/attestation/derive
+{ "encryptedPrompt": "..." }
+```
+
+The `umbra_attestation` MCP tool is a different thing. It returns the settlement record of a private-swap session from `GET /agents/v1/attestations/:sessionId`. It does not read inference receipts.
+
+## Verify it yourself
+
+The full check, from the live key through the Intel DCAP signature chain to the on-chain anchor, runs in your browser on [Check a reply yourself](/docs/verify). Auditors will find the by-hand steps there too.

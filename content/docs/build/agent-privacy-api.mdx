@@ -1,0 +1,142 @@
+---
+title: "Agent Privacy API"
+icon: ArrowRightLeft
+description: "The Agent Privacy API (/agents/v1) gives AI agents private token swaps on Solana in two modes, plus pay-per-call encrypted inference over x402."
+status: mixed
+checked: "2026-08-26"
+statusNote: "Swap execution is Soon: no mainnet swap run is on record. Discovery, quote, and anonymity-set reads are Live."
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+When an agent moves tokens on Solana, the transaction graph shows who paid whom. Anyone can trace the funding source to the destination. The Agent Privacy API (`/agents/v1`) breaks that link. It serves two agent needs: private on-chain swaps and encrypted inference. The main Solrouter SDK covers encrypted chat and research. One agent type swaps tokens privately. The other has no API key and pays per inference call with x402, a pay-per-request HTTP standard. The Solrouter backend and a swap worker run the swaps. The TEE (trusted execution environment, a hardware-isolated enclave) does not. Only the x402 inference endpoint on this page uses the encrypted TEE path.
+
+<Callout>No sanctions screening runs today. Agents are responsible for their own compliance.</Callout>
+
+## Feature status
+
+| Feature | Status |
+| --- | --- |
+| Discovery documents (`/.well-known/*`, `/agents/v1/openapi.json`, `/agents/v1/capabilities`) | Live |
+| `GET /agents/v1/quote` and `GET /agents/v1/anonymity-set` | Live |
+| Mode A managed-wallet swaps | Soon |
+| Mode B one-shot swaps | Soon |
+| `POST /api/v1/x402/chat/completions` | Live |
+| `@solrouter/agent-tools` npm package | Soon |
+
+## Execution modes
+
+Pick a mode by one question: does your agent keep a funded wallet with Solrouter, or sign each operation on the fly? The API supports both.
+
+<Callout type="warn">Both swap modes are Soon. The code path exists, but no mainnet swap run is on record as of 2026-08-26. The samples below show the request shapes the routes accept today.</Callout>
+
+<Tabs items={["Mode A: Managed wallet", "Mode B: One-shot swap"]}>
+  <Tab value="Mode A: Managed wallet">
+    Fund once and forget the setup. Your agent provisions a long-lived managed Umbra wallet through the API, funds it once, then runs as many private swaps as it needs. Use it for agents that swap often, accumulate balance, or run on a schedule. Wallet routes require an API key.
+
+    **How custody works:**
+
+    * Solrouter holds the wallet keypair. The per-wallet Data Encryption Key (DEK) is wrapped with a Key Encryption Key (KEK) that the backend reads from `WALLET_VAULT_KEK`.
+    * The DEK is unwrapped inside the backend API and the swap worker for one operation, then wiped.
+    * The wallet vault runs in the backend process, not inside a TEE.
+
+    ```bash
+    # Provision a managed wallet for this agent
+    curl -X POST "https://api.solrouter.com/agents/v1/wallets" \
+      -H "Authorization: Bearer sk_solrouter_..." \
+      -H "Content-Type: application/json" \
+      -d '{}'
+    # -> { "walletId": "...", "umbraAddress": "...", "network": "mainnet", "fundingHint": "..." }
+
+    # Fund umbraAddress, then run a swap from the managed wallet
+    curl -X POST "https://api.solrouter.com/agents/v1/wallets/WALLET_ID/swap" \
+      -H "Authorization: Bearer sk_solrouter_..." \
+      -H "Content-Type: application/json" \
+      -d '{
+        "fromMint": "So11111111111111111111111111111111111111112",
+        "toMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "amount": "10000000",
+        "destinationPubkey": "YOUR_FRESH_DESTINATION_ADDRESS"
+      }'
+    # -> { "sessionId": "...", "status": "running", "estimatedSeconds": 70 }
+    ```
+  </Tab>
+
+  <Tab value="Mode B: One-shot swap">
+    Use this mode when your agent has its own wallet and holds no balance with Solrouter. Nothing is provisioned. Your agent gets an unsigned funding transaction, signs it, submits the signature, and the worker handles the rest. Good for stateless agents and single-operation workflows.
+
+    **The 7-step pipeline:**
+
+    1. Agent requests a one-shot session with payer pubkey, mints, amount, and destination
+    2. API returns an unsigned funding transaction
+    3. Agent signs the transaction with its own wallet and broadcasts it
+    4. Agent submits the transaction signature to the API to start execution
+    5. Worker runs the Umbra mixer round-trip to break the on-chain link
+    6. Jupiter aggregator executes the swap
+    7. Worker forwards the proceeds to the destination, with no on-chain link to the payer
+
+    ```bash
+    # 1. Create the session
+    curl -X POST "https://api.solrouter.com/agents/v1/swaps/oneshot" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "payerPubkey": "YOUR_AGENT_WALLET_PUBKEY",
+        "fromMint": "So11111111111111111111111111111111111111112",
+        "toMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "amount": "10000000",
+        "destinationPubkey": "FRESH_DESTINATION_ADDRESS"
+      }'
+    # -> { "sessionId": "...", "ephemeralPubkey": "...", "fundingTx": "<base64>", "expectedSeconds": 75, ... }
+
+    # 2. Sign fundingTx with your wallet and broadcast it.
+    # 3. Submit the confirmed signature:
+    curl -X POST "https://api.solrouter.com/agents/v1/swaps/oneshot/SESSION_ID/execute" \
+      -H "Content-Type: application/json" \
+      -d '{"fundingTxSig": "..."}'
+
+    # 4. Poll until state is settled
+    curl "https://api.solrouter.com/agents/v1/sessions/SESSION_ID"
+    ```
+  </Tab>
+</Tabs>
+
+**What Solrouter stores per session:** `from_mint`, `to_mint`, `amount_base_units`, `destination_pubkey`, `payer_user_id`, `ephemeral_pubkey`, the wrapped ephemeral key, `final_tx_sig`, and `actual_out`. Solrouter's backend can read every column. Retention period: not published.
+
+## Discovery endpoints
+
+So your agent does not hardcode URLs, the API publishes its own configuration. A2A-compatible agents (the Agent-to-Agent interop protocol) and x402-aware runtimes read these endpoints to self-configure at runtime.
+
+| Endpoint                       | Description                                                       | Status |
+| ------------------------------ | ----------------------------------------------------------------- | ------ |
+| `/.well-known/agent-card.json` | A2A protocol v1.0 card with the full skill list                   | Live   |
+| `/.well-known/x402`            | x402 paywall manifest: per-call USDC pricing for keyless agents   | Live   |
+| `/agents/v1/openapi.json`      | Full OpenAPI 3.1 specification                                    | Live   |
+| `/agents/v1/capabilities`      | Capability summary for runtime introspection                      | Live   |
+
+The manifest is served by the API host: `https://api.solrouter.com/.well-known/x402`.
+
+## x402 encrypted inference
+
+Not every agent has an API key, and account creation is friction. For those cases Solrouter exposes a pay-per-call encrypted inference endpoint. Your agent pays in USDC on Solana mainnet, with no account and no key management. x402 is the standard. The live manifest advertises Coinbase (`api.cdp.coinbase.com/x402`) as the facilitator. The manifest shows `X402_FACILITATOR_URL` when set, or a built-in default when not. It does not show which facilitator settles payments. pay.sh is a catalog that lists the endpoint.
+
+* **Endpoint:** `POST /api/v1/x402/chat/completions`
+* **Pricing:** \$0.005 per call, settled via x402 USDC on Solana mainnet
+* **Encryption:** Arcium-encrypted prompt in, encrypted response out. The same TEE path as the SDK.
+* **Discovery:** `/.well-known/x402`. Any x402-aware runtime can auto-discover pricing and payment instructions.
+
+```bash
+# x402 paywalled encrypted inference. No API key needed.
+# `encryptedPrompt` MUST be an Arcium ciphertext produced client-side.
+# Use encrypt(message, baseUrl) and packageForTEE(encryptedData) from @solrouter/sdk.
+# `model` is required.
+curl -X POST "https://api.solrouter.com/api/v1/x402/chat/completions" \
+  -H "Content-Type: application/json" \
+  -d '{"encryptedPrompt": "<base64 Arcium ciphertext>", "model": "gpt-oss:20b"}'
+```
+
+Call the endpoint without payment and the server replies `402 Payment Required` with the price, the network, and the `payTo` address. An x402-aware runtime signs a USDC payment payload with the agent's wallet key and retries with the `X-PAYMENT` header. Solrouter's server sends that payload to its facilitator to verify and settle the transfer, then returns 200. The agent never talks to the facilitator.
+
+<Callout>The paywall charges \$0.005 per call. The response body currently reports `paid.amount: 0.02`. This is a backend follow-up; the manifest price is the one charged.</Callout>
+
+<Callout>This endpoint returns the encrypted reply only. It does not commit an on-chain receipt. Receipts are created for `POST /tee/process`, the route the SDK uses. See [Encryption Proof](/docs/how-it-works/proof).</Callout>

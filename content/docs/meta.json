@@ -1,12 +1,14 @@
 {
   "pages": [
-    "---Get Started---",
     "index",
-    "quickstart",
-    "chat-app",
-    "concepts",
-    "develop",
-    "payments",
-    "api-reference"
+    "use-cases",
+    "verify",
+    "use",
+    "build",
+    "how-it-works",
+    "---Reference---",
+    "api-reference",
+    "glossary",
+    "token"
   ]
 }

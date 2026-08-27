@@ -1,0 +1,125 @@
+---
+title: "Quickstart"
+icon: Rocket
+description: "Get an API key with your Solana wallet, install @solrouter/sdk, and send your first encrypted request in a few lines of TypeScript."
+status: live
+checked: "2026-08-26"
+---
+
+import { Cards, Card } from 'fumadocs-ui/components/card';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import { Lock, KeyRound, Code } from 'lucide-react';
+
+Most AI APIs can read every prompt you send them. Solrouter does not: your message is encrypted on your machine before it leaves, and the backend relays it without seeing the plaintext. The next five steps set that up end to end. You sign in with a Solana wallet, install the SDK, and send your first encrypted request. No email and no credit card: you need a wallet and a few lines of TypeScript.
+
+<Steps>
+  <Step>
+    ### Get an API key
+
+    Your key is how Solrouter authenticates you and bills your usage. It is tied to your wallet, not your identity.
+
+    Go to [solrouter.com/sdk](https://solrouter.com/sdk), connect your Solana wallet, and generate an API key. Top up your prepaid balance in USDC or \$ROUTER to start making calls.
+
+    <Callout>
+      No email, no credit card, and no KYC required. Your API key is tied to your wallet.
+    </Callout>
+  </Step>
+
+  <Step>
+    ### Install the SDK
+
+    The SDK handles encryption, routing, and decryption for you, so you write normal TypeScript and get privacy by default.
+
+    Add `@solrouter/sdk` to your project using your preferred package manager.
+
+    <Tabs items={["npm", "yarn", "pnpm"]}>
+      <Tab value="npm">
+      ```bash
+      npm install @solrouter/sdk
+      ```
+      </Tab>
+      <Tab value="yarn">
+      ```bash
+      yarn add @solrouter/sdk
+      ```
+      </Tab>
+      <Tab value="pnpm">
+      ```bash
+      pnpm add @solrouter/sdk
+      ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step>
+    ### Initialize the client
+
+    One call gets you a configured client. Pass your API key and the API base URL.
+
+    The SDK fetches the enclave's published public key from `GET /tee/public-key` before your first encrypted request. That key is the encryption target for your prompts. The SDK does not fetch or verify the attestation quote. To check the enclave yourself, see [Attestation](/docs/how-it-works/attestation).
+
+    ```typescript
+    import { SolRouter } from '@solrouter/sdk';
+
+    const client = new SolRouter({
+      apiKey: 'sk_solrouter_...',
+      baseUrl: 'https://api.solrouter.com',
+    });
+    ```
+
+    <Callout>
+      Set `baseUrl` explicitly. The SDK default points at a Render host, not at `api.solrouter.com`.
+    </Callout>
+  </Step>
+
+  <Step>
+    ### Send your first encrypted chat
+
+    Here the privacy guarantee pays off. Your prompt travels encrypted through the Solrouter backend. Only the TEE (Trusted Execution Environment: hardware that isolates code and data from the machine's operator) can decrypt it. The enclave then sends the plaintext to an open-weight model on a Nosana GPU node.
+
+    Call `client.chat()` to send a message. The SDK encrypts it client-side with Arcium's RescueCipher. It sends the encrypted blob through the Solrouter backend, which cannot read it. Then it decrypts the response for you.
+
+    With the current SDK, use the default model `gpt-oss-20b`. Other catalog ids pass through with a type cast; see [Models](/docs/how-it-works/models).
+
+    ```typescript
+    // Encrypted end to end: the Solrouter backend never sees plaintext
+    const response = await client.chat('What are the risks of this DeFi protocol?');
+    console.log(response.message);
+    ```
+
+    If the GPU node was idle, the first reply can say "Nosana GPU node is warming up". Wait a moment and send the request again.
+  </Step>
+
+  <Step>
+    ### Check your balance
+
+    Solrouter bills against prepaid funds, so you can check your remaining balance at any time. For example, check it before a batch of calls, or show it in your own UI.
+
+    Query your prepaid balance:
+
+    ```typescript
+    const { balance, balanceFormatted } = await client.getBalance();
+    console.log(`Balance: ${balanceFormatted}`);
+    ```
+  </Step>
+</Steps>
+
+## Next steps
+
+You have sent an encrypted request and checked your balance. That is the core loop. Where you go next depends on what you build: the full SDK surface, keyless payments, or direct HTTP access.
+
+<Cards>
+  <Card title="Privacy SDK" icon={<Lock />} href="/docs/build/privacy-sdk">
+    Full `@solrouter/sdk` documentation: model selection, plaintext mode (`encrypted: false`), BRAID reasoning (`reasoning: 'braid'`), and more.
+  </Card>
+
+  <Card title="Authentication" icon={<KeyRound />} href="/docs/build/api-key">
+    Learn about API key auth, x402 keyless payments, and keeping your credentials safe.
+  </Card>
+
+  <Card title="API Reference" icon={<Code />} href="/docs/api-reference/overview">
+    Browse the full REST API, including the agent endpoint and x402 paywall spec.
+  </Card>
+</Cards>

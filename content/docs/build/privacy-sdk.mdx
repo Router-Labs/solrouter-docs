@@ -1,0 +1,153 @@
+---
+title: "Privacy SDK"
+icon: Code
+description: "Add encrypted AI calls to any app. Install @solrouter/sdk, pass your API key, and call client.chat(). The SDK encrypts the prompt on your machine."
+status: live
+checked: "2026-08-26"
+statusNote: "The SDK on npm (1.1.0) types gpt-oss-20b only. Other catalog ids pass through with a type cast. The model table below shows the status of each id."
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import { EncryptionFlow } from '@/components/diagrams/encryption-flow';
+
+Most AI APIs read your prompts in the clear. The Solrouter Privacy SDK encrypts your prompt before it leaves your machine, so the Solrouter backend cannot read it. The SDK handles the cryptography for you.
+
+Here is what happens when you call `client.chat()`. The SDK fetches the enclave's X25519 public key from `GET /tee/public-key`. It does not fetch or verify the attestation quote. That check is a manual step. See the [attestation guide](/docs/how-it-works/attestation). The SDK then encrypts your prompt on your machine with Arcium's RescueCipher. It sends the encrypted blob through the Solrouter backend, which forwards it without decrypting it. The TEE (Trusted Execution Environment, a CPU-isolated confidential VM) decrypts the prompt and calls the model on a Nosana GPU node. The node runs the model outside the enclave, so it sees the prompt and the reply in plaintext during inference. The reply comes back encrypted, and the SDK decrypts it with your session key.
+
+## Installation
+
+Install the SDK from your package manager of choice.
+
+<Tabs items={["npm", "yarn", "pnpm"]}>
+  <Tab value="npm">
+  ```bash
+  npm install @solrouter/sdk
+  ```
+  </Tab>
+  <Tab value="yarn">
+  ```bash
+  yarn add @solrouter/sdk
+  ```
+  </Tab>
+  <Tab value="pnpm">
+  ```bash
+  pnpm add @solrouter/sdk
+  ```
+  </Tab>
+</Tabs>
+
+## Basic usage
+
+This section walks through the calls you will make most often, starting with the default encrypted chat.
+
+### Encrypted chat (default)
+
+Every call is encrypted unless you opt out. Create a `SolRouter` client with your API key and the production `baseUrl`, then start chatting.
+
+```typescript
+import { SolRouter } from '@solrouter/sdk';
+
+const client = new SolRouter({
+  apiKey: 'sk_solrouter_...',
+  baseUrl: 'https://api.solrouter.com',
+});
+
+// Encrypted on your machine. The Solrouter backend never sees plaintext.
+const response = await client.chat('What are the risks of this DeFi protocol?');
+console.log(response.message);
+```
+
+<Callout>
+  Set `baseUrl` in every client. Without it, SDK 1.1.0 defaults to a Render host, not `api.solrouter.com`.
+</Callout>
+
+### Choosing a model
+
+Solrouter runs self-hosted open-weight models on Nosana GPU nodes. The backend catalog has three ids. The SDK type allows two strings. At runtime any other string passes through unchanged.
+
+| SDK string    | Backend id      | Status   | Note                                                             |
+| ------------- | --------------- | -------- | ---------------------------------------------------------------- |
+| `gpt-oss-20b` | `gpt-oss:20b`   | Live     | Default. Use this with SDK 1.1.0.                                |
+| `qwen3-8b`    | `qwen3:8b`      | Archived | Alias of a retired node. Do not use.                             |
+| none yet      | `qwen3.8:27b`   | Live     | Reachable with a type cast: `model: 'nosana:qwen3.8:27b' as any`. A typed alias needs a new SDK release. |
+| none yet      | `gemma4:31b`    | Soon     | Encrypted path not confirmed end to end.                         |
+
+A new SDK release with the current model map is Soon.
+
+```typescript
+const response = await client.chat('Summarize the latest Solana validator outage', {
+  model: 'gpt-oss-20b',  // the only typed live model string in SDK 1.1.0
+});
+```
+
+After an idle period, a node can answer with a retryable "warming up" error. Wait a moment and send the request again.
+
+### Opt out of encryption (plaintext)
+
+You can turn off client-side encryption for one call. The prompt then goes to the Solrouter backend in plaintext. The backend reads it and routes it to the same self-hosted Nosana models. No proprietary model is reachable this way.
+
+```typescript
+const response = await client.chat('Hello', { encrypted: false });
+```
+
+<EncryptionFlow encrypted={false} />
+
+In words, with `encrypted: true` (the default):
+
+- Your device encrypts the prompt with RescueCipher and an X25519 shared secret.
+- The Solrouter backend forwards the ciphertext. It cannot read it.
+- The TEE decrypts the prompt and calls the model at the configured Nosana endpoint URL. The node sees the prompt in plaintext.
+- The reply comes back encrypted to your session key.
+
+In words, with `encrypted: false`:
+
+- Your device sends the prompt as plaintext.
+- The Solrouter backend reads the prompt and routes it to the same Nosana model.
+- The TEE is not used. No on-chain receipt is created.
+- The reply comes back in plaintext.
+
+### Guided reasoning (BRAID, agent path)
+
+For questions that need structured analysis, route through the agent endpoint. Setting `reasoning: 'braid'` runs your request through BRAID guided reasoning. BRAID walks a fixed Guided Reasoning Diagram (GRD) of tool steps, then makes one synthesis call to the model. Older material calls this SERV.
+
+This path is plaintext. The SDK sends the prompt to `POST /agent` without encryption and the response reports `encrypted: false`.
+
+```typescript
+const response = await client.chat('Compare Marginfi vs Kamino lending on Solana', {
+  reasoning: 'braid',  // plaintext path through the agent endpoint
+});
+```
+
+### Check balance
+
+You pay per call from a prepaid balance. Check what is left at any time.
+
+```typescript
+const { balance, balanceFormatted } = await client.getBalance();
+```
+
+## SDK options reference
+
+Each of these options goes in the object you pass as the second argument to `client.chat()`.
+
+On the encrypted path, this leaves your machine: the ciphertext bundle (`ciphertext`, `nonce`, `publicKey`, `version`), plus in plaintext your API key, the model id, `chatId`, and any `systemPrompt`, `useRAG`, `ragCollection`, or `useLiveSearch` you set. The backend forwards only the bundle and the model id to the CVM.
+
+| Option          | Type    | Default       | Description                                                                          |
+| --------------- | ------- | ------------- | ------------------------------------------------------------------------------------ |
+| `model`         | string  | `gpt-oss-20b` | Model string. Use `gpt-oss-20b` with SDK 1.1.0. `qwen3-8b` maps to a retired node. Other catalog ids pass through with a type cast. |
+| `encrypted`     | boolean | `true`        | Turn client-side encryption on or off for this call                                 |
+| `reasoning`     | string  | none          | Set to `'braid'` for guided reasoning. This path is plaintext.                       |
+| `chatId`        | string  | none          | Sent in plaintext to the backend. Not forwarded to the CVM.                          |
+| `systemPrompt`  | string  | none          | Sent in plaintext to the backend. Dropped before the CVM, so it never reaches the model. |
+| `useRAG`        | boolean | none          | Sent in plaintext to the backend and ignored on the encrypted path.                  |
+| `ragCollection` | string  | none          | Sent in plaintext to the backend and ignored on the encrypted path.                  |
+| `useLiveSearch` | boolean | none          | Sent in plaintext to the backend and ignored on the encrypted path.                  |
+
+## No KYC required
+
+Privacy starts at sign-up. You do not need an email address, a credit card, or any personal information to use the SDK. Connect your Solana wallet at [solrouter.com/sdk](https://solrouter.com/sdk), generate an API key, and top up your balance in USDC or `$ROUTER`. Pricing is metered per call from your prepaid balance.
+
+<Callout>
+  Solrouter runs only self-hosted, open-weight models on the Nosana decentralized GPU network. The catalog ids are `gpt-oss:20b` (Live), `qwen3.8:27b` (Live), and `gemma4:31b` (Soon). There are no third-party model APIs: no OpenAI, Anthropic, or Google. Your prompts never go to an external model provider. The Nosana node that runs the model does see the prompt in plaintext during inference. Solrouter does not control that hardware.
+</Callout>

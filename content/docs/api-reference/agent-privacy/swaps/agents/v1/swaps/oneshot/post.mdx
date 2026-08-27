@@ -1,7 +1,7 @@
 ---
 title: Begin a one-shot ephemeral-wallet private swap (Mode B)
 description: >-
-  Start a private swap that runs through a throwaway ephemeral wallet — no
+  Start a private swap that runs through a throwaway ephemeral wallet, with no
   managed custody. Solrouter returns an unsigned `fundingTx`; the agent signs
   and broadcasts it, then calls `POST /swaps/oneshot/{id}/execute` to kick off
   the swap orchestrator.
@@ -14,9 +14,9 @@ _openapi:
     headings: []
     contents:
       - content: >-
-          Start a private swap that runs through a throwaway ephemeral wallet —
-          no managed custody. Solrouter returns an unsigned `fundingTx`; the
-          agent signs and broadcasts it, then calls `POST
+          Start a private swap that runs through a throwaway ephemeral wallet,
+          with no managed custody. Solrouter returns an unsigned `fundingTx`;
+          the agent signs and broadcasts it, then calls `POST
           /swaps/oneshot/{id}/execute` to kick off the swap orchestrator.
 ---
 

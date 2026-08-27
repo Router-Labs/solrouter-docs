@@ -1,4 +1,5 @@
 import { getPageImage, getPageMarkdownUrl, source } from '@/lib/source';
+import { statusSentence } from '@/lib/status';
 import {
   DocsBody,
   DocsDescription,
@@ -20,11 +21,17 @@ export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
 
   const MDX = page.data.body;
   const markdownUrl = getPageMarkdownUrl(page).url;
+  const status = statusSentence(page.data);
 
   return (
     <DocsPage toc={page.data.toc} full={page.data.full}>
       <DocsTitle>{page.data.title}</DocsTitle>
       <DocsDescription className="mb-0">{page.data.description}</DocsDescription>
+      {status ? (
+        <p className="mt-2 text-sm text-fd-muted-foreground" data-status={page.data.status}>
+          {status}
+        </p>
+      ) : null}
       <div className="flex flex-row gap-2 items-center border-b pb-6">
         <MarkdownCopyButton markdownUrl={markdownUrl} />
         <ViewOptionsPopover
