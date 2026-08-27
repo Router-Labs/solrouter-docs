@@ -18,15 +18,14 @@ export function statusLabel(status: PageStatus): string {
   return LABEL[status];
 }
 
-/** One or two plain sentences that appear under the page description and in llms output. */
+/** A short note under the description, shown only when a page is not fully Live. */
 export function statusSentence(input: {
   status?: PageStatus;
   checked?: string;
   statusNote?: string;
 }): string | null {
-  if (!input.status) return null;
-  const parts = [`Status: ${LABEL[input.status]}.`];
-  parts.push(input.statusNote ? input.statusNote.trim().replace(/\.?$/, '.') : MEANING[input.status]);
-  if (input.checked) parts.push(`Checked against code and api.solrouter.com on ${input.checked}.`);
-  return parts.join(' ');
+  if (!input.status || input.status === 'live') return null;
+  return input.statusNote
+    ? input.statusNote.trim().replace(/\.?$/, '.')
+    : MEANING[input.status];
 }
