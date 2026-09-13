@@ -68,6 +68,6 @@ The full tool list is on [MCP server](/docs/build/mcp-server).
 | No Solrouter tools in the tool list | Cursor reads MCP config at start. Quit it fully and open it again. Check the JSON is valid. |
 | `SOLROUTER_API_KEY is not set` | The `env` block is missing or misspelled. |
 | 401 unauthorized | The key is mistyped or deleted. Keys start with `sk_solrouter_`. |
-| 402 insufficient funds | Paid tools need an active plan or USDC credit on the account. See [Pricing](/docs/use/pricing). |
+| 402 insufficient funds | Your plan calls are used up and the USDC balance is below \$0.02. Pick a plan or add USDC. See [Pricing](/docs/use/pricing). |
 | `BRAVE_API_KEY not configured` | The research tools need a Brave Search key in `env`. `encrypted_chat` does not. |
 | "Nosana GPU node is warming up" | The model's node was idle. Wait a moment and ask again. |

@@ -1422,7 +1422,7 @@
           "Inference"
         ],
         "summary": "Cryptographically private AI inference (Arcium-encrypted, x402-paywalled)",
-        "description": "OpenAI-compatible chat completions. The prompt MUST be Arcium-encrypted client-side using `@solrouter/sdk`'s `encryptPrompt()` helper; the encrypted prompt is processed and the response returned encrypted, without Solrouter ever seeing plaintext. Pay-per-call x402 ($0.005 USDC flat per call). For per-token internal-credit billing with an API key, use POST /api/v1/chat/completions instead.",
+        "description": "OpenAI-compatible chat completions. The prompt MUST be Arcium-encrypted client-side using `@solrouter/sdk`'s `encryptPrompt()` helper. The Solrouter backend relays the ciphertext without reading it; the enclave decrypts it and calls a Nosana GPU node, which sees the prompt and reply in plaintext during inference. The response returns encrypted. Pay-per-call x402 ($0.02 USDC flat per call). A signed-in caller with an active plan spends one plan call instead.",
         "requestBody": {
           "required": true,
           "content": {
@@ -1509,7 +1509,9 @@
             "ApiKey": []
           }
         ],
-        "x-x402-price": {}
+        "x-x402-price": {
+          "usdc": 0.02
+        }
       }
     },
     "/agents/v1/sessions/{id}": {

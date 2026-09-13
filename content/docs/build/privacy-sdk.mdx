@@ -119,7 +119,7 @@ const response = await client.chat('Compare Marginfi vs Kamino lending on Solana
 
 ### Check balance
 
-Calls draw from your plan first. If the account also holds USDC credit, read it here.
+Calls draw from your plan first, then from USDC credit at \$0.02 a call. Read the credit balance here.
 
 ```typescript
 const { balance, balanceFormatted } = await client.getBalance();
@@ -144,7 +144,9 @@ On the encrypted path, this leaves your machine: the ciphertext bundle (`ciphert
 
 ## Sign-up and pricing
 
-Sign in at [solrouter.com/sdk](https://solrouter.com/sdk) with an email address or a Solana wallet, with no KYC, and generate an API key. Your first 5 messages are free. After that a plan covers your calls: Pro \$9 for 2,000, Builder \$49 for 12,500, or Scale \$99 for 30,000, each per 30 days in USDC. See [Pricing](/docs/use/pricing).
+Sign in at [solrouter.com/sdk](https://solrouter.com/sdk) with an email address or a Solana wallet, with no KYC, and generate an API key. A plan covers your calls: Pro \$9 for 2,000, Builder \$49 for 12,500, or Scale \$99 for 30,000, each per 30 days in USDC. See [Pricing](/docs/use/pricing).
+
+Each encrypted `client.chat()` call is one call to [`POST /tee/process`](/docs/api-reference/tee/process). With your API key it draws one call from your plan. When the plan is used up, or you have none, it costs \$0.02 from your USDC balance. With neither, the request fails with `insufficient_funds` (HTTP 402). The free messages from a web sign-in do not apply to API key calls. A call that fails in the enclave is not charged.
 
 <Callout>
   Solrouter runs only self-hosted, open-weight models on the Nosana decentralized GPU network. The model ids are `gpt-oss:20b`, `qwen3.8:27b`, and `qwen3-coder:30b`. There are no third-party model APIs: no OpenAI, Anthropic, or Google. Your prompts never go to an external model provider. The Nosana node that runs the model does see the prompt in plaintext during inference. Solrouter does not control that hardware.

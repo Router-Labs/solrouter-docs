@@ -10,7 +10,7 @@ import { Cards, Card } from 'fumadocs-ui/components/card';
 import { Callout } from 'fumadocs-ui/components/callout';
 import { Plug, Bot, Layers } from 'lucide-react';
 
-Solrouter is sold as a monthly allowance of private calls. You pick a plan, pay in USDC on Solana, and each request to a private model uses one call. There is no per-token math.
+Solrouter is sold as a monthly allowance of private calls. You pick a plan, pay in USDC on Solana, and each sealed request to a private model uses one call. There is no per-token math. The same allowance covers the web chat, the SDK, and the MCP server.
 
 ## Plans
 
@@ -32,8 +32,11 @@ Every plan includes:
 
 | Who | Free allowance |
 | --- | --- |
-| Signed-in user | 5 free messages |
-| Guest, not signed in | 5 messages a day |
+| Signed in to the web chat | 5 free messages |
+| Signed in to the mobile app with a Solana wallet | 10 free messages |
+| Guest, not signed in | 5 sealed messages a day per network address |
+
+The free messages belong to a web or mobile sign-in. A call made with an API key does not use them: it goes straight to your plan or your USDC balance.
 
 Sign in at [solrouter.com](https://solrouter.com) with an email address or a Solana wallet. There is no KYC. If you sign in with email and have no wallet, one is made for you.
 
@@ -46,9 +49,30 @@ Sign in at [solrouter.com](https://solrouter.com) with an email address or a Sol
   One request to a private model is one call, whatever its length. Each call is capped at 8K tokens of context and 4K tokens of output. A call that fails on our side, for example while the enclave is down, goes back into your allowance.
 </Callout>
 
+## One plan at a time
+
+An account holds one active plan. Subscribing to a second plan while one is active returns `409 already_subscribed`. To change plans, cancel the current one first. It keeps working until the end of the period you paid for.
+
+## How a sealed call is paid
+
+Every sealed call to `POST /tee/process` costs one unit. That is the route the web chat, the SDK's `client.chat()`, and the MCP server's `encrypted_chat` use. The backend takes the first source that covers the call:
+
+| Order | Source | `usage.source` |
+| --- | --- | --- |
+| 1 | A call from your plan or your staked `$ROUTER` allowance | `plan` |
+| 2 | A free message, for web and mobile sign-ins only | `free` |
+| 3 | Your USDC balance, \$0.02 per call | `balance` |
+| none | Nothing covers it: `402 insufficient_funds` | none |
+
+- **Guests.** A request with no `Authorization` header is a guest call. Guests get 5 a day per network address, shared with the plaintext guest route. After that the reply is `429 guest_limit` and `usage.source` is `guest`.
+- **Partner keys.** Keys issued to first-party Solrouter products are not metered. `usage.source` is `partner`.
+- **Every reply** carries a `usage` object. `usage.source` names what paid, and `usage.calls_remaining` shows what is left when the source is a plan, the free trial, or the guest allowance.
+- **Failures are free.** If the enclave call fails, the plan call, free message, or guest message goes back. A USDC balance is charged only after the enclave answers.
+- **Billing outage.** If billing cannot be checked and nothing else covers the call, the reply is `503 billing_unavailable`, not a top-up prompt.
+
 ## Agents without an account: x402
 
-An agent that has no API key and no plan can pay for each request with [x402](/docs/glossary), settled in USDC on Solana mainnet. These prices come from `ROUTE_PRICES` in the backend, the same table that feeds the live manifest at [`/.well-known/x402`](https://api.solrouter.com/.well-known/x402).
+An agent that has no API key and no plan can pay for each request with [x402](/docs/glossary), settled in USDC on Solana mainnet. Every route below is charged its price on each call, including the per-wallet routes. With an API key, the same price is debited from the account's USDC balance instead. These prices come from `ROUTE_PRICES` in the backend, the same table that feeds the live manifest at [`/.well-known/x402`](https://api.solrouter.com/.well-known/x402).
 
 | Route | USDC per call |
 | --- | --- |
@@ -63,7 +87,7 @@ An agent that has no API key and no plan can pay for each request with [x402](/d
 | `POST /agents/v1/wallets/:id/withdraw` | \$0.05 |
 | `GET /agents/v1/wallets/:id/balance` | \$0.005 |
 
-A plan covers inference only. Swap and wallet routes always charge their x402 price, so a plan's calls cannot be spent on swaps. See [Agent Privacy API](/docs/build/agent-privacy-api).
+A plan covers inference only. Swap and wallet routes always charge their price, so a plan's calls cannot be spent on swaps. A call to a priced route without payment or balance gets a `402` challenge. See [Agent Privacy API](/docs/build/agent-privacy-api).
 
 ## Next
 

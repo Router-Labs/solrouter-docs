@@ -46,6 +46,10 @@ claude mcp add solrouter -e SOLROUTER_API_KEY=sk_solrouter_... -- npx -y @solrou
 
 Restart the client after saving. The Solrouter tools appear in its tool list.
 
+## What a call costs
+
+`encrypted_chat` and the model step of each research tool make one call to [`POST /tee/process`](/docs/api-reference/tee/process) with your API key. Each one draws one call from your plan. When the plan is used up, or you have none, it costs \$0.02 from your USDC balance. With neither, the tool returns `402 insufficient_funds`. The web chat's free messages do not apply to API key calls. A call that fails in the enclave is not charged. `account_balance` shows your USDC credit. See [Pricing](/docs/use/pricing).
+
 ## Privacy and research tools
 
 Use these tools for encrypted AI inference or on-chain research from inside your client. Only the AI step is encrypted. The data-gathering steps call third parties directly from your machine in plaintext.

@@ -27,7 +27,9 @@ https://api.solrouter.com
 
 ## Authentication
 
-All requests require a Bearer token in the `Authorization` header. You generate your key at [solrouter.com/sdk](https://solrouter.com/sdk) by signing in with an email address or a Solana wallet. No KYC. Calls draw from your plan; see [Pricing](/docs/use/pricing).
+Requests carry a Bearer token in the `Authorization` header. You generate your key at [solrouter.com/sdk](https://solrouter.com/sdk) by signing in with an email address or a Solana wallet. No KYC. A sealed call with an API key draws one call from your plan, or \$0.02 from your USDC balance when the plan is used up; with neither, the reply is `402 insufficient_funds`. See [Pricing](/docs/use/pricing).
+
+`POST /tee/process` also accepts guest calls with no `Authorization` header, capped at 5 a day per network address (`429 guest_limit`). Every `/tee/process` reply carries `usage.source`, which names what paid for the call. Partner keys issued to first-party Solrouter products are not metered.
 
 ```
 Authorization: Bearer sk_solrouter_...
@@ -39,15 +41,15 @@ For agents that do not hold an API key, Solrouter also supports **x402 per-call 
 
 <Cards>
   <Card title="Encrypted Chat" icon={<MessageSquare />} href="/docs/build/privacy-sdk">
-    Status: Live. **POST /api/v1/chat/completions** takes an API key and requires `encryptedPrompt` and `model`; it returns 400 `bad_request` without them. `GET /api/v1/models`, `/api/v1/balance`, and `/api/v1/usage` sit beside it. `@solrouter/sdk` calls **POST /tee/process** and encrypts client-side. Keyless agents pay per call on `POST /api/v1/x402/chat/completions`.
+    Status: Live. **POST /api/v1/chat/completions** takes an API key and requires `encryptedPrompt` and `model`; it returns 400 `bad_request` without them. `GET /api/v1/models`, `/api/v1/balance`, and `/api/v1/usage` sit beside it. `@solrouter/sdk` calls **[POST /tee/process](/docs/api-reference/tee/process)** and encrypts client-side; each call is metered against your plan or balance. Keyless agents pay per call on `POST /api/v1/x402/chat/completions`.
   </Card>
 
   <Card title="Agent" icon={<Bot />} href="/docs/api-reference/agent">
     Status: Live. **POST /agent** runs your prompt through the tool-calling agent, with built-in tools for web search, on-chain data, DEX quotes, and Solana wallet inspection. Send `reasoning: 'braid'` for guided reasoning.
   </Card>
 
-  <Card title="TEE Attestation" icon={<ShieldCheck />} href="/docs/api-reference/tee/public-key">
-    Status: Live. **GET /tee/public-key** returns the enclave's live X25519 public key. **GET /tee/attestation** returns the TDX quote when the CVM can reach the dStack agent; otherwise `tdxQuote` is null and `tdxQuoteError` says why. The attestation guide covers the verification flow.
+  <Card title="TEE" icon={<ShieldCheck />} href="/docs/api-reference/tee/public-key">
+    Status: Live. **POST /tee/process** relays one sealed prompt to the enclave and reports `usage`. **GET /tee/public-key** returns the enclave's live X25519 public key. **GET /tee/attestation** returns the TDX quote when the CVM can reach the dStack agent; otherwise `tdxQuote` is null and `tdxQuoteError` says why. The attestation guide covers the verification flow.
   </Card>
 
   <Card title="Agent Privacy API" icon={<Lock />} href="/docs/build/agent-privacy-api">
@@ -81,4 +83,4 @@ All endpoints return JSON. A top-level `success` field exists on `POST /agent` a
 
 The TEE key and attestation reads, x402 inference, the discovery documents, and `/agents/v1` responses have no `success` field. They return the result object directly, or an `error` field with a non-2xx status.
 
-For error codes on authentication, see the [Authentication](/docs/build/api-key) page, which covers `401`, `402`, and `403` responses.
+For status codes, including `402 insufficient_funds`, `429 guest_limit`, and `503 billing_unavailable`, see [Errors](/docs/api-reference/errors).

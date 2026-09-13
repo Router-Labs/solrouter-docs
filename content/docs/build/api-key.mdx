@@ -11,7 +11,7 @@ import { Step, Steps } from 'fumadocs-ui/components/steps';
 
 Solrouter skips the identity check most AI APIs start with. You authenticate with an API key sent as a bearer token. You get that key by signing in with an email address or a Solana wallet. There is no KYC (Know Your Customer identity check).
 
-Your first 5 messages are free. After that a plan covers your calls. See [Pricing](/docs/use/pricing).
+A plan covers your calls. Without one, each sealed call costs \$0.02 from your USDC balance. The 5 free messages come with a web chat sign-in and do not apply to calls made with an API key. See [Pricing](/docs/use/pricing).
 
 ## Getting your API key
 
@@ -77,7 +77,7 @@ External callers have two ways to authenticate. Pick the row that matches how yo
 
 | Tier               | How it works                                                                                                                                                                                                                 | Best for                                    |
 | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| **API key**        | `Authorization: Bearer sk_solrouter_...`, calls drawn from your plan                                                                                                                                                   | Most applications and development workflows |
+| **API key**        | `Authorization: Bearer sk_solrouter_...`. Sealed calls draw from your plan, then from USDC balance at \$0.02; priced agent routes debit their price from the balance                                                   | Most applications and development workflows |
 | **x402 (keyless)** | Per-call USDC settlement on Solana mainnet                                                                                                                                                                                  | Autonomous agents that do not hold API keys |
 
 x402 settles through a facilitator. The live manifest advertises Coinbase (`api.cdp.coinbase.com/x402`). Service discovery is at [`/.well-known/x402`](https://api.solrouter.com/.well-known/x402). The manifest shows `X402_FACILITATOR_URL` when it is set, or a built-in default when it is not. The manifest does not show which facilitator settles payments. Wire-level facilitator: not determined.

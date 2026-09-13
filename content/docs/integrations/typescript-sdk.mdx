@@ -65,6 +65,6 @@ Every option is on [Privacy SDK](/docs/build/privacy-sdk).
 | --- | --- |
 | `apiKey is required` or `invalid apiKey format` | Pass a key that starts with `sk_solrouter_`. Create one on the [keys page](https://solrouter.com/sdk). |
 | 401 unauthorized | The key was deleted or mistyped. |
-| 402 insufficient funds | The account needs an active plan or USDC credit. See [Pricing](/docs/use/pricing). |
+| 402 insufficient funds | Your plan calls are used up and the USDC balance is below \$0.02. Pick a plan or add USDC. See [Pricing](/docs/use/pricing). |
 | Model not found | Use `gpt-oss-20b`. `qwen3-8b` is still in the SDK's type but that model is retired. |
 | "Nosana GPU node is warming up" | The model's node was idle. Wait a moment and retry. |

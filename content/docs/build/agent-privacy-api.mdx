@@ -25,6 +25,25 @@ When an agent moves tokens on Solana, the transaction graph shows who paid whom.
 | `POST /api/v1/x402/chat/completions` | Live |
 | `@solrouter/agent-tools` npm package | Soon |
 
+## What each route costs
+
+Every priced route is charged on each call. That includes the per-wallet routes under `/agents/v1/wallets/:id`. With an API key, the price is debited from the account's USDC balance. Without a key, or when the balance is too low, the route answers `402 Payment Required` with an x402 challenge. A plan's calls do not cover these routes; they cover inference only.
+
+| Route | USDC per call |
+| --- | --- |
+| `GET /agents/v1/quote` | \$0.001 |
+| `POST /agents/v1/swaps/oneshot` | \$0.10 |
+| `POST /agents/v1/wallets` | \$0.05 |
+| `POST /agents/v1/wallets/:id/fund-intent` | \$0.001 |
+| `POST /agents/v1/wallets/:id/swap` | \$0.05 |
+| `POST /agents/v1/wallets/:id/encrypt` | \$0.02 |
+| `POST /agents/v1/wallets/:id/shield` | \$0.05 |
+| `POST /agents/v1/wallets/:id/withdraw` | \$0.05 |
+| `GET /agents/v1/wallets/:id/balance` | \$0.005 |
+| `POST /api/v1/x402/chat/completions` | \$0.02 |
+
+Routes not listed carry no per-call price: the anonymity set, one-shot `execute`, wallet `audit`, sessions, attestations, and the discovery documents.
+
 ## Execution modes
 
 Pick a mode by one question: does your agent keep a funded wallet with Solrouter, or sign each operation on the fly? The API supports both.
