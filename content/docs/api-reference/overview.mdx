@@ -47,7 +47,7 @@ For agents that do not hold an API key, Solrouter also supports **x402 per-call 
   </Card>
 
   <Card title="TEE Attestation" icon={<ShieldCheck />} href="/docs/api-reference/tee/public-key">
-    Status: Live. **GET /tee/public-key** returns the enclave's live X25519 public key. **GET /tee/attestation** returns the TDX quote when the CVM can reach the dStack agent; otherwise `tdxQuote` is null and `tdxQuoteError` says why. See the [attestation guide](/docs/how-it-works/attestation) for the verification flow.
+    Status: Live. **GET /tee/public-key** returns the enclave's live X25519 public key. **GET /tee/attestation** returns the TDX quote when the CVM can reach the dStack agent; otherwise `tdxQuote` is null and `tdxQuoteError` says why. The attestation guide covers the verification flow.
   </Card>
 
   <Card title="Agent Privacy API" icon={<Lock />} href="/docs/build/agent-privacy-api">

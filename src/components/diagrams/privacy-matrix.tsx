@@ -4,11 +4,11 @@ import type { ReactNode } from 'react';
 export type Cell = 'pt' | 'ct' | 'no' | 'ha' | 're' | 'me' | 'nd';
 
 const STYLE: Record<Cell, { label: string; cls: string }> = {
-  pt: { label: 'readable', cls: 'bg-amber-500/15 text-amber-600 dark:text-amber-300 border border-amber-500/40' },
-  ct: { label: 'encrypted', cls: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border border-emerald-500/40' },
+  pt: { label: 'readable', cls: 'bg-fd-primary text-fd-primary-foreground border border-fd-primary' },
+  ct: { label: 'encrypted', cls: 'bg-fd-background text-fd-muted-foreground border border-fd-border' },
   no: { label: 'nothing', cls: 'bg-fd-muted text-fd-muted-foreground border border-fd-border' },
-  ha: { label: 'hash only', cls: 'bg-sky-500/15 text-sky-600 dark:text-sky-300 border border-sky-500/40' },
-  re: { label: 'at rest*', cls: 'bg-amber-500/10 text-amber-600 dark:text-amber-200 border border-amber-500/30' },
+  ha: { label: 'hash only', cls: 'bg-fd-background text-fd-muted-foreground border border-fd-border' },
+  re: { label: 'at rest*', cls: 'bg-fd-background text-fd-foreground border border-fd-primary' },
   me: { label: 'metadata', cls: 'bg-fd-muted text-fd-muted-foreground border border-fd-border' },
   nd: { label: 'unknown', cls: 'text-fd-muted-foreground border border-dashed border-fd-border' },
 };

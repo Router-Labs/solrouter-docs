@@ -28,6 +28,11 @@
   --color-fd-accent: #efeeeb; /* --card-hover */
   --color-fd-accent-foreground: #0d0c0a; /* --strong */
   --color-fd-ring: #0d0c0a;
+  /* No semantic blue/amber/green: callouts use the accent and muted tones. */
+  --color-fd-info: #6b645a; /* --subtle */
+  --color-fd-idea: #6b645a;
+  --color-fd-warning: #0d0c0a; /* --accent */
+  --color-fd-success: #0d0c0a;
 }
 
 .dark {
@@ -48,6 +53,10 @@
   --color-fd-accent: #1a1917; /* --card-hover */
   --color-fd-accent-foreground: #f4ede0; /* --strong */
   --color-fd-ring: #f5e6d3;
+  --color-fd-info: #8a8378; /* --subtle */
+  --color-fd-idea: #8a8378;
+  --color-fd-warning: #f5e6d3; /* --accent */
+  --color-fd-success: #f5e6d3;
 }
 
 body {

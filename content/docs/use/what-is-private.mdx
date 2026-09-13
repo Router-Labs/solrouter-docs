@@ -51,7 +51,7 @@ Each cell says what that party can see. The legend under the matrix explains eve
 
 ## Who can see what
 
-Rows here describe the sealed path: the TypeScript SDK with its default settings, or the MCP server's `encrypted_chat`. Amber cells mark the only places a party can read your words. Every row is Live.
+Rows here describe the sealed path: the TypeScript SDK with its default settings, or the MCP server's `encrypted_chat`. Filled cells mark the only places a party can read your words. Every row is Live.
 
 <PrivacyMatrix
   parties={["Network observer", "Solrouter backend", "CVM cloud host (Phala)", "Nosana GPU host", "Solana observer"]}
@@ -102,7 +102,7 @@ On this path attachments and knowledge-base files reach the backend and the mode
 
 ## Where your words are readable
 
-The strip below follows one sealed request from your device to the Solana receipt. Green zones hold your words in readable form. Grey zones hold only ciphertext or a hash. The amber zone is the rented GPU machine.
+The strip below follows one sealed request from your device to the Solana receipt. Tinted zones hold your words in readable form. Grey zones hold only ciphertext or a hash. The rented GPU machine is one of the tinted zones.
 
 <PlaintextZones />
 

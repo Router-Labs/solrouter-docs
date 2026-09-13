@@ -161,9 +161,9 @@ function Check({ ok, children }: { ok: boolean; children: ReactNode }) {
   return (
     <li className="flex items-start gap-2 text-sm">
       {ok ? (
-        <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" aria-hidden />
+        <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-fd-primary" aria-hidden />
       ) : (
-        <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" aria-hidden />
+        <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-fd-muted-foreground" aria-hidden />
       )}
       <span className={ok ? 'text-fd-foreground' : 'text-fd-muted-foreground'}>
         {children}
@@ -290,8 +290,8 @@ export function EncryptionProofVerifier() {
         </div>
 
         {verdict.state === 'error' && (
-          <div className="mt-4 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-fd-foreground">
-            <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" aria-hidden />
+          <div className="mt-4 flex items-start gap-2 rounded-lg border border-fd-border bg-fd-muted px-4 py-3 text-sm text-fd-foreground">
+            <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-fd-muted-foreground" aria-hidden />
             <span>{verdict.message}</span>
           </div>
         )}
@@ -324,19 +324,19 @@ export function EncryptionProofVerifier() {
           <div
             className={`mt-4 rounded-lg border p-4 ${
               verdict.signatureValid
-                ? 'border-emerald-500/30 bg-emerald-500/10'
-                : 'border-red-500/30 bg-red-500/10'
+                ? 'border-fd-primary bg-fd-card'
+                : 'border-dashed border-fd-border bg-fd-muted'
             }`}
           >
             <div className="flex items-center gap-2 text-sm font-semibold text-fd-foreground">
               {verdict.signatureValid ? (
                 <>
-                  <ShieldCheck className="h-5 w-5 text-emerald-500" aria-hidden />
+                  <ShieldCheck className="h-5 w-5 text-fd-primary" aria-hidden />
                   Enclave signature verified
                 </>
               ) : (
                 <>
-                  <ShieldX className="h-5 w-5 text-red-500" aria-hidden />
+                  <ShieldX className="h-5 w-5 text-fd-muted-foreground" aria-hidden />
                   {verdict.note ? 'Proof fetched — check it yourself' : 'Signature did NOT verify'}
                 </>
               )}

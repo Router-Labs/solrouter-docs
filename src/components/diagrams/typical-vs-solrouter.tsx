@@ -14,13 +14,13 @@ function Stage({
     tone === 'accent'
       ? 'border-fd-primary/40 bg-fd-primary/10'
       : tone === 'danger'
-        ? 'border-amber-500/40 bg-amber-500/10'
+        ? 'border-fd-primary bg-fd-card'
         : 'border-fd-border bg-fd-card';
   const icon =
     tone === 'accent'
       ? 'text-fd-primary'
       : tone === 'danger'
-        ? 'text-amber-600 dark:text-amber-300'
+        ? 'text-fd-primary'
         : 'text-fd-muted-foreground';
   return (
     <div className={`flex flex-1 items-center gap-2 rounded-xl border px-3 py-2.5 ${box}`}>
@@ -31,7 +31,7 @@ function Stage({
 }
 
 function Hop({ label, safe }: { label: string; safe: boolean }) {
-  const color = safe ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400';
+  const color = safe ? 'text-fd-muted-foreground' : 'text-fd-foreground';
   return (
     <div className={`flex shrink-0 items-center justify-center gap-1 ${color}`}>
       <span className="text-[10px] font-semibold whitespace-nowrap uppercase tracking-wide">{label}</span>
@@ -45,7 +45,7 @@ function Lane({ title, safe, children }: { title: string; safe: boolean; childre
     <div>
       <div className="mb-2 flex items-center gap-2">
         <span
-          className={`h-1.5 w-1.5 rounded-full ${safe ? 'bg-emerald-500' : 'bg-amber-500'}`}
+          className={`h-1.5 w-1.5 rounded-full ${safe ? 'border border-fd-muted-foreground' : 'bg-fd-primary'}`}
           aria-hidden
         />
         <span className="text-[11px] font-semibold uppercase tracking-wide text-fd-muted-foreground">

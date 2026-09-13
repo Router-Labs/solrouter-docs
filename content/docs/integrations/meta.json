@@ -2,7 +2,6 @@
   "title": "Integrations",
   "icon": "Plug",
   "pages": [
-    "index",
     "---MCP clients---",
     "claude-code",
     "cursor",

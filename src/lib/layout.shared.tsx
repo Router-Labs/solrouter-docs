@@ -4,8 +4,8 @@ import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
 function Logo() {
   return (
     <span className="inline-flex items-center gap-1.5">
-      {/* The PNG carries its own padding, so it sits larger than the cap height (38px mark at 22px type on solrouter.com). */}
-      <img src="/solrouter-waves.png" alt="" width={34} height={34} className="invert dark:invert-0" />
+      {/* The PNG carries its own padding, so it sits larger than the cap height (38px mark at 22px type; same size here on solrouter.com). */}
+      <img src="/solrouter-waves.png" alt="" width={38} height={38} className="invert dark:invert-0" />
       <span className="text-xl font-medium" style={{ letterSpacing: '-0.03em', color: 'var(--sr-strong)' }}>
         Solrouter
       </span>
