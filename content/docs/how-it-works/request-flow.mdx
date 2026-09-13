@@ -3,7 +3,7 @@ title: "The TEE request flow"
 icon: Workflow
 description: "What happens to one encrypted request, hop by hop, with the exact payload at each step."
 status: live
-checked: "2026-08-26"
+checked: "2026-09-13"
 ---
 
 import { RequestFlowStepper } from '@/components/diagrams/request-flow-stepper';
@@ -22,7 +22,7 @@ This page follows one `client.chat()` call through the SDK, the Solrouter backen
 5. The backend forwards `{encryptedPrompt, model, privacyAttestationId}` unchanged.
 6. The CVM derives the shared secret with its X25519 private key and decrypts.
 7. The CVM calls the configured Nosana endpoint at `/v1/chat/completions` with the plaintext prompt. HTTPS per the documented node URL, not re-verified.
-8. The CVM encrypts the reply to your key, signs the `SOLR-ATTEST-v2` tuple, and requests a tappd quote with `report_data = sha256(x25519 || ed25519)`.
+8. The CVM encrypts the reply to your key, signs the `SOLR-ATTEST-v2` tuple, and requests a tappd quote over `reportData = sha256(x25519 || ed25519)`, which tappd writes into the quote as `sha512("app-data:" || reportData)`.
 9. The backend commits the compressed receipt and returns `{success, encryptedResponse, attestation, encryptionProof, requestId, metadata, backendRole: 'BLIND_RELAY', onchainAttestation, privacyProof}`.
 10. The SDK decrypts `encryptedResponse` with the session private key.
 
