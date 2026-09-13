@@ -1,7 +1,7 @@
 /*
  * Architecture map data (design section 6, row 25).
  * Sources are monorepo file:line from the design doc dated 2026-08-26.
- * be: = SolRouter/dev/backend, fe: = SolRouter frontend.
+ * be: = SolRouter/dev/backend, fe: = SolRouter frontend (repo paths).
  */
 import { boxNode, flowEdge, type BoxNode, type FlowEdge } from './types';
 

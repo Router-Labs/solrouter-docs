@@ -3,9 +3,10 @@ import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
 /** The real Solrouter wave mark (white PNG, inverted on light) + wordmark, matching solrouter.com. */
 function Logo() {
   return (
-    <span className="inline-flex items-center gap-2">
-      <img src="/solrouter-waves.png" alt="" width={24} height={24} className="invert dark:invert-0" />
-      <span className="text-xl font-medium text-fd-foreground" style={{ letterSpacing: '-0.03em' }}>
+    <span className="inline-flex items-center gap-1.5">
+      {/* The PNG carries its own padding, so it sits larger than the cap height (38px mark at 22px type on solrouter.com). */}
+      <img src="/solrouter-waves.png" alt="" width={34} height={34} className="invert dark:invert-0" />
+      <span className="text-xl font-medium" style={{ letterSpacing: '-0.03em', color: 'var(--sr-strong)' }}>
         Solrouter
       </span>
     </span>
