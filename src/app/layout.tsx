@@ -25,9 +25,18 @@ export default function Layout({ children }: LayoutProps<'/'>) {
       className={`${instrument.variable} ${dm.variable} ${jb.variable}`}
       suppressHydrationWarning
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var t=new URLSearchParams(location.search).get('theme');if(t==='light'||t==='dark')localStorage.setItem('theme',t)}catch(e){}",
+          }}
+        />
+      </head>
       <body className="flex flex-col min-h-screen">
-        {/* Brand is dark-first editorial; toggle + OS preference still work. */}
-        <RootProvider theme={{ defaultTheme: 'dark', enableSystem: true }}>
+        {/* Light by default, like solrouter.com. The landing passes ?theme= so a
+            visitor who switched to dark there stays in dark here. */}
+        <RootProvider theme={{ defaultTheme: 'light', enableSystem: false }}>
           {children}
         </RootProvider>
       </body>

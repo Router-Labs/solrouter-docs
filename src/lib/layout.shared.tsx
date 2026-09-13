@@ -1,31 +1,11 @@
 import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
 
-/** SolRouter wave mark + serif wordmark, matching docs.solrouter.com. */
+/** The real Solrouter wave mark (white PNG, inverted on light) + wordmark, matching solrouter.com. */
 function Logo() {
   return (
     <span className="inline-flex items-center gap-2">
-      <svg
-        viewBox="0 0 32 24"
-        width="24"
-        height="18"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={3}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="text-fd-primary"
-        aria-hidden
-      >
-        <path d="M2 9 q 4 -5 8 0 t 8 0 t 8 0" />
-        <path d="M2 17 q 4 -5 8 0 t 8 0 t 8 0" />
-      </svg>
-      <span
-        className="text-xl text-fd-primary"
-        style={{
-          fontFamily: 'var(--font-instrument), serif',
-          letterSpacing: '-0.02em',
-        }}
-      >
+      <img src="/solrouter-waves.png" alt="" width={24} height={24} className="invert dark:invert-0" />
+      <span className="text-xl font-medium text-fd-foreground" style={{ letterSpacing: '-0.03em' }}>
         Solrouter
       </span>
     </span>
