@@ -11,12 +11,15 @@ import { Cards, Card } from 'fumadocs-ui/components/card';
 import { Lock, ShieldCheck, BookOpen, MessageSquare } from 'lucide-react';
 import { PlaintextZones } from '@/components/diagrams/plaintext-zones';
 import { PrivacyMatrix } from '@/components/diagrams/privacy-matrix';
+import { WhoSeesWhat } from '@/components/diagrams/sealed-blur';
 
 ## The question
 
 "If I type something private into Solrouter, who can read it?"
 
 On the sealed path, Solrouter's own servers cannot read your prompt or the reply. The prompt is opened only inside a sealed computer (a TEE) and on the rented GPU machine that runs the AI model. Web chat at solrouter.com is on the sealed path, and its history stays in your browser. Agent mode, its connectors, and your knowledge base do not get that protection, and the tables below show exactly where each one is readable.
+
+<WhoSeesWhat />
 
 ## What is sealed
 

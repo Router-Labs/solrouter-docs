@@ -10,10 +10,13 @@ import { Cards, Card } from 'fumadocs-ui/components/card';
 import { Callout } from 'fumadocs-ui/components/callout';
 import { TypicalVsSolrouter } from '@/components/diagrams/typical-vs-solrouter';
 import { Plug, CircleDollarSign, Layers, ShieldCheck } from 'lucide-react';
+import { SealedPrompt } from '@/components/diagrams/sealed-blur';
 
 Solrouter is private AI chat. On the sealed path your prompt is encrypted on your device, relayed as ciphertext by Solrouter's backend, and opened only inside an Intel TDX enclave on Phala. Each sealed call writes a receipt to Solana. Use it in the web chat at solrouter.com, Claude Code, Cursor, Claude Desktop, or your own app.
 
 <TypicalVsSolrouter />
+
+<SealedPrompt />
 
 **In words**
 

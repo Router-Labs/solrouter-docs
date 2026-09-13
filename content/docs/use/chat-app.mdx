@@ -9,6 +9,7 @@ checked: "2026-09-13"
 import { Cards, Card } from 'fumadocs-ui/components/card';
 import { Step, Steps } from 'fumadocs-ui/components/steps';
 import { Bot, Paperclip, Database, Plug } from 'lucide-react';
+import { PrivacyScreenDemo } from '@/components/diagrams/sealed-blur';
 
 Solrouter chat at [solrouter.com/chat](https://solrouter.com/chat) is a chat app that answers only with open-weight models. There is no OpenAI, Anthropic, or Google model behind it.
 
@@ -70,6 +71,12 @@ Each sealed reply carries a lock link to its Solana receipt. See [Check a reply 
 ### History stays in your browser
 
 Sealed chat history is stored in your browser's IndexedDB, not on Solrouter's servers. It does not sync across devices, and clearing site data erases it. The server keeps only the chat row: the title "New Chat", the model, and timestamps. The real title and every message stay on your device. Agent mode messages are still stored on the server.
+
+### Privacy screen
+
+Sharing your screen or chatting in public? Turn on **Privacy screen** next to the Sealed badge above the message box. Messages stay blurred until you hover over one, or tap it on a phone. The setting is remembered in this browser, and it only changes what is shown on your screen, not how messages are encrypted.
+
+<PrivacyScreenDemo />
 
 ### Not available in sealed chat
 
