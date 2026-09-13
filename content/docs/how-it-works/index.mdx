@@ -3,7 +3,7 @@ title: "Architecture"
 icon: Layers
 description: "Every part of Solrouter on one interactive map: what each part holds, what it can see, and where the code lives."
 status: mixed
-checked: "2026-08-26"
+checked: "2026-09-13"
 statusNote: "Private swaps are Soon. Every other part of the map is Live."
 ---
 
@@ -18,9 +18,9 @@ Click a node to open its details. Drag to pan. Pinch to zoom.
 
 **In words**
 
-- Chat app (solrouter.com/chat): holds your wallet session and, in Maximum Privacy Mode, encrypts each prompt in the browser. In the default mode it sends plaintext to the backend.
+- Chat app (solrouter.com/chat): holds your session. Today it sends prompts to the backend in plaintext; sealing every web chat prompt is Soon. Agent mode and its Notion and GitHub connectors run on the backend.
 - `@solrouter/sdk`: holds your API key and encrypts by default. Sends the ciphertext bundle plus the API key, model id, and chat id in plaintext.
-- `@solrouter/mcp-server` (your machine): holds `SOLROUTER_API_KEY`, `SOLROUTER_API_URL`, and `BRAVE_API_KEY`. Four tools use the encrypted path for the model step. Search and market lookups go to third parties in plaintext.
+- `@solrouter/mcp-server` (your machine): holds `SOLROUTER_API_KEY` and, optionally, `BRAVE_API_KEY`. Four tools use the sealed path for the model step. Search and market lookups go to third parties in plaintext.
 - REST and x402 clients: send whatever they build. `POST /api/v1/chat/completions` and `/tee/process` require `encryptedPrompt`; `/agent` accepts plaintext or `encryptedPrompt`.
 - Solrouter backend (behind api.solrouter.com): checks the key, bills, runs the x402 paywall, relays ciphertext to the enclave, and commits receipts with its deployer wallet. It holds no decryption key on the encrypted path.
 - Intel TDX enclave on Phala dStack: generates an X25519 sealing key and an ed25519 signing key at boot, decrypts with RescueCipher, requests TDX quotes from the tappd agent, runs a 5-tool allowlist for encrypted agent mode, and hosts SearXNG in the same enclave.
@@ -38,5 +38,5 @@ Click a node to open its details. Drag to pan. Pinch to zoom.
   <Card title="Attestation" href="/docs/how-it-works/attestation" description="The Intel-signed TDX quote." />
   <Card title="On-chain proof" href="/docs/how-it-works/proof" description="The receipt on Solana." />
   <Card title="Agent reasoning" href="/docs/how-it-works/agent-reasoning" description="The /agent paths and the skill graph." />
-  <Card title="Models" href="/docs/how-it-works/models" description="One Nosana job per model." />
+  <Card title="Models" href="/docs/how-it-works/models" description="Three open-weight models, one Nosana job each." />
 </Cards>

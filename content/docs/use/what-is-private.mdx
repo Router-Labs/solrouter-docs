@@ -3,7 +3,7 @@ title: "What is private here"
 icon: EyeOff
 description: "Who can read your prompt, your files, and your history, and what Solrouter keeps on its servers."
 status: mixed
-checked: "2026-08-26"
+checked: "2026-09-13"
 statusNote: "Each row states its own Live or Soon status."
 ---
 
@@ -17,9 +17,24 @@ import { PrivacyMatrix } from '@/components/diagrams/privacy-matrix';
 
 "If I type something private into Solrouter, who can read it?"
 
-With encryption on, Solrouter's own servers cannot read your prompt or the reply. The prompt is opened only inside a sealed computer (a TEE) and on the rented GPU machine that runs the AI model. Your attached files, your knowledge base, and your saved chat history do not get that protection, and the tables below show exactly where each one is readable.
+On the sealed path, Solrouter's own servers cannot read your prompt or the reply. The prompt is opened only inside a sealed computer (a TEE) and on the rented GPU machine that runs the AI model. Your attached files, your knowledge base, and your saved chat history do not get that protection, and the tables below show exactly where each one is readable.
 
-Encryption is a toggle in the chat app. It is off by default. The Privacy SDK encrypts by default. The page [Chat app](/docs/use/chat-app) explains the toggle. This page explains what each setting exposes.
+## What is sealed
+
+Sealed means the prompt is encrypted on your machine with a fresh X25519 key agreement and Arcium RescueCipher, opened only inside the Intel TDX enclave on Phala, and recorded with a Light Protocol compressed attestation on Solana (program `ATMRatMtsKX4bHax7U4FRdhbE4mjU4NKpDZGqZqAhBKb`).
+
+| Surface | Sealed | Status |
+| --- | --- | --- |
+| TypeScript SDK, `client.chat()` with the default `encrypted: true` | Yes | Live |
+| MCP server, `encrypted_chat` | Yes | Live |
+| MCP server, the model step of `private_research`, `private_token_analysis`, `private_wallet_audit` | Yes | Live |
+| MCP server, the lookups those research tools make (Brave, DexScreener, CoinGecko, Solana RPC) | No. They go from your machine to those services in plaintext | Live |
+| MCP server, `agent_run` | No. The prompt goes to Solrouter's backend in plaintext | Live |
+| Web chat at solrouter.com | Soon. Today prompts reach the backend in readable form | Soon |
+| Agent mode, including the Notion and GitHub connectors | No. The tool loop runs on Solrouter's backend | Live |
+| SDK with `encrypted: false` or `reasoning: 'braid'` | No | Live |
+
+Nothing on this page says "all requests are encrypted", because they are not. Check the row for the surface you use.
 
 ## Who is who
 
@@ -36,7 +51,7 @@ Each cell says what that party can see. The legend under the matrix explains eve
 
 ## Who can see what
 
-Rows here describe the encrypted path: the Privacy SDK with its default settings, or the chat app with Maximum Privacy Mode on. Amber cells mark the only places a party can read your words. Every row is Live.
+Rows here describe the sealed path: the TypeScript SDK with its default settings, or the MCP server's `encrypted_chat`. Amber cells mark the only places a party can read your words. Every row is Live.
 
 <PrivacyMatrix
   parties={["Network observer", "Solrouter backend", "CVM cloud host (Phala)", "Nosana GPU host", "Solana observer"]}
@@ -45,29 +60,25 @@ Rows here describe the encrypted path: the Privacy SDK with its default settings
     { what: "Reply text", cells: ["ct", "ct", "ct", "pt", "no"] },
     { what: "Attached files", cells: ["no", "no", "no", "no", "no"] },
     { what: "Knowledge-base documents", cells: ["ct", "pt", "no", "no", "no"] },
-    { what: "Chat history (Persistent mode)", cells: ["ct", "re", "no", "pt", "no"] },
-    { what: "Chat history (Maximum Privacy mode)", cells: ["no", "no", "no", "no", "no"] },
-    { what: "Memory", cells: ["ct", "ct", "ct", "pt", "no"] },
     { what: "Wallet address", cells: ["no", "pt", "no", "no", "no"] },
     { what: "Model name", cells: ["no", "pt", "me", "pt", "pt"] },
     { what: "That you used Solrouter", cells: ["me", "pt", "me", "me", "me"] },
     { what: "Encrypted-prompt hash", cells: ["no", "ha", "no", "no", "ha"] },
-    { what: "Web searches (agent mode)", cells: ["ct", "ct", "me", "pt", "no"] },
+    { what: "Web searches (encrypted agent mode, REST)", cells: ["ct", "ct", "me", "pt", "no"] },
   ]}
 />
 
 **Notes**
 
 - **Nosana GPU host, readable.** The model runs there in plaintext for the length of one request. Solrouter rents the machine and does not control it. The request is not linked to your identity.
-- **Chat history, at rest.** Persistent mode stores each message encrypted with AES-256-GCM under a key the backend holds. That protects against a stolen database copy, not against Solrouter. On this path the backend also reads the prompt in plaintext on the way in.
 - **Knowledge-base documents.** Files are split and embedded on the server as plain text, not encrypted at rest. Whether the deployed app isolates collections per user is not determined.
-- **Attached files.** The encrypted path sends the text prompt only. Attachments travel on the default path below.
+- **Attached files.** The sealed path sends the text prompt only. Attachments travel on the standard path below.
 - **Web searches** is the encrypted agent path: a REST call to `/agent` with `encryptedPrompt`, Live for REST and Soon for the SDK. Search runs through SearXNG inside the enclave, which then queries public engines. Those engines receive the search text.
 - The enclave logs the first 50 characters of each reply. Who can read that log is not determined.
 
-## Default chat (toggle off)
+## Standard path
 
-This is the chat app with the toggle off, the SDK with `encrypted: false`, and guest chat. There is no client-side encryption, so the backend and the model node read your words. Only the rows that change from the matrix above are shown. Status: Live.
+This is the web chat today, Agent mode and its connectors, guest chat, and the SDK with `encrypted: false`. There is no client-side encryption, so the backend and the model node read your words. Status: Live.
 
 <PrivacyMatrix
   parties={["Network observer", "Solrouter backend", "CVM cloud host (Phala)", "Nosana GPU host", "Solana observer"]}
@@ -76,17 +87,22 @@ This is the chat app with the toggle off, the SDK with `encrypted: false`, and g
     { what: "Reply text", cells: ["ct", "pt", "no", "pt", "no"] },
     { what: "Attached files", cells: ["ct", "pt", "no", "pt", "no"] },
     { what: "Knowledge-base documents", cells: ["ct", "pt", "no", "pt", "no"] },
+    { what: "Chat history", cells: ["ct", "re", "no", "pt", "no"] },
     { what: "Memory", cells: ["ct", "pt", "no", "pt", "no"] },
     { what: "Web searches", cells: ["ct", "pt", "no", "pt", "no"] },
+    { what: "Notion and GitHub content (Agent mode)", cells: ["ct", "pt", "no", "pt", "no"] },
   ]}
   legend={false}
 />
+
+- **Chat history, at rest.** The web app stores each message encrypted with AES-256-GCM under a key the backend holds. That protects against a stolen database copy, not against Solrouter, which also reads the prompt on the way in.
+- **Connectors.** In Agent mode the backend calls Notion or GitHub with your connected token, reads what comes back, and passes it to the model node with your prompt.
 
 On this path attachments and knowledge-base files reach the backend and the model node in plaintext. Documents upload to Cloudflare R2 through a short-lived link, and the backend extracts their text. Live search and the `web_search` tool use Brave, with DuckDuckGo and Wikipedia as fallbacks, so those services receive the search text.
 
 ## Where your words are readable
 
-The strip below follows one encrypted request from your device to the Solana receipt. Green zones hold your words in readable form. Grey zones hold only ciphertext or a hash. The amber zone is the rented GPU machine.
+The strip below follows one sealed request from your device to the Solana receipt. Green zones hold your words in readable form. Grey zones hold only ciphertext or a hash. The amber zone is the rented GPU machine.
 
 <PlaintextZones />
 
@@ -127,8 +143,8 @@ Guest chat sends your prompt in plaintext to the backend and then to the model n
 
 ## Short answers
 
-- "Can Solrouter read my prompt?" With the toggle on, or with the SDK default, no. With the toggle off, yes.
-- "Can Solrouter read my history?" In Persistent mode, yes. It holds the key. In Maximum Privacy mode there is no history.
+- "Can Solrouter read my prompt?" Through the SDK or the MCP server's `encrypted_chat`, no. In the web chat today, in Agent mode, or with `encrypted: false`, yes.
+- "Can Solrouter read my history?" Yes. The web app stores history under a key the backend holds.
 - "Can Solrouter read my memory?" No. Only your wallet can unlock it.
 - "Can Solrouter read my uploaded documents?" Yes. They are stored as plain text and plain files.
 - "Can anyone else read my prompt?" The operator of the Nosana GPU node could, while the model runs. No one else.
@@ -138,7 +154,7 @@ Guest chat sends your prompt in plaintext to the backend and then to the model n
 
 <Cards>
   <Card title="Chat app" icon={<MessageSquare />} href="/docs/use/chat-app">
-    Where the Privacy Mode toggle is and what each mode keeps.
+    What the web app keeps and what is sealed there.
   </Card>
   <Card title="Check a reply yourself" icon={<ShieldCheck />} href="/docs/verify">
     Paste the lock link from a reply and see the receipt check pass.

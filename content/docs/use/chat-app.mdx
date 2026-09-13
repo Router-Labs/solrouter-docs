@@ -1,87 +1,89 @@
 ---
-title: "Chat App"
+title: "Chat app"
 icon: MessageSquare
-description: "Solrouter Chat at solrouter.com/chat is a wallet-based AI chat with an encryption toggle, file attachments, and a RAG knowledge base. No email required."
-status: live
-checked: "2026-08-26"
+description: "Solrouter chat at solrouter.com: sign in with email or a Solana wallet, pick one of three open-weight models, and connect Notion or GitHub in Agent mode."
+status: mixed
+checked: "2026-09-13"
+statusNote: "Sealing every web chat prompt is Soon. Today the web app sends chat prompts to Solrouter's backend in readable form. The SDK and the MCP server's chat tools are sealed today"
 ---
 
 import { Cards, Card } from 'fumadocs-ui/components/card';
 import { Callout } from 'fumadocs-ui/components/callout';
 import { Step, Steps } from 'fumadocs-ui/components/steps';
-import { Lock, Paperclip, Database } from 'lucide-react';
+import { Bot, Paperclip, Database, Plug } from 'lucide-react';
 
-Most AI chat tools want your email, store your conversations in plaintext, and lock you into a single model. Solrouter Chat at [solrouter.com/chat](https://solrouter.com/chat) works differently. You never create an account. You can turn on Maximum Privacy Mode to encrypt each prompt before it leaves your browser.
+Solrouter chat at [solrouter.com/chat](https://solrouter.com/chat) is a chat app that answers only with open-weight models. There is no OpenAI, Anthropic, or Google model behind it.
 
-You connect a Solana wallet, top up a prepaid balance, and pick one of two open-weight models. You also get file attachments and a RAG knowledge base. Encryption is a toggle. It is off by default.
+## Getting started
 
-## Two privacy modes
+<Steps>
+  <Step>
+### Sign in
 
-Encryption is a toggle, off by default. Here is what each mode does with your prompt and your history.
+Open [solrouter.com/chat](https://solrouter.com/chat) and sign in with an email address or a Solana wallet. There is no KYC. If you sign in with email and have no wallet, one is made for you.
 
-| | Persistent (default) | Maximum Privacy (on) |
-| --- | --- | --- |
-| Prompt to the backend | plaintext | encrypted in your browser |
-| Opened where | backend, then the Nosana node | only the enclave, then the Nosana node |
-| Chat history | stored, encrypted at rest under a key Solrouter holds | not stored, lost on refresh |
-| Best for | everyday chats | sensitive prompts |
+Not signed in? Guests get 5 messages a day.
+  </Step>
 
-For exactly who can read what, see [What is private here](/docs/use/what-is-private).
+  <Step>
+### Use your free messages
+
+Every signed-in account gets 5 free messages.
+  </Step>
+
+  <Step>
+### Pick a plan
+
+Pro is \$9 for 2,000 calls, Builder \$49 for 12,500, and Scale \$99 for 30,000, each per 30 days in USDC. No crypto? Pay by card through MoonPay. See [Pricing](/docs/use/pricing).
+  </Step>
+
+  <Step>
+### Pick a model and chat
+
+Choose a model in the composer and send your message. If a model's node was idle, the first reply can say "Nosana GPU node is warming up". Wait a moment and send it again.
+  </Step>
+</Steps>
+
+## Models
+
+| Model | Note |
+| --- | --- |
+| GPT-OSS 20B | Default |
+| Qwen 3.8 27B | Uncensored |
+| Qwen3 Coder 30B | Coding |
+
+Each has 8K tokens of context and up to 4K tokens of output. See [Models](/docs/how-it-works/models).
+
+## What is sealed in the app
+
+<Callout type="warn" title="Web chat sealing: Soon">
+  Sealing every web chat prompt on your device is Soon. Today the web app sends chat prompts to Solrouter's backend in readable form, and the backend passes them to the model node. If you need a sealed prompt now, use the [TypeScript SDK](/docs/integrations/typescript-sdk) or the MCP server's `encrypted_chat` in [Claude Code](/docs/integrations/claude-code), [Cursor](/docs/integrations/cursor), or [Claude Desktop](/docs/integrations/claude-desktop).
+</Callout>
+
+| Feature | Sealed |
+| --- | --- |
+| Chat prompts and replies | Soon |
+| Agent mode, including the Notion and GitHub connectors | No. The tool loop runs on the backend |
+| File attachments | No |
+| Knowledge base (RAG) | No. Stored chunks are plain text |
+
+For who can read what, see [What is private here](/docs/use/what-is-private).
 
 ## Features
 
 <Cards>
-  <Card title="Encryption toggle" icon={<Lock />}>
-    Turn on Maximum Privacy Mode to encrypt each prompt before it leaves your browser. Off by default.
+  <Card title="Agent mode" icon={<Bot />} href="/docs/how-it-works/agent-reasoning">
+    Switch the composer to Agent and the model can search the web, read Solana data, and call tools. Not sealed.
+  </Card>
+  <Card title="Connectors" icon={<Plug />} href="/docs/integrations/notion">
+    Connect [Notion](/docs/integrations/notion) or [GitHub](/docs/integrations/github) in Agent mode. The tools only read.
   </Card>
   <Card title="File attachments" icon={<Paperclip />}>
-    Send images and documents with your question. Attachments are not encrypted, only the text prompt is.
+    Send images and documents with your question. Attachments are not sealed.
   </Card>
-  <Card title="RAG knowledge base" icon={<Database />}>
+  <Card title="Knowledge base" icon={<Database />}>
     Upload files and ask questions grounded in them. Stored chunks are not encrypted at rest.
   </Card>
 </Cards>
 
 Image and video generation is Archived. It is disabled in the chat app.
-
-## Getting started
-
-Four steps take you from a blank browser tab to your first message.
-
-<Steps>
-  <Step>
-    ### Open the chat app
-
-    Go to [solrouter.com/chat](https://solrouter.com/chat) in your browser.
-  </Step>
-
-  <Step>
-    ### Connect your Solana wallet
-
-    Click **Connect Wallet** and approve the request in your wallet. Your wallet is your identity here. No email address or personal information is required.
-  </Step>
-
-  <Step>
-    ### Top up your balance
-
-    Add credits in **USDC** or **`$ROUTER`**. You pay per call from this prepaid balance, so you only spend on what you use.
-  </Step>
-
-  <Step>
-    ### Select a model and start chatting
-
-    Pick a model from the selector and send your first message. To encrypt the prompt in your browser, turn on **Maximum Privacy Mode** first. It is off by default, and history is not kept while it is on.
-
-    If the GPU node was idle, the first reply can say "Nosana GPU node is warming up". Wait a moment and send the message again.
-  </Step>
-</Steps>
-
-## Supported models
-
-The chat model picker lists two self-hosted open-weight models on the Nosana GPU network: `gpt-oss:20b` (Default, Live) and `qwen3.8:27b` (Uncensored, Live). No proprietary model is reachable in the chat app. Maximum Privacy Mode works with both models.
-
-For model ids and their status, see the [Supported Models](/docs/how-it-works/models) page.
-
-<Callout>
-  In Maximum Privacy Mode, Solrouter's backend cannot read your prompt. Plaintext exists on your device, inside the Intel TDX enclave, and on the Nosana GPU node that runs the model during inference. Solrouter does not control that node's hardware.
-</Callout>

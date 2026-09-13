@@ -11,11 +11,11 @@ export const systemMapNodes: BoxNode[] = [
   boxNode('chat', 0, 0, {
     icon: 'MessageSquare',
     title: 'Chat app',
-    sub: 'Encrypts in the browser',
+    sub: 'Web chat, sealing Soon',
     accent: true,
     detail: {
       holds: 'Your ephemeral X25519 key and the plaintext prompt, in the browser tab.',
-      sees: 'Plaintext prompt and reply. Maximum Privacy Mode (toggle on) encrypts the text prompt for /tee/process. Persistent Privacy Mode (the default) sends the prompt in plaintext to the backend /nosana or /router route. Attachments are not encrypted client-side.',
+      sees: 'Plaintext prompt and reply. Today the web chat sends the prompt in plaintext to the backend /nosana or /router route; sealing every prompt for /tee/process is Soon. Agent mode and attachments are not encrypted client-side.',
       status: 'Live',
       source: 'fe:src/components/chat/ChatArea.tsx:542-569,1114; fe:src/lib/r2Upload.ts:36-47',
       href: '/docs/use/chat-app',
@@ -136,7 +136,7 @@ export const systemMapNodes: BoxNode[] = [
 ];
 
 export const systemMapEdges: FlowEdge[] = [
-  flowEdge('chat', 'backend', 'ciphertext (Maximum Privacy Mode) or plaintext (default)'),
+  flowEdge('chat', 'backend', 'plaintext today (sealing Soon)'),
   flowEdge('sdk', 'backend', 'ciphertext'),
   flowEdge('mcp', 'backend', 'ciphertext'),
   flowEdge('rest', 'backend', 'ciphertext'),

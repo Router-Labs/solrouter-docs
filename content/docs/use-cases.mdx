@@ -3,8 +3,8 @@ title: "Use cases"
 icon: Compass
 description: "What people, developers, agents, traders, and teams do with Solrouter today, and what is still on the way."
 status: mixed
-checked: "2026-08-26"
-statusNote: "Each card carries its own Status word. The Live cards for privacy modes, memory, guest mode, and team accounts depend on the owner's browser check in PR 5."
+checked: "2026-09-13"
+statusNote: "Each card carries its own Status word."
 ---
 
 import { Cards, Card } from 'fumadocs-ui/components/card';
@@ -32,7 +32,7 @@ import {
 } from 'lucide-react';
 
 Every card below starts with one Status word. We checked each against the code
-on 2026-08-26. **Live** works today. **Soon** exists in code but is not switched
+on 2026-09-13. **Live** works today. **Soon** exists in code but is not switched
 on or not confirmed end to end. **Archived** was removed.
 
 Many cards mention a sealed machine. That is a TEE (Trusted Execution
@@ -42,57 +42,58 @@ Other terms are in the [Glossary](/docs/glossary): [wallet](/docs/glossary),
 [x402](/docs/glossary), and [mixer](/docs/glossary).
 
 <Callout title="What private means here">
-  When encryption is on, Solrouter's own servers never see your words in
-  readable form. The GPU computer that runs the AI model does see them while it
+  On the sealed path (the SDK and the MCP server's chat tools), Solrouter's own
+  servers never see your words in readable form. The GPU computer that runs the AI model does see them while it
   writes the answer. Solrouter does not own that computer. Read
   [What is private here](/docs/use/what-is-private).
 </Callout>
 
 ## For people
 
-These are for anyone who uses the chat app at solrouter.com. Encryption in the
-chat app is a switch called Maximum Privacy mode. It is off when you first
-open the app. While it is on, the app keeps no history.
+These are for anyone who wants private answers, in the chat app at
+solrouter.com or in an AI app they already use. Sealing every web chat prompt
+is Soon, so the private cards below point at the MCP server today.
 
 <Cards>
-  <Card icon={<FileText />} title="Summarise a contract off the record" href="/docs/use/chat-app">
-    **Live.** You want a summary of a contract, but you do not want an AI
-    company to keep a copy. Turn on Maximum Privacy mode and paste the text,
-    because an attached file is not encrypted.
+  <Card icon={<FileText />} title="Summarise a contract off the record" href="/docs/integrations/claude-desktop">
+    **Live** in Claude Desktop, **Soon** in the web chat. You want a summary of
+    a contract, but you do not want an AI company to keep a copy. Add the MCP
+    server, ask Claude Desktop to use `encrypted_chat`, and paste the text.
   </Card>
-  <Card icon={<Code />} title="Review code without sharing it" href="/docs/use/chat-app">
-    **Live.** You want feedback on code that is not public. Turn on Maximum
-    Privacy mode and paste the code, and Solrouter's servers never see it in
-    readable form.
+  <Card icon={<Code />} title="Review code without sharing it" href="/docs/integrations/claude-code">
+    **Live.** You want feedback on code that is not public. In Claude Code or
+    Cursor, ask for `encrypted_chat` with Qwen3 Coder 30B, and Solrouter's
+    servers never see the code in readable form.
   </Card>
-  <Card icon={<PenLine />} title="Draft a reply nobody else gets to read" href="/docs/use/chat-app">
-    **Live.** You want help with a sensitive message, such as a letter to a
-    doctor or a lawyer. Turn on Maximum Privacy mode, write the draft, and
-    close the tab, because nothing is saved.
+  <Card icon={<PenLine />} title="Ask your Notion or GitHub" href="/docs/integrations/notion">
+    **Live, not sealed.** You want answers from your own pages and repos.
+    Connect Notion or GitHub in Agent mode and ask. The agent only reads, and
+    it runs on Solrouter's backend, outside the enclave.
   </Card>
-  <Card icon={<History />} title="Keep your history, or keep nothing" href="/docs/use/chat-app">
-    **Live.** Some chats should survive a reload and others should leave no
-    trace. Persistent mode saves history encrypted with a key that Solrouter
-    holds, and Maximum Privacy mode saves nothing at all.
+  <Card icon={<History />} title="Keep your chat history" href="/docs/use/chat-app">
+    **Live.** Chats survive a reload. The web app saves history encrypted at
+    rest with a key that Solrouter holds, which protects against a stolen
+    database copy but not against Solrouter.
   </Card>
   <Card icon={<Brain />} title="Memory that only your wallet can unlock" href="/docs/use/chat-app">
     **Live.** You want the assistant to remember facts across chats without
     Solrouter holding a readable profile of you. Your wallet signs a fixed
     message to make the key, so Solrouter stores only a locked blob.
   </Card>
-  <Card icon={<UserX />} title="Try it with no wallet and no account" href="/docs/use/chat-app">
-    **Live.** You will not connect a wallet before you have seen the product
-    work. Open the guest page and send up to five free messages a day.
+  <Card icon={<UserX />} title="Try it with no account" href="/docs/use/chat-app">
+    **Live.** You will not sign up before you have seen the product work. Open
+    the guest page and send up to five free messages a day. Signing in adds
+    five more.
   </Card>
   <Card icon={<Paperclip />} title="Attach a file to a chat" href="/docs/use/chat-app">
     **Live.** You want to ask about a PDF, a spreadsheet, or a screenshot. You
     can attach it, but attachments are not encrypted, and documents are stored
     in readable form on a file server.
   </Card>
-  <Card icon={<BadgeCheck />} title="Check that a reply came from the sealed machine" href="/docs/verify">
-    **Live.** A privacy promise on a web page is not proof. Click the lock link
-    under a reply, or paste it into the checker, and see the receipt on the
-    Solana blockchain.
+  <Card icon={<BadgeCheck />} title="Check the sealed machine yourself" href="/docs/verify">
+    **Live.** A privacy promise on a web page is not proof. Check the enclave's
+    key against its Intel TDX quote in your browser, then look up the Solana
+    receipt for a sealed call.
   </Card>
 </Cards>
 
@@ -111,7 +112,7 @@ app, editor, or backend.
     `client.chat()`, and the prompt is encrypted on your machine before it
     leaves.
   </Card>
-  <Card icon={<Plug />} title="Private research inside Claude Desktop or Cursor" href="/docs/build/mcp-server">
+  <Card icon={<Plug />} title="Private research inside Claude Code, Cursor, or Claude Desktop" href="/docs/integrations">
     **Live.** Research done through a normal assistant shows the model provider
     which tokens and wallets you look at. Paste one config block, and only
     the synthesis step runs encrypted; web searches and price lookups stay
@@ -129,10 +130,9 @@ app, editor, or backend.
     an encrypted prompt to `POST /agent`, and the loop runs inside the sealed
     machine with five approved tools.
   </Card>
-  <Card icon={<Wallet />} title="Pay per call with no email, card, or KYC" href="/docs/build/api-key">
-    **Live.** Signing up for an AI service means handing over your identity and
-    a card. Connect a Solana wallet, make an API key, and top up a balance in
-    USDC or $ROUTER.
+  <Card icon={<Wallet />} title="A flat monthly plan with no KYC" href="/docs/use/pricing">
+    **Live.** Sign in with email or a Solana wallet, make an API key, and pick a
+    plan: \$9, \$49, or \$99 a month in USDC, or pay by card through MoonPay.
   </Card>
 </Cards>
 

@@ -3,7 +3,7 @@ title: "Agent Tools SDK"
 icon: Bot
 description: "Typed tools for the Solrouter Agent Privacy API with a Vercel AI SDK adapter. The package is not on npm yet. Use the HTTP API or the MCP tools today."
 status: soon
-checked: "2026-08-26"
+checked: "2026-09-13"
 statusNote: "The @solrouter/agent-tools package is not on npm yet."
 ---
 
@@ -68,7 +68,7 @@ const settled = await client.pollUntilSettled(session.sessionId);
 
 How your agent proves it can pay shapes how you deploy it, so pick the mode that fits before you build. The Agent Privacy API supports two.
 
-* **API key.** Include `Authorization: Bearer sk_solrouter_...` in every request. Usage bills against your prepaid balance in USDC or `$ROUTER`. Best when your agent is long-lived and you have already funded an account.
+* **API key.** Include `Authorization: Bearer sk_solrouter_...` in every request. Usage bills against the account behind the key. Best when your agent is long-lived and you have already funded an account.
 * **x402 (keyless).** Pay per call in USDC on Solana mainnet through an x402 facilitator, with no account at all. The live manifest advertises Coinbase (`api.cdp.coinbase.com/x402`). The manifest shows `X402_FACILITATOR_URL` when it is set, or a built-in default when it is not. It does not show which facilitator settles payments. Discover pricing and payment endpoints at [`/.well-known/x402`](https://api.solrouter.com/.well-known/x402).
 
 <Callout>

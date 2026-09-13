@@ -1,75 +1,55 @@
 ---
 title: "Models"
 icon: Layers
-description: "Solrouter runs only self-hosted open-weight models on Nosana GPU nodes. No prompt reaches OpenAI, Anthropic, or any other proprietary model API."
-status: mixed
-checked: "2026-08-26"
-statusNote: "The model table carries a Status column: gemma4:31b is Soon and qwen3:8b is Archived."
+description: "Three open-weight models, served only through the Intel TDX enclave on Phala: GPT-OSS 20B, Qwen 3.8 27B, and Qwen3 Coder 30B. 8K context, 4K output."
+status: live
+checked: "2026-09-13"
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout';
 
-In privacy mode Solrouter answers with self-hosted, open-weight models only. It never calls a proprietary API. That choice is what makes the privacy claim hold.
-
-Every model runs on its own [Nosana](https://nosana.io) GPU node. Your encrypted request travels from your device to an Intel TDX enclave (a TEE, a trusted execution environment: a hardware-isolated virtual machine). The enclave decrypts it and calls the model on the Nosana node (HTTPS per the documented node URL, not re-verified). No proprietary model API is in this path.
+Solrouter answers with open-weight models only. No prompt goes to OpenAI, Anthropic, or Google. Their models run on their makers' servers, where prompts are readable, so they cannot sit behind a sealed path.
 
 ## Available models
 
-Each row is one model with its ids and its status on 2026-08-26.
+| Model | Id | Best for | Context | Max output |
+| --- | --- | --- | --- | --- |
+| GPT-OSS 20B | `gpt-oss:20b` | Default. General questions, research, summaries | 8K | 4K |
+| Qwen 3.8 27B | `qwen3.8:27b` | Uncensored. Topics other models refuse | 8K | 4K |
+| Qwen3 Coder 30B | `qwen3-coder:30b` | Coding. Review, refactors, explaining code | 8K | 4K |
 
-| Model | Catalog id | SDK id | Status |
-| --- | --- | --- | --- |
-| GPT-OSS 20B | `gpt-oss:20b` | `gpt-oss-20b` | Live |
-| Qwen 3.8 27B | `qwen3.8:27b` | none yet | Live |
-| Gemma 4 31B | `gemma4:31b` | none | Soon |
-| Qwen 3 8B | `qwen3:8b` | `qwen3-8b` | Archived |
+- **Context** is the model's window on its GPU node (`NOSANA_CONTEXT_LENGTH`, 8,192 tokens). Prompt, history, and reply share it.
+- **Max output** is enforced inside the enclave (`TEE_MAX_OUTPUT_TOKENS`, 4,096 tokens). A request that asks for more is clamped. A request that sets no limit gets 2,048.
+- The REST API also accepts the ids with a `nosana:` prefix, for example `nosana:gpt-oss:20b`.
 
-`gpt-oss:20b`: default in the chat app and the SDK. Context 8192 tokens.
-
-`qwen3.8:27b`: listed as "Uncensored" in the chat picker. In SDK 1.1.0 it needs a type cast (see below).
-
-`gemma4:31b`: listed by `GET /api/v1/models` with a 262144-token context. The enclave has no endpoint for it yet, so the encrypted path is not confirmed.
-
-`qwen3:8b`: retired node. The chat app folds this id to `qwen3.8:27b`.
-
-The REST API returns catalog ids with a `nosana:` prefix, for example `nosana:gpt-oss:20b`. The backend accepts both forms.
-
-All of these models are open-weight. Their weights are public, so anyone can inspect what runs on your prompt.
+8K in and 4K out is fine for questions, a diff, or a file. It is not enough for a whole repository.
 
 ## Choosing a model
 
-Leave the model out and the SDK defaults to `gpt-oss-20b`. To pick one, pass `model` to `client.chat()`:
+- In the chat app, pick the model in the composer.
+- In the MCP server, pass `model` to `encrypted_chat`: `gpt-oss-20b` (the default), or a backend id such as `nosana:qwen3-coder:30b`.
+- In the SDK, pass `model` to `client.chat()`. The default is `gpt-oss-20b`.
 
 ```typescript
-const response = await client.chat('Your prompt here', {
-  model: 'gpt-oss-20b', // the only typed live model in SDK 1.1.0
+const res = await client.chat('Review this function for bugs', {
+  model: 'gpt-oss-20b',
 });
 ```
 
-The SDK type lists `gpt-oss-20b` and `qwen3-8b`. The second maps to the retired `qwen3:8b` node, so do not use it. Any other string passes through unchanged, so `nosana:qwen3.8:27b` works with a type cast. A typed alias needs a new SDK release (Soon). The chat app lets you pick `qwen3.8:27b` today.
+The SDK's TypeScript type still lists an older id, `qwen3-8b`. That model is retired and is not served. Use `gpt-oss-20b`. To reach the other two models from the SDK, pass the backend id with a cast, for example `model: 'nosana:qwen3-coder:30b' as any`.
 
-<Callout title="Tip">
-  Call `list_models` on the MCP server to see the models `GET /api/v1/models` returns, with the price per million tokens. Today that list holds `gpt-oss:20b` and `gemma4:31b`, so it differs from the chat picker.
+## How a model runs
+
+Each model runs as its own job on a [Nosana](https://nosana.io) GPU node, one node per model. A sealed request goes from your device to the Intel TDX enclave on Phala. The enclave opens it, calls the model's node, and seals the answer back to your key. No proprietary model API is anywhere in that path.
+
+<Callout type="warn" title="Where the prompt is readable">
+  The GPU node runs the model outside the enclave, so the prompt and the reply are in plaintext in that node's memory while the model works. Solrouter rents the node and does not control its hardware. The request is not linked to your identity on the node. Solrouter's backend never sees the plaintext. See [What is private here](/docs/use/what-is-private).
 </Callout>
 
 ## Node warm-up
 
-A Nosana node goes idle when nobody uses it. The first request after idle time can fail with the error "Nosana GPU node is warming up". The error is retryable. Wait a short time and send the request again.
+A node that has sat idle can answer the first request with "Nosana GPU node is warming up". The error is retryable. Wait a moment and send the request again.
 
-## Why self-hosted models?
+## Retired models
 
-End-to-end privacy only holds if your prompt never reaches a proprietary API. If Solrouter handed your decrypted prompt to OpenAI or Anthropic, that provider would see your plaintext. Client-side encryption and TEE isolation would then buy you nothing.
-
-Running only open-weight models on Nosana nodes closes that gap. It means:
-
-* No proprietary model provider ever sees your query, your documents, or your reply.
-* Solrouter's backend never sees your plaintext. It relays ciphertext only.
-* The model weights are public, so anyone can inspect what runs on your prompt.
-
-## Where plaintext exists
-
-The enclave decrypts your prompt and then calls the model on a Nosana GPU node (HTTPS per the documented node URL, not re-verified) with `POST /v1/chat/completions` on that node. The node runs Ollama outside the TDX enclave. So your prompt and the reply exist in plaintext in that node's memory during inference. The node operator could read the prompt during inference. Solrouter does not control that hardware. What holds: Solrouter's backend never sees plaintext, and the request is not linked to your identity on the node.
-
-<Callout>
-  There are no proprietary model APIs in the Solrouter privacy pipeline: no OpenAI, no Anthropic, no Google. `{ encrypted: false }` does not unlock one. It sends your prompt in plaintext to the same self-hosted Nosana models, without TEE isolation. The SDK cannot reach any proprietary model.
-</Callout>
+`qwen3:8b` was replaced by `qwen3.8:27b`. `gemma4:31b` was retired. Neither is served.

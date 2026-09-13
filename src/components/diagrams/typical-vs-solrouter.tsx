@@ -67,7 +67,7 @@ export function TypicalVsSolrouter() {
   return (
     <figure
       role="img"
-      aria-label="Two rows. In a typical AI API your prompt travels in plaintext to the provider server, which reads it, then to the model. With Solrouter and encryption on, your device sends ciphertext, the Solrouter backend relays it without reading it, the TDX enclave opens it, and the Nosana GPU node runs the model over TLS."
+      aria-label="Two rows. In a typical AI API your prompt travels in plaintext to the provider server, which reads it, then to the model. On the Solrouter sealed path, your device sends ciphertext, the Solrouter backend relays it without reading it, the TDX enclave opens it, and the Nosana GPU node runs the model over TLS."
       className="my-6 flex flex-col gap-6 rounded-2xl border border-fd-border bg-fd-card/40 p-5"
     >
       <Lane title="Typical AI API" safe={false}>
@@ -77,7 +77,7 @@ export function TypicalVsSolrouter() {
         <Hop label="plaintext" safe={false} />
         <Stage icon={Server} label="Model" />
       </Lane>
-      <Lane title="Solrouter, encryption on" safe>
+      <Lane title="Solrouter, sealed path" safe>
         <Stage icon={Lock} label="You" tone="accent" />
         <Hop label="ciphertext" safe />
         <Stage icon={EyeOff} label="Solrouter backend" />

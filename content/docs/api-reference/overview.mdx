@@ -3,7 +3,7 @@ title: "Overview"
 icon: List
 description: "The Solrouter REST API gives you encrypted chat completions, agent reasoning, TEE key and attestation reads, and private on-chain swaps. Base URL: https://api.solrouter.com"
 status: mixed
-checked: "2026-08-26"
+checked: "2026-09-13"
 statusNote: "Chat, agent, and TEE endpoints are Live. Agent Privacy API swap execution is Soon."
 ---
 
@@ -11,7 +11,7 @@ import { Cards, Card } from 'fumadocs-ui/components/card';
 import { Callout } from 'fumadocs-ui/components/callout';
 import { MessageSquare, Bot, ShieldCheck, Lock } from 'lucide-react';
 
-The Solrouter REST API is the direct HTTP interface to Solrouter's private AI infrastructure. With it you can send encrypted chat completions and run agent reasoning with tool calls. You can also read the TEE (trusted execution environment) key and attestation quote. Private on-chain swaps use the same base URL. All of it sits on one authenticated surface with no email, credit card, or KYC.
+The Solrouter REST API is the direct HTTP interface to Solrouter's private AI infrastructure. With it you can send encrypted chat completions and run agent reasoning with tool calls. You can also read the TEE (trusted execution environment) key and attestation quote. Private on-chain swaps use the same base URL. All of it sits on one authenticated surface with no KYC.
 
 <Callout>
   Raw REST is plaintext unless you send `encryptedPrompt`. When you use `@solrouter/sdk`, chat requests are encrypted before they leave your machine, and the Solrouter backend relays the ciphertext to the TEE without reading it. If you call `POST /agent` with `curl` and a plain `prompt`, you are sending plaintext to the backend. `POST /tee/process` and `POST /api/v1/chat/completions` reject requests without `encryptedPrompt`.
@@ -27,7 +27,7 @@ https://api.solrouter.com
 
 ## Authentication
 
-All requests require a Bearer token in the `Authorization` header. You generate your key at [solrouter.com/sdk](https://solrouter.com/sdk) by connecting a Solana wallet. No email or credit card is required. Balance is prepaid in USDC or `$ROUTER`.
+All requests require a Bearer token in the `Authorization` header. You generate your key at [solrouter.com/sdk](https://solrouter.com/sdk) by signing in with an email address or a Solana wallet. No KYC. Calls draw from your plan; see [Pricing](/docs/use/pricing).
 
 ```
 Authorization: Bearer sk_solrouter_...

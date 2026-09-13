@@ -1,17 +1,17 @@
 ---
 title: "Get an API key"
 icon: KeyRound
-description: "Get an API key by connecting a Solana wallet at solrouter.com/sdk. No email, no KYC. Send the key as a bearer token, or pay per call with x402."
+description: "Sign in at solrouter.com/sdk with email or a Solana wallet and generate an API key. No KYC. Send the key as a bearer token, or pay per call with x402."
 status: live
-checked: "2026-08-26"
+checked: "2026-09-13"
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout';
 import { Step, Steps } from 'fumadocs-ui/components/steps';
 
-Most AI APIs make you sign up with an email, verify your identity, and add a credit card before your first request. Solrouter skips all of that. You authenticate with an API key sent as a bearer token. You get that key by connecting a Solana wallet. There is no email sign-up, no KYC (Know Your Customer identity check), and no card.
+Solrouter skips the identity check most AI APIs start with. You authenticate with an API key sent as a bearer token. You get that key by signing in with an email address or a Solana wallet. There is no KYC (Know Your Customer identity check).
 
-Fund a prepaid balance in USDC or \$ROUTER, and you can make calls in minutes.
+Your first 5 messages are free. After that a plan covers your calls. See [Pricing](/docs/use/pricing).
 
 ## Getting your API key
 
@@ -25,9 +25,9 @@ Open [solrouter.com/sdk](https://solrouter.com/sdk) in your browser.
   </Step>
 
   <Step>
-### Connect your Solana wallet
+### Sign in
 
-Connect Phantom, Solflare, or a Privy embedded wallet (any Wallet Standard wallet). Your wallet is your only identity credential. Solrouter collects no email and no personal information.
+Sign in with an email address, or connect Phantom, Solflare, or another Wallet Standard wallet. If you sign in with email and have no wallet, an embedded Solana wallet is made for you.
   </Step>
 
   <Step>
@@ -37,9 +37,9 @@ Click **Generate API Key**. Your key is issued at once and starts with `sk_solro
   </Step>
 
   <Step>
-### Top up your balance
+### Pick a plan
 
-Add funds to your prepaid account in **USDC** or **\$ROUTER**. Solrouter meters every API call and deducts the cost from this balance. There is no monthly bill. You pay only for what you use.
+Pro is \$9 for 2,000 calls, Builder \$49 for 12,500, and Scale \$99 for 30,000, each per 30 days in USDC on Solana. No crypto? Pay by card through MoonPay. See [Pricing](/docs/use/pricing).
   </Step>
 </Steps>
 
@@ -77,7 +77,7 @@ External callers have two ways to authenticate. Pick the row that matches how yo
 
 | Tier               | How it works                                                                                                                                                                                                                 | Best for                                    |
 | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| **API key**        | `Authorization: Bearer sk_solrouter_...`, billed from your prepaid balance                                                                                                                                                   | Most applications and development workflows |
+| **API key**        | `Authorization: Bearer sk_solrouter_...`, calls drawn from your plan                                                                                                                                                   | Most applications and development workflows |
 | **x402 (keyless)** | Per-call USDC settlement on Solana mainnet                                                                                                                                                                                  | Autonomous agents that do not hold API keys |
 
 x402 settles through a facilitator. The live manifest advertises Coinbase (`api.cdp.coinbase.com/x402`). Service discovery is at [`/.well-known/x402`](https://api.solrouter.com/.well-known/x402). The manifest shows `X402_FACILITATOR_URL` when it is set, or a built-in default when it is not. The manifest does not show which facilitator settles payments. Wire-level facilitator: not determined.
@@ -102,5 +102,5 @@ Your key can spend real money, so treat it with the same care as a password. The
 * **Rotate compromised keys at once.** If a key is exposed, go to [solrouter.com/sdk](https://solrouter.com/sdk), delete the affected key, and generate a new one.
 
 <Callout type="warn">
-  Never expose your API key in client-side code or public repositories. Anyone with your key can spend your prepaid balance. If you suspect a key has leaked, rotate it at once at solrouter.com/sdk.
+  Never expose your API key in client-side code or public repositories. Anyone with your key can spend your plan. If you suspect a key has leaked, rotate it at once at solrouter.com/sdk.
 </Callout>
