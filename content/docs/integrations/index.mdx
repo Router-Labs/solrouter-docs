@@ -1,0 +1,55 @@
+---
+title: "Integrations"
+icon: Plug
+description: "Use Solrouter from Claude Code, Cursor, Claude Desktop, your own TypeScript code, and your Notion and GitHub accounts. Each page says what is sealed."
+status: live
+checked: "2026-09-13"
+---
+
+import { Cards, Card } from 'fumadocs-ui/components/card';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Terminal, MousePointer2, MessageSquare, Code, BookOpen, GitBranch } from 'lucide-react';
+
+Solrouter reaches your tools three ways: anything that speaks MCP, your own code through the TypeScript SDK, and your workspace through Agent mode in the chat app.
+
+| Integration | Kind | How | Sealed |
+| --- | --- | --- | --- |
+| [Claude Code](/docs/integrations/claude-code) | Coding agent | MCP, one command | Yes, for chat tools |
+| [Cursor](/docs/integrations/cursor) | Coding agent | MCP, `~/.cursor/mcp.json` | Yes, for chat tools |
+| [Claude Desktop](/docs/integrations/claude-desktop) | Chat app | MCP, `claude_desktop_config.json` | Yes, for chat tools |
+| [TypeScript SDK](/docs/integrations/typescript-sdk) | Your code | `npm install @solrouter/sdk` | Yes |
+| [Notion](/docs/integrations/notion) | Workspace | Agent mode connector | No |
+| [GitHub](/docs/integrations/github) | Code | Agent mode connector | No |
+
+<Callout title="What sealed means">
+  Sealed means the prompt is encrypted on your machine to the enclave's key (X25519 per request plus Arcium RescueCipher) and opened only inside the Intel TDX enclave on Phala. Each sealed call writes a compressed receipt to Solana. The Notion and GitHub connectors run in Agent mode on Solrouter's backend, outside the enclave. The MCP server's web and market lookups go from your machine to those services in plaintext. See [What is private here](/docs/use/what-is-private).
+</Callout>
+
+## Before you start
+
+1. Sign in at [solrouter.com](https://solrouter.com) with email or a Solana wallet.
+2. Create an API key on the [keys page](https://solrouter.com/sdk). It starts with `sk_solrouter_`.
+3. Pick a plan, or use your 5 free messages first. See [Pricing](/docs/use/pricing).
+
+## Pick one
+
+<Cards>
+  <Card icon={<Terminal />} title="Claude Code" href="/docs/integrations/claude-code">
+    One command adds sealed private chat and research tools.
+  </Card>
+  <Card icon={<MousePointer2 />} title="Cursor" href="/docs/integrations/cursor">
+    One block in mcp.json gives Cursor's agent a sealed second model.
+  </Card>
+  <Card icon={<MessageSquare />} title="Claude Desktop" href="/docs/integrations/claude-desktop">
+    The same MCP server, added to Claude Desktop's config file.
+  </Card>
+  <Card icon={<Code />} title="TypeScript SDK" href="/docs/integrations/typescript-sdk">
+    Encrypted-by-default client for your own app or agent.
+  </Card>
+  <Card icon={<BookOpen />} title="Notion" href="/docs/integrations/notion">
+    Search pages and query databases from Agent mode.
+  </Card>
+  <Card icon={<GitBranch />} title="GitHub" href="/docs/integrations/github">
+    List repos, read files, and look through issues from Agent mode.
+  </Card>
+</Cards>

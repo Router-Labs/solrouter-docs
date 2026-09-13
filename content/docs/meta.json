@@ -1,11 +1,12 @@
 {
   "pages": [
     "index",
-    "use-cases",
-    "verify",
     "use",
+    "integrations",
     "build",
     "how-it-works",
+    "verify",
+    "use-cases",
     "---Reference---",
     "api-reference",
     "glossary",

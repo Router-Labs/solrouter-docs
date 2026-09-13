@@ -1,0 +1,61 @@
+---
+title: "GitHub"
+icon: GitBranch
+description: "Connect GitHub in Agent mode at solrouter.com so the agent can list your repos, read files, and look through issues. Connector calls are not sealed."
+status: live
+checked: "2026-09-13"
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+Let the agent list your repositories, read files, and look through issues.
+
+| | |
+| --- | --- |
+| Where | [solrouter.com](https://solrouter.com), Agent mode |
+| Access | Read: repos, files, issues |
+| Tools | `github_list_repos`, `github_read_file`, `github_issues` |
+| Sealed | No |
+
+<Callout type="warn" title="Not sealed">
+  Agent mode runs its tool loop on Solrouter's backend, outside the enclave. The backend reads your prompt and the code the tools fetch, and the model node sees both while it writes the answer. Do not point it at code you would not paste into a normal AI chat.
+</Callout>
+
+## Setup
+
+<Steps>
+  <Step>
+### Connect GitHub
+
+Sign in at [solrouter.com](https://solrouter.com), switch the composer to Agent, and pick GitHub in the connector strip. Approve on GitHub.
+
+GitHub's consent screen asks for the `repo` and `read:user` scopes. GitHub does not offer a read-only scope for private repositories, so the grant is wider than what the agent uses. The agent's GitHub tools only read.
+  </Step>
+
+  <Step>
+### Ask
+
+The agent calls `github_list_repos`, `github_read_file`, and `github_issues` as it needs them.
+
+```
+Read src/pricing.ts in my api repo and explain the floor
+```
+  </Step>
+</Steps>
+
+## Recommended models
+
+| Model | Why |
+| --- | --- |
+| `gpt-oss:20b` | The default. Reliable at picking tools and reading their results |
+
+Long files still have to fit the model's 8K context. Ask for one file or one function at a time.
+
+## When it fails
+
+| Symptom | Fix |
+| --- | --- |
+| A private repo is missing | If it belongs to an organization, the organization has to approve the Solrouter OAuth app. Check the organization's third-party application settings on GitHub. |
+| Connector shows disconnected | The token was revoked on GitHub. Connect again from the strip. |
+| Public repo works without connecting | Expected. `github_issues` and `github_read_file` can read public repositories without a token. |

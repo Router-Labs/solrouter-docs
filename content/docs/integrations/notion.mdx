@@ -1,0 +1,63 @@
+---
+title: "Notion"
+icon: BookOpen
+description: "Connect Notion in Agent mode at solrouter.com, then ask the agent to search pages and query databases. Connector calls are not sealed."
+status: live
+checked: "2026-09-13"
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+Connect Notion once, then ask the agent to find pages and read databases for you.
+
+| | |
+| --- | --- |
+| Where | [solrouter.com](https://solrouter.com), Agent mode |
+| Access | Read: search, pages, databases |
+| Tools | `notion_search`, `notion_get_page`, `notion_query_database` |
+| Sealed | No |
+
+<Callout type="warn" title="Not sealed">
+  Agent mode runs its tool loop on Solrouter's backend, outside the enclave. The backend reads your prompt and the Notion content the tools return, and the model node sees both while it writes the answer. Use sealed chat for anything you do not want the backend to read.
+</Callout>
+
+## Setup
+
+<Steps>
+  <Step>
+### Open Agent mode
+
+Sign in at [solrouter.com](https://solrouter.com) and switch the composer to Agent.
+  </Step>
+
+  <Step>
+### Connect Notion
+
+Pick Notion in the connector strip. Notion asks which pages to share with Solrouter. Only pages you pick there are reachable.
+  </Step>
+
+  <Step>
+### Ask
+
+The agent calls `notion_search`, `notion_get_page`, and `notion_query_database` as it needs them.
+
+```
+Find the Q3 roadmap database and list items marked blocked
+```
+  </Step>
+</Steps>
+
+## Recommended models
+
+| Model | Why |
+| --- | --- |
+| `gpt-oss:20b` | The default. Reliable at picking tools and reading their results |
+
+## When it fails
+
+| Symptom | Fix |
+| --- | --- |
+| The agent says it cannot find a page | Notion only exposes pages you shared during connect. Connect again and add the page. |
+| The agent reads a database as a page and gets nothing | Ask it to query the database. `notion_get_page` reads pages; `notion_query_database` lists database rows. |
+| Connector shows disconnected | The Notion token was revoked. Connect again from the strip. |
