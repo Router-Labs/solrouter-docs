@@ -18,11 +18,11 @@ Click a node to open its details. Drag to pan. Pinch to zoom.
 
 **In words**
 
-- Chat app (solrouter.com/chat): holds your session. Today it sends prompts to the backend in plaintext; sealing every web chat prompt is Soon. Agent mode and its Notion and GitHub connectors run on the backend.
+- Chat app (solrouter.com/chat): holds your session, an ephemeral X25519 key, and your sealed chat history in IndexedDB. Every normal message, signed in or guest, is sealed in the browser and sent to `/tee/process`, with no plaintext fallback. Agent mode and its Notion and GitHub connectors run on the backend and are not sealed.
 - `@solrouter/sdk`: holds your API key and encrypts by default. Sends the ciphertext bundle plus the API key, model id, and chat id in plaintext.
 - `@solrouter/mcp-server` (your machine): holds `SOLROUTER_API_KEY` and, optionally, `BRAVE_API_KEY`. Four tools use the sealed path for the model step. Search and market lookups go to third parties in plaintext.
 - REST and x402 clients: send whatever they build. `POST /api/v1/chat/completions` and `/tee/process` require `encryptedPrompt`; `/agent` accepts plaintext or `encryptedPrompt`.
-- Solrouter backend (behind api.solrouter.com): checks the key, bills, runs the x402 paywall, relays ciphertext to the enclave, and commits receipts with its deployer wallet. It holds no decryption key on the encrypted path.
+- Solrouter backend (behind api.solrouter.com): checks the key, meters each sealed call against a plan, free messages, or USDC balance, runs the x402 paywall, relays ciphertext to the enclave, and commits receipts with its deployer wallet. It holds no decryption key on the encrypted path.
 - Intel TDX enclave on Phala dStack: generates an X25519 sealing key and an ed25519 signing key at boot, decrypts with RescueCipher, requests TDX quotes from the tappd agent, runs a 5-tool allowlist for encrypted agent mode, and hosts SearXNG in the same enclave.
 - Nosana GPU node, one per model: runs the open-weight model in Ollama and sees the prompt and reply during inference. Solrouter does not control that hardware.
 - Solana: holds one Light Protocol compressed receipt per private inference, under program `ATMRatMtsKX4bHax7U4FRdhbE4mjU4NKpDZGqZqAhBKb`.

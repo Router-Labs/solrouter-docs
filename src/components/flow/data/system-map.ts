@@ -11,13 +11,13 @@ export const systemMapNodes: BoxNode[] = [
   boxNode('chat', 0, 0, {
     icon: 'MessageSquare',
     title: 'Chat app',
-    sub: 'Web chat, sealing Soon',
+    sub: 'Web chat, sealed in the browser',
     accent: true,
     detail: {
-      holds: 'Your ephemeral X25519 key and the plaintext prompt, in the browser tab.',
-      sees: 'Plaintext prompt and reply. Today the web chat sends the prompt in plaintext to the backend /nosana or /router route; sealing every prompt for /tee/process is Soon. Agent mode and attachments are not encrypted client-side.',
+      holds: 'Your ephemeral X25519 key, the plaintext prompt in the browser tab, and sealed chat history in IndexedDB. History does not sync across devices.',
+      sees: 'Plaintext prompt and reply on your device only. Every normal message, signed in or guest, is encrypted in the browser and sent to /tee/process, with no plaintext fallback. Agent mode is not sealed and sends the prompt to /agent in plaintext.',
       status: 'Live',
-      source: 'fe:src/components/chat/ChatArea.tsx:542-569,1114; fe:src/lib/r2Upload.ts:36-47',
+      source: 'fe:src/components/chat/ChatArea.tsx:721-812; fe:src/lib/sealedChat.ts; fe:src/lib/sealedHistory.ts',
       href: '/docs/use/chat-app',
     },
   }),
@@ -64,7 +64,7 @@ export const systemMapNodes: BoxNode[] = [
     title: 'Solrouter backend',
     sub: 'Blind relay, keys, billing',
     detail: {
-      holds: 'API keys, balances, the x402 paywall, and the deployer wallet that commits receipts. No decryption key.',
+      holds: 'API keys, plan allowances, balances, the guest limit, the x402 paywall, and the deployer wallet that commits receipts. No decryption key.',
       sees: 'Ciphertext, your API key or wallet address, model name, and usage. Never the plaintext.',
       status: 'Live',
       source: 'be:routes/tee.js:33-54,57-73,84-103; be:lib/x402Middleware.js:27-46',
@@ -136,7 +136,7 @@ export const systemMapNodes: BoxNode[] = [
 ];
 
 export const systemMapEdges: FlowEdge[] = [
-  flowEdge('chat', 'backend', 'plaintext today (sealing Soon)'),
+  flowEdge('chat', 'backend', 'ciphertext'),
   flowEdge('sdk', 'backend', 'ciphertext'),
   flowEdge('mcp', 'backend', 'ciphertext'),
   flowEdge('rest', 'backend', 'ciphertext'),

@@ -10,7 +10,7 @@ import { Callout } from 'fumadocs-ui/components/callout';
 
 [Attestation](/docs/how-it-works/attestation) proves the enclave is genuine. The **encryption proof** ties *your specific request* to that enclave. Inside the enclave, a key that exists nowhere else signs the hash of your exact ciphertext, and the receipt goes to Solana. The backend relays it and cannot change it without breaking the signature.
 
-Each sealed call through `POST /tee/process` (the route the SDK and the MCP server's chat tools use) writes one receipt. Each receipt is a **Light Protocol compressed account**: about 0.000005 SOL each, roughly 400 times cheaper than a normal Solana PDA. That cost gap is why a proof per message is viable.
+Each sealed call through `POST /tee/process` (the route the web chat, the SDK, and the MCP server's chat tools use) writes one receipt. Each receipt is a **Light Protocol compressed account**: about 0.000005 SOL each, roughly 400 times cheaper than a normal Solana PDA. That cost gap is why a proof per message is viable.
 
 ## What the record stores
 

@@ -51,7 +51,7 @@ This page defines each term in plain words first, then the technical name. Every
 ## G
 **GRD (Guided Reasoning Diagram).** A fixed plan for one kind of question. It tells BRAID which tools to run and in what order. Six exist: comparison, DeFi analysis, general research, market overview, token research, and wallet analysis. See [Agent endpoint and guided reasoning](/docs/how-it-works/agent-reasoning).
 
-**Guest mode.** Using the chat app without signing in. Guests get 5 free messages per day per network address. See [Chat app](/docs/use/chat-app).
+**Guest mode.** Using the chat app without signing in. Guest messages are sealed, and guests get 5 per day per network address. See [Chat app](/docs/use/chat-app).
 ## I
 **Intel DCAP.** Intel's free software for checking that a TDX quote came from real Intel hardware. A security researcher can run it against the quote Solrouter returns. See [Check a reply yourself](/docs/verify).
 
@@ -103,7 +103,7 @@ This page defines each term in plain words first, then the technical name. Every
 
 **$ROUTER.** Solrouter's own token on Solana. You can pay for calls with it instead of USDC. Solrouter can buy it back and burn it with revenue; the configured ratios are not published. See [$ROUTER token](/docs/token).
 ## S
-**Sealed.** Encrypted on your device to the enclave's key (X25519 per request plus RescueCipher), opened only inside the Intel TDX enclave, and recorded with a receipt on Solana. The SDK and the MCP server's chat tools are sealed; Agent mode and its connectors are not. See [What is private here](/docs/use/what-is-private).
+**Sealed.** Encrypted on your device to the enclave's key (X25519 per request plus RescueCipher), opened only inside the Intel TDX enclave, and recorded with a receipt on Solana. The web chat, the SDK, and the MCP server's chat tools are sealed; Agent mode and its connectors are not. See [What is private here](/docs/use/what-is-private).
 
 **SERV.** The older name for the guided reasoning feature now called BRAID. It is not the "OpenServ" line in the token allocation table, which names a token drop to that community. See [Agent endpoint and guided reasoning](/docs/how-it-works/agent-reasoning).
 

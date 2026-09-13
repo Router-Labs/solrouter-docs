@@ -11,7 +11,7 @@ import { Callout } from 'fumadocs-ui/components/callout';
 import { TypicalVsSolrouter } from '@/components/diagrams/typical-vs-solrouter';
 import { Plug, CircleDollarSign, Layers, ShieldCheck } from 'lucide-react';
 
-Solrouter is private AI chat. On the sealed path your prompt is encrypted on your device, relayed as ciphertext by Solrouter's backend, and opened only inside an Intel TDX enclave on Phala. Each sealed call writes a receipt to Solana. Use it in Claude Code, Cursor, Claude Desktop, or your own app.
+Solrouter is private AI chat. On the sealed path your prompt is encrypted on your device, relayed as ciphertext by Solrouter's backend, and opened only inside an Intel TDX enclave on Phala. Each sealed call writes a receipt to Solana. Use it in the web chat at solrouter.com, Claude Code, Cursor, Claude Desktop, or your own app.
 
 <TypicalVsSolrouter />
 
@@ -27,8 +27,8 @@ Solrouter is private AI chat. On the sealed path your prompt is encrypted on you
 | --- | --- |
 | TypeScript SDK, `client.chat()` | Yes |
 | MCP server, `encrypted_chat` and the model step of the research tools | Yes |
-| Web chat at solrouter.com | Soon |
-| Agent mode and its Notion and GitHub connectors | No |
+| Web chat at solrouter.com, signed in or guest | Yes |
+| Agent mode in the web chat, and its Notion and GitHub connectors | No |
 | MCP web search and market lookups, `agent_run` | No |
 
 Sealed means X25519 key agreement per request plus Arcium RescueCipher on your device, decryption only inside the enclave, and a Light Protocol compressed attestation on Solana under program `ATMRatMtsKX4bHax7U4FRdhbE4mjU4NKpDZGqZqAhBKb`. The full breakdown is on [What is private here](/docs/use/what-is-private).

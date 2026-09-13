@@ -1,14 +1,12 @@
 ---
 title: "Chat app"
 icon: MessageSquare
-description: "Solrouter chat at solrouter.com: sign in with email or a Solana wallet, pick one of three open-weight models, and connect Notion or GitHub in Agent mode."
-status: mixed
+description: "Solrouter chat at solrouter.com: every normal message is sealed in your browser, history stays on your device, and Agent mode with Notion or GitHub is available unsealed."
+status: live
 checked: "2026-09-13"
-statusNote: "Sealing every web chat prompt is Soon. Today the web app sends chat prompts to Solrouter's backend in readable form. The SDK and the MCP server's chat tools are sealed today"
 ---
 
 import { Cards, Card } from 'fumadocs-ui/components/card';
-import { Callout } from 'fumadocs-ui/components/callout';
 import { Step, Steps } from 'fumadocs-ui/components/steps';
 import { Bot, Paperclip, Database, Plug } from 'lucide-react';
 
@@ -22,13 +20,13 @@ Solrouter chat at [solrouter.com/chat](https://solrouter.com/chat) is a chat app
 
 Open [solrouter.com/chat](https://solrouter.com/chat) and sign in with an email address or a Solana wallet. There is no KYC. If you sign in with email and have no wallet, one is made for you.
 
-Not signed in? Guests get 5 messages a day.
+Not signed in? Guests get 5 sealed messages a day.
   </Step>
 
   <Step>
 ### Use your free messages
 
-Every signed-in account gets 5 free messages.
+Every signed-in account gets 5 free messages. A message uses a call from your plan first, then a free message, then \$0.02 of USDC balance.
   </Step>
 
   <Step>
@@ -56,16 +54,31 @@ Each has 8K tokens of context and up to 4K tokens of output. See [Models](/docs/
 
 ## What is sealed in the app
 
-<Callout type="warn" title="Web chat sealing: Soon">
-  Sealing every web chat prompt on your device is Soon. Today the web app sends chat prompts to Solrouter's backend in readable form, and the backend passes them to the model node. If you need a sealed prompt now, use the [TypeScript SDK](/docs/integrations/typescript-sdk) or the MCP server's `encrypted_chat` in [Claude Code](/docs/integrations/claude-code), [Cursor](/docs/integrations/cursor), or [Claude Desktop](/docs/integrations/claude-desktop).
-</Callout>
+Every normal chat message is sealed, whether you are signed in or a guest. The browser encrypts the prompt to the enclave's key and sends it to `POST /tee/process`. Solrouter's backend relays ciphertext and cannot read it. There is no plaintext fallback: if sealing fails, the app shows an error and sends nothing.
+
+The enclave calls the model on a Nosana GPU node, and that node sees the prompt and the reply in plaintext while it runs the model. Solrouter does not control that hardware.
 
 | Feature | Sealed |
 | --- | --- |
-| Chat prompts and replies | Soon |
-| Agent mode, including the Notion and GitHub connectors | No. The tool loop runs on the backend |
-| File attachments | No |
-| Knowledge base (RAG) | No. Stored chunks are plain text |
+| Chat prompts and replies, signed in or guest | Yes |
+| Plain-text file attachments | Yes. The text rides inside the sealed prompt |
+| Recent turns and remembered facts sent as context | Yes. They ride inside the sealed prompt |
+| Agent mode, including the Notion and GitHub connectors | No. Badged "Not sealed". The tool loop runs on the backend |
+
+Each sealed reply carries a lock link to its Solana receipt. See [Check a reply yourself](/docs/verify).
+
+### History stays in your browser
+
+Sealed chat history is stored in your browser's IndexedDB, not on Solrouter's servers. It does not sync across devices, and clearing site data erases it. The server keeps only the chat row: the title "New Chat", the model, and timestamps. The real title and every message stay on your device. Agent mode messages are still stored on the server.
+
+### Not available in sealed chat
+
+The enclave receives one sealed prompt and nothing else, so features that need the backend to read your words are off:
+
+- Live web search and the knowledge base (RAG)
+- `/tools` and connectors. Switch to Agent mode for these, which is not sealed
+- Automatic memory capture. Saying "remember that ..." still works, and the fact is encrypted with your wallet key
+- Image and document attachments. They are refused before upload. Paste the text or attach a plain-text file instead
 
 For who can read what, see [What is private here](/docs/use/what-is-private).
 
@@ -76,13 +89,13 @@ For who can read what, see [What is private here](/docs/use/what-is-private).
     Switch the composer to Agent and the model can search the web, read Solana data, and call tools. Not sealed.
   </Card>
   <Card title="Connectors" icon={<Plug />} href="/docs/integrations">
-    Connect Notion or GitHub in Agent mode. The tools only read.
+    Connect Notion or GitHub in Agent mode. The tools only read. Not sealed.
   </Card>
-  <Card title="File attachments" icon={<Paperclip />}>
-    Send images and documents with your question. Attachments are not sealed.
+  <Card title="Text files" icon={<Paperclip />}>
+    Attach plain-text files to a sealed message. Images and documents are refused in sealed chat.
   </Card>
-  <Card title="Knowledge base" icon={<Database />}>
-    Upload files and ask questions grounded in them. Stored chunks are not encrypted at rest.
+  <Card title="Local history" icon={<Database />}>
+    Sealed chats are kept in your browser. They survive a reload but do not sync to other devices.
   </Card>
 </Cards>
 
