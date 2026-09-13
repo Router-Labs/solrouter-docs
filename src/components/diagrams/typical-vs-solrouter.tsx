@@ -83,7 +83,7 @@ export function TypicalVsSolrouter() {
         <Stage icon={EyeOff} label="Solrouter backend" />
         <Hop label="ciphertext" safe />
         <Stage icon={KeyRound} label="TDX enclave" tone="accent" />
-        <Hop label="plaintext / TLS" safe={false} />
+        <Hop label="TLS" safe />
         <Stage icon={Zap} label="Nosana GPU" />
       </Lane>
       <figcaption className="text-center text-xs text-fd-muted-foreground">
