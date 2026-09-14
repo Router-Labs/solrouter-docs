@@ -33,7 +33,8 @@ Sealed means the prompt is encrypted on your machine with a fresh X25519 key agr
 | MCP server, the lookups those research tools make (Brave, DexScreener, CoinGecko, Solana RPC) | No. They go from your machine to those services in plaintext | Live |
 | MCP server, `agent_run` | No. The prompt goes to Solrouter's backend in plaintext | Live |
 | Web chat at solrouter.com, signed in or guest | Yes. No plaintext fallback | Live |
-| Agent mode, including the Notion and GitHub connectors | No. Badged "Not sealed". The tool loop runs on Solrouter's backend | Live |
+| Agent mode (default) | Yes. The agent and its tools run inside the enclave: web search, token price and security, trending tokens, swap quotes, wallet balances. Each call writes a Solana receipt | Live |
+| Agent mode with Extended tools (Notion and GitHub connectors, scraping) | No. Badged "Not sealed". The tool loop runs on Solrouter's backend | Live |
 | SDK with `encrypted: false` or `reasoning: 'braid'` | No | Live |
 
 Nothing on this page says "all requests are encrypted", because they are not. Check the row for the surface you use.

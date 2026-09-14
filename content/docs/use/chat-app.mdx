@@ -64,7 +64,8 @@ The enclave calls the model on a Nosana GPU node, and that node sees the prompt 
 | Chat prompts and replies, signed in or guest | Yes |
 | Plain-text file attachments | Yes. The text rides inside the sealed prompt |
 | Recent turns and remembered facts sent as context | Yes. They ride inside the sealed prompt |
-| Agent mode, including the Notion and GitHub connectors | No. Badged "Not sealed". The tool loop runs on the backend |
+| Agent mode (default) | Yes. The agent runs inside the enclave with web search, token price and security, trending tokens, swap quotes and wallet balances |
+| Agent mode with Extended tools (Notion and GitHub connectors, scraping) | No. Badged "Not sealed". The tool loop runs on the backend |
 
 Each sealed reply carries a lock link to its Solana receipt. See [Check a reply yourself](/docs/verify).
 
@@ -83,7 +84,7 @@ Sharing your screen or chatting in public? Turn on **Privacy screen** next to th
 The enclave receives one sealed prompt and nothing else, so features that need the backend to read your words are off:
 
 - Live web search and the knowledge base (RAG)
-- `/tools` and connectors. Switch to Agent mode for these, which is not sealed
+- Connectors and scraping. Turn on Extended tools in Agent mode for these, which is not sealed
 - Automatic memory capture. Saying "remember that ..." still works, and the fact is encrypted with your wallet key
 - Image and document attachments. They are refused before upload. Paste the text or attach a plain-text file instead
 
@@ -96,7 +97,7 @@ For who can read what, see [What is private here](/docs/use/what-is-private).
     Switch the composer to Agent and the model can search the web, read Solana data, and call tools. Not sealed.
   </Card>
   <Card title="Connectors" icon={<Plug />} href="/docs/integrations">
-    Connect Notion or GitHub in Agent mode. The tools only read. Not sealed.
+    Turn on Extended tools in Agent mode, then connect Notion or GitHub. The tools only read. Not sealed.
   </Card>
   <Card title="Text files" icon={<Paperclip />}>
     Attach plain-text files to a sealed message. Images and documents are refused in sealed chat.

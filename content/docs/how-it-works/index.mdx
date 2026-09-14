@@ -18,7 +18,7 @@ Click a node to open its details. Drag to pan. Pinch to zoom.
 
 **In words**
 
-- Chat app (solrouter.com/chat): holds your session, an ephemeral X25519 key, and your sealed chat history in IndexedDB. Every normal message, signed in or guest, is sealed in the browser and sent to `/tee/process`, with no plaintext fallback. Agent mode and its Notion and GitHub connectors run on the backend and are not sealed.
+- Chat app (solrouter.com/chat): holds your session, an ephemeral X25519 key, and your sealed chat history in IndexedDB. Every normal message, signed in or guest, is sealed in the browser and sent to `/tee/process`, with no plaintext fallback. Agent mode is sealed too: the agent runs inside the enclave with a privacy-safe tool set (web search, token prices and security, trending tokens, swap quotes, wallet balances). Only the Extended tools switch, which enables the Notion and GitHub connectors and scraping, runs on the backend and is not sealed.
 - `@solrouter/sdk`: holds your API key and encrypts by default. Sends the ciphertext bundle plus the API key, model id, and chat id in plaintext.
 - `@solrouter/mcp-server` (your machine): holds `SOLROUTER_API_KEY` and, optionally, `BRAVE_API_KEY`. Four tools use the sealed path for the model step. Search and market lookups go to third parties in plaintext.
 - REST and x402 clients: send whatever they build. `POST /api/v1/chat/completions` and `/tee/process` require `encryptedPrompt`; `/agent` accepts plaintext or `encryptedPrompt`.

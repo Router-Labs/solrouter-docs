@@ -32,7 +32,7 @@ POST https://api.solrouter.com/agent
 | `chatId` | string | Optional conversation id. When present, the backend stores the turn in that chat's history and sends prior turns as context. When absent, the call is stateless. |
 | `reasoning` | string | Set `'braid'` to run guided reasoning instead of the tool loop. |
 | `braidOptions` | object | BRAID only. `includeTrace: true` adds `braidTrace` to the response. `forceGrdId` picks a GRD by id instead of intent detection. |
-| `encryptedPrompt` | string (JSON) | Encrypted mode. The prompt is encrypted client-side to the enclave public key and packaged as a JSON string with `ciphertext`, `nonce`, `publicKey`, `algorithm`, and `version`. The backend forwards it to the CVM without reading it. Status: Live for REST callers who send `encryptedPrompt`. Soon for the SDK. Not used by the chat app, whose agent mode runs the plaintext tool loop. |
+| `encryptedPrompt` | string (JSON) | Encrypted mode. The prompt is encrypted client-side to the enclave public key and packaged as a JSON string with `ciphertext`, `nonce`, `publicKey`, `algorithm`, and `version`. The backend forwards it to the CVM without reading it. Status: Live for REST callers who send `encryptedPrompt` and for the chat app's Agent mode (the default; Extended tools uses the plaintext path). Soon for the SDK. Metered like `/tee/process`, and each call writes a Solana receipt. |
 
 ## Example request
 

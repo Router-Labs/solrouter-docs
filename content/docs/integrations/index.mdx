@@ -22,7 +22,7 @@ Solrouter reaches your tools three ways: anything that speaks MCP, your own code
 | [GitHub](/docs/integrations/github) | Code | Agent mode connector | No |
 
 <Callout title="What sealed means">
-  Sealed means the prompt is encrypted on your machine to the enclave's key (X25519 per request plus Arcium RescueCipher) and opened only inside the Intel TDX enclave on Phala. Each sealed call writes a compressed receipt to Solana. The Notion and GitHub connectors run in Agent mode on Solrouter's backend, outside the enclave. The MCP server's web and market lookups go from your machine to those services in plaintext. See [What is private here](/docs/use/what-is-private).
+  Sealed means the prompt is encrypted on your machine to the enclave's key (X25519 per request plus Arcium RescueCipher) and opened only inside the Intel TDX enclave on Phala. Each sealed call writes a compressed receipt to Solana. The Notion and GitHub connectors need Agent mode's Extended tools switch, which runs on Solrouter's backend, outside the enclave. The MCP server's web and market lookups go from your machine to those services in plaintext. See [What is private here](/docs/use/what-is-private).
 </Callout>
 
 ## Before you start
