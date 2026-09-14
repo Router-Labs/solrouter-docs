@@ -19,7 +19,7 @@ import { Callout } from 'fumadocs-ui/components/callout';
 | Guided reasoning (BRAID) | `reasoning: 'braid'` | Backend | One synthesis call |
 | Encrypted agent mode | `encryptedPrompt` | Inside the enclave | Loop inside the enclave |
 
-The encrypted path is Live for REST callers who send `encryptedPrompt`, and Soon for the SDK. The chat app's agent mode runs the plaintext tool loop.
+The encrypted path is Live for REST callers who send `encryptedPrompt` and for the chat app's Agent mode by default, and Soon for the SDK. Inside the enclave the agent picks one of 40 decision graphs written offline and runs only that graph's tools. The chat app's Extended tools switch runs the plaintext tool loop instead.
 
 ## The tool loop
 

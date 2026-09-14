@@ -1,0 +1,15 @@
+{
+  "title": "Integrations",
+  "icon": "Plug",
+  "pages": [
+    "---MCP clients---",
+    "claude-code",
+    "cursor",
+    "claude-desktop",
+    "---Your code---",
+    "typescript-sdk",
+    "---Agent mode connectors---",
+    "notion",
+    "github"
+  ]
+}

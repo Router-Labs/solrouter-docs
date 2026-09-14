@@ -1,0 +1,76 @@
+---
+title: "Claude Code"
+icon: Terminal
+description: "One command adds Solrouter's MCP server to Claude Code: sealed private chat plus research tools, with your API key in SOLROUTER_API_KEY."
+status: live
+checked: "2026-09-13"
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+Give Claude Code a second model it can hand private work to. Anything sent through `encrypted_chat` is sealed on your machine and opened only inside the Intel TDX enclave.
+
+| Item | Value |
+| --- | --- |
+| Package | `@solrouter/mcp-server` (1.2.0) |
+| Env | `SOLROUTER_API_KEY` |
+| Needs | Node.js 18 or newer, for `npx` |
+| Sealed | Yes, for `encrypted_chat` and the model step of the research tools |
+
+## Setup
+
+<Steps>
+  <Step>
+### Add the server
+
+Run this once in your terminal, with your own key:
+
+```bash
+claude mcp add solrouter -e SOLROUTER_API_KEY=sk_solrouter_... -- npx -y @solrouter/mcp-server
+```
+
+Run `claude mcp list` to confirm it is registered.
+  </Step>
+
+  <Step>
+### Use it
+
+Start Claude Code and ask it to use the tool by name for anything you do not want leaving your machine in plaintext:
+
+```
+> use solrouter encrypted_chat to review this diff
+```
+  </Step>
+</Steps>
+
+## Recommended models
+
+| Model | Why |
+| --- | --- |
+| `gpt-oss-20b` | The default for `encrypted_chat`. General questions and summaries |
+| `nosana:qwen3-coder:30b` | Code review and refactors. Ask Claude Code to pass it as `model` |
+
+Each call is capped at 8K tokens of context and 4K of output, so send a diff or a file, not a whole repository. See [Models](/docs/how-it-works/models).
+
+## What is sealed
+
+- **Sealed:** `encrypted_chat`, and the final model step of `private_research`, `private_token_analysis`, and `private_wallet_audit`.
+- **Not sealed:** the lookups those research tools make. Search text goes to Brave, token symbols to DexScreener and CoinGecko, and wallet addresses to the Solana RPC, straight from your machine. `agent_run` sends your prompt to Solrouter's backend in plaintext.
+
+The full tool list is on [MCP server](/docs/build/mcp-server).
+
+## When it fails
+
+| Symptom | Fix |
+| --- | --- |
+| No Solrouter tools in the tool list | The server is read when Claude Code starts. Quit it and start it again. Check `claude mcp list`. |
+| `SOLROUTER_API_KEY is not set` | The key was not passed. Remove the server with `claude mcp remove solrouter` and add it again with `-e`. |
+| 401 unauthorized | The key is mistyped or deleted. Keys start with `sk_solrouter_`. |
+| 402 insufficient funds | Your plan calls are used up and the USDC balance is below \$0.02. Pick a plan or add USDC. See [Pricing](/docs/use/pricing). |
+| `BRAVE_API_KEY not configured` | `private_research` and `private_token_analysis` need a Brave Search key. Add `-e BRAVE_API_KEY=...`, or use `encrypted_chat`. |
+| "Nosana GPU node is warming up" | The model's node was idle. Wait a moment and ask again. |
+
+<Callout>
+  Keep the key out of shared shell history and dotfiles in git. Anyone with it can spend your plan.
+</Callout>

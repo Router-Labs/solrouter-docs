@@ -1,0 +1,70 @@
+---
+title: "TypeScript SDK"
+icon: Code
+description: "Install @solrouter/sdk and call client.chat(). The prompt is sealed inside chat() before the request leaves your process."
+status: live
+checked: "2026-09-13"
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+An encrypted-by-default client for your own app or agent. `client.chat()` seals the prompt to the enclave's key before it sends anything, and opens the sealed reply for you.
+
+| Item | Value |
+| --- | --- |
+| Package | `@solrouter/sdk` |
+| Model | `gpt-oss-20b` (default) |
+| Needs | Node.js 18 or newer |
+| Sealed | Yes, for `client.chat()` with the default `encrypted: true` |
+
+## Setup
+
+<Steps>
+  <Step>
+### Install
+
+```bash
+npm install @solrouter/sdk
+```
+  </Step>
+
+  <Step>
+### Send a sealed prompt
+
+Encryption happens inside `chat()` before the request is sent.
+
+```typescript
+import { SolRouter } from '@solrouter/sdk';
+
+const client = new SolRouter({ apiKey: process.env.SOLROUTER_API_KEY });
+const res = await client.chat('Summarise this contract', { model: 'gpt-oss-20b' });
+console.log(res.message);
+```
+  </Step>
+</Steps>
+
+## Recommended models
+
+| Model | Why |
+| --- | --- |
+| `gpt-oss-20b` | The default and the only live id in the SDK's type |
+
+The other two models are reachable by passing the backend id with a cast, for example `model: 'nosana:qwen3-coder:30b' as any`. See [Models](/docs/how-it-works/models).
+
+## What is sealed
+
+- **Sealed:** `client.chat(prompt)` and `client.chat(prompt, { encrypted: true })`.
+- **Not sealed:** `client.chat(prompt, { encrypted: false })` and `client.chat(prompt, { reasoning: 'braid' })`. Both send the prompt to Solrouter's backend in plaintext.
+- Metadata you pass, such as `chatId` or `systemPrompt`, reaches the backend in plaintext on every path.
+
+Every option is on [Privacy SDK](/docs/build/privacy-sdk).
+
+## When it fails
+
+| Symptom | Fix |
+| --- | --- |
+| `apiKey is required` or `invalid apiKey format` | Pass a key that starts with `sk_solrouter_`. Create one on the [keys page](https://solrouter.com/sdk). |
+| 401 unauthorized | The key was deleted or mistyped. |
+| 402 insufficient funds | Your plan calls are used up and the USDC balance is below \$0.02. Pick a plan or add USDC. See [Pricing](/docs/use/pricing). |
+| Model not found | Use `gpt-oss-20b`. `qwen3-8b` is still in the SDK's type but that model is retired. |
+| "Nosana GPU node is warming up" | The model's node was idle. Wait a moment and retry. |

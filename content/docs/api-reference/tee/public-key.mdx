@@ -3,7 +3,7 @@ title: "GET /tee/public-key"
 icon: KeyRound
 description: "Fetch the enclave's X25519 public key for client-side encryption. The SDK fetches it once per process and caches it. Call it yourself only in a custom client."
 status: live
-checked: "2026-08-26"
+checked: "2026-09-13"
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout';
@@ -23,7 +23,7 @@ No authentication is required for this endpoint. The backend proxies the call to
 | Field | Type | Description |
 | --- | --- | --- |
 | publicKey | string | The enclave's current X25519 public key, base64 encoded. Use it as the recipient key for client-side encryption. |
-| publicKeySha256 | string | Hex sha256 of the raw 32-byte public key. `GET /tee/attestation` pins this same digest in the quote's `report_data`. |
+| publicKeySha256 | string | Hex sha256 of the raw 32-byte public key. `GET /tee/attestation` returns this digest as `reportDataHex` and binds it into the quote's `report_data` as `sha512("app-data:" || digest)`. |
 | algorithm | string | Always `x25519` (lower case). |
 | teeType | string | Always `INTEL-TDX-PHALA`. |
 

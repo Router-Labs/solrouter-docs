@@ -1,0 +1,72 @@
+---
+title: "Claude Desktop"
+icon: MessageSquare
+description: "Add Solrouter's MCP server to claude_desktop_config.json for sealed private chat and research tools inside Claude Desktop."
+status: live
+checked: "2026-09-13"
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+The same MCP server as Claude Code and Cursor, added to Claude Desktop's config file. Prompts sent through `encrypted_chat` are sealed on your machine and opened only inside the Intel TDX enclave.
+
+| Item | Value |
+| --- | --- |
+| File (macOS) | `~/Library/Application Support/Claude/claude_desktop_config.json` |
+| File (Windows) | `%APPDATA%\Claude\claude_desktop_config.json` |
+| Env | `SOLROUTER_API_KEY` |
+| Sealed | Yes, for `encrypted_chat` and the model step of the research tools |
+
+## Setup
+
+<Steps>
+  <Step>
+### Edit the config
+
+Merge this block into the file. If it already has `mcpServers`, add only the `solrouter` entry.
+
+```json
+{
+  "mcpServers": {
+    "solrouter": {
+      "command": "npx",
+      "args": ["-y", "@solrouter/mcp-server"],
+      "env": { "SOLROUTER_API_KEY": "sk_solrouter_..." }
+    }
+  }
+}
+```
+  </Step>
+
+  <Step>
+### Restart Claude Desktop
+
+Quit it fully, then open it again. The Solrouter tools appear in the tools menu.
+  </Step>
+</Steps>
+
+## Recommended models
+
+| Model | Why |
+| --- | --- |
+| `gpt-oss-20b` | The default for `encrypted_chat`. General questions and summaries |
+| `nosana:qwen3.8:27b` | Uncensored. Topics other models refuse |
+
+Each call is capped at 8K tokens of context and 4K of output. See [Models](/docs/how-it-works/models).
+
+## What is sealed
+
+- **Sealed:** `encrypted_chat`, and the final model step of the three research tools.
+- **Not sealed:** the web, market, and RPC lookups the research tools make from your machine, and `agent_run`.
+
+The full tool list is on [MCP server](/docs/build/mcp-server).
+
+## When it fails
+
+| Symptom | Fix |
+| --- | --- |
+| No Solrouter tools in the tool list | Claude Desktop reads the config at start. Quit it fully and open it again. Check the JSON is valid. |
+| `npx` not found | Install Node.js 18 or newer. On macOS, Claude Desktop may not see a Node installed only in your shell profile; set `command` to the full path from `which npx`. |
+| 401 unauthorized | The key is mistyped or deleted. Keys start with `sk_solrouter_`. |
+| 402 insufficient funds | Your plan calls are used up and the USDC balance is below \$0.02. Pick a plan or add USDC. See [Pricing](/docs/use/pricing). |
+| "Nosana GPU node is warming up" | The model's node was idle. Wait a moment and ask again. |

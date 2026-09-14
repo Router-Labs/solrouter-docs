@@ -3,7 +3,7 @@ title: "POST /agent"
 icon: Webhook
 description: "The /agent endpoint runs your prompt through a tool loop with web search, on-chain data, DEX quotes, and Solana tools. Optional guided reasoning (BRAID) and encrypted mode."
 status: live
-checked: "2026-08-26"
+checked: "2026-09-13"
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout';
@@ -27,12 +27,12 @@ POST https://api.solrouter.com/agent
 | Field | Type | Description |
 | --- | --- | --- |
 | `prompt` | string (required) | The question or task. Research, comparisons, on-chain analysis, swap quotes, or any task the built-in tools cover. |
-| `model` | string | The model that runs the loop and writes the reply. Models run on Nosana GPU nodes. `gpt-oss:20b` (default) is Live. `qwen3.8:27b` is Live. `gemma4:31b` is Soon. `qwen3:8b` is retired (Archived). A model with no configured Nosana endpoint returns 501 `nosana_not_configured`. |
+| `model` | string | The model that runs the loop and writes the reply. `gpt-oss:20b` (default), `qwen3.8:27b` (uncensored), or `qwen3-coder:30b` (coding). A model with no configured Nosana endpoint returns 501 `nosana_not_configured`. |
 | `useTools` | boolean | Defaults to `true`. When `true`, the model can call any built-in tool before it writes the reply. Set `false` to run one plain completion with no tools. This field does not select guided reasoning. |
 | `chatId` | string | Optional conversation id. When present, the backend stores the turn in that chat's history and sends prior turns as context. When absent, the call is stateless. |
 | `reasoning` | string | Set `'braid'` to run guided reasoning instead of the tool loop. |
 | `braidOptions` | object | BRAID only. `includeTrace: true` adds `braidTrace` to the response. `forceGrdId` picks a GRD by id instead of intent detection. |
-| `encryptedPrompt` | string (JSON) | Encrypted mode. The prompt is encrypted client-side to the enclave public key and packaged as a JSON string with `ciphertext`, `nonce`, `publicKey`, `algorithm`, and `version`. The backend forwards it to the CVM without reading it. Status: Live for REST callers who send `encryptedPrompt`. Soon for the SDK. Not used by the chat app, whose agent mode runs the plaintext tool loop. |
+| `encryptedPrompt` | string (JSON) | Encrypted mode. The prompt is encrypted client-side to the enclave public key and packaged as a JSON string with `ciphertext`, `nonce`, `publicKey`, `algorithm`, and `version`. The backend forwards it to the CVM without reading it. Status: Live for REST callers who send `encryptedPrompt` and for the chat app's Agent mode (the default; Extended tools uses the plaintext path). Soon for the SDK. Metered like `/tee/process`, and each call writes a Solana receipt. |
 
 ## Example request
 

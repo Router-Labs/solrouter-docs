@@ -8,6 +8,7 @@ checked: "2026-08-26"
 
 import { Callout } from 'fumadocs-ui/components/callout';
 import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import { SealedPrompt } from '@/components/diagrams/sealed-blur';
 
 When you send a prompt to an AI provider, you normally trust that provider to read it, store it, and not misuse it. Solrouter removes that trust requirement for its own backend. Your prompt is encrypted on your own device before it leaves, and Solrouter's backend never holds the key to read it.
 
@@ -24,6 +25,8 @@ The first line of defense is simple: encrypt before you transmit. The SDK encryp
 * **`RescueCipher`**: Arcium's field-element symmetric cipher. Arcium chose it for compatibility with MPC, FHE, and ZK computation, so the same encrypted payload can be processed under any of those paradigms as Arcium's network matures.
 * **`X25519` key exchange**: your SDK session generates an ephemeral (single-use, per-session) X25519 keypair. The SDK derives the shared secret from your ephemeral private key and the TEE public key. The SDK fetches that key from `GET /tee/public-key`. It does not fetch or verify the attestation quote. Verification is a manual step; see [Attestation](/docs/how-it-works/attestation).
 * **TEE-generated keypair**: the TEE's own X25519 keypair is generated inside the Confidential VM at boot time. The private key never leaves the enclave, not even to Solrouter's own infrastructure.
+
+<SealedPrompt />
 
 ### Inference isolation
 

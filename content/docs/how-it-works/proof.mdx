@@ -3,14 +3,14 @@ title: "On-chain proof"
 icon: Stamp
 description: "Each private inference writes a receipt to Solana, signed inside the enclave. This page explains what the receipt stores and why the backend cannot forge it."
 status: live
-checked: "2026-08-26"
+checked: "2026-09-13"
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout';
 
 [Attestation](/docs/how-it-works/attestation) proves the enclave is genuine. The **encryption proof** ties *your specific request* to that enclave. Inside the enclave, a key that exists nowhere else signs the hash of your exact ciphertext, and the receipt goes to Solana. The backend relays it and cannot change it without breaking the signature.
 
-Each receipt is a **Light Protocol compressed account**: about 0.000005 SOL each, roughly 400 times cheaper than a normal Solana PDA. That cost gap is why a proof per message is viable.
+Each sealed call through `POST /tee/process` (the route the web chat, the SDK, and the MCP server's chat tools use) writes one receipt. Each receipt is a **Light Protocol compressed account**: about 0.000005 SOL each, roughly 400 times cheaper than a normal Solana PDA. That cost gap is why a proof per message is viable.
 
 ## What the record stores
 
@@ -41,7 +41,7 @@ A `POST /tee/process` reply returns this record under `onchainAttestation` (`add
 
 ## Why a forged receipt is detectable
 
-The ed25519 signing key is generated inside the enclave at boot and never leaves it. The backend pays for the Solana transaction with its deployer wallet, so it could commit a record carrying any key and signature. The on-chain program stores those fields without checking them. The safeguard is the per-request TDX quote: its `report_data` equals `sha256(tee_pubkey ‖ enclave_pubkey)`, so `enclave_pubkey` is pinned to attested hardware. A verifier who checks that binding can tell a real enclave key from a forged one.
+The ed25519 signing key is generated inside the enclave at boot and never leaves it. The backend pays for the Solana transaction with its deployer wallet, so it could commit a record carrying any key and signature. The on-chain program stores those fields without checking them. The safeguard is the per-request TDX quote: its `report_data` equals `sha512("app-data:" ‖ sha256(tee_pubkey ‖ enclave_pubkey))`, so `enclave_pubkey` is pinned to attested hardware. A verifier who checks that binding can tell a real enclave key from a forged one.
 
 <Callout type="warn" title="What a passing check proves">
   A passing signature check proves the key in the record signed your exact ciphertext, and that the record is on-chain. The per-request quote check proves that key belongs to an attested TDX enclave. The deepest level, Intel's full DCAP chain on the raw quote, needs the live quote from `GET /tee/attestation`.

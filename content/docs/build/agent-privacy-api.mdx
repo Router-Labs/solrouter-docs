@@ -3,7 +3,7 @@ title: "Agent Privacy API"
 icon: ArrowRightLeft
 description: "The Agent Privacy API (/agents/v1) gives AI agents private token swaps on Solana in two modes, plus pay-per-call encrypted inference over x402."
 status: mixed
-checked: "2026-08-26"
+checked: "2026-09-13"
 statusNote: "Swap execution is Soon: no mainnet swap run is on record. Discovery, quote, and anonymity-set reads are Live."
 ---
 
@@ -24,6 +24,25 @@ When an agent moves tokens on Solana, the transaction graph shows who paid whom.
 | Mode B one-shot swaps | Soon |
 | `POST /api/v1/x402/chat/completions` | Live |
 | `@solrouter/agent-tools` npm package | Soon |
+
+## What each route costs
+
+Every priced route is charged on each call. That includes the per-wallet routes under `/agents/v1/wallets/:id`. With an API key, the price is debited from the account's USDC balance. Without a key, or when the balance is too low, the route answers `402 Payment Required` with an x402 challenge. A plan's calls do not cover these routes; they cover inference only.
+
+| Route | USDC per call |
+| --- | --- |
+| `GET /agents/v1/quote` | \$0.001 |
+| `POST /agents/v1/swaps/oneshot` | \$0.10 |
+| `POST /agents/v1/wallets` | \$0.05 |
+| `POST /agents/v1/wallets/:id/fund-intent` | \$0.001 |
+| `POST /agents/v1/wallets/:id/swap` | \$0.05 |
+| `POST /agents/v1/wallets/:id/encrypt` | \$0.02 |
+| `POST /agents/v1/wallets/:id/shield` | \$0.05 |
+| `POST /agents/v1/wallets/:id/withdraw` | \$0.05 |
+| `GET /agents/v1/wallets/:id/balance` | \$0.005 |
+| `POST /api/v1/x402/chat/completions` | \$0.02 |
+
+Routes not listed carry no per-call price: the anonymity set, one-shot `execute`, wallet `audit`, sessions, attestations, and the discovery documents.
 
 ## Execution modes
 
@@ -121,7 +140,7 @@ The manifest is served by the API host: `https://api.solrouter.com/.well-known/x
 Not every agent has an API key, and account creation is friction. For those cases Solrouter exposes a pay-per-call encrypted inference endpoint. Your agent pays in USDC on Solana mainnet, with no account and no key management. x402 is the standard. The live manifest advertises Coinbase (`api.cdp.coinbase.com/x402`) as the facilitator. The manifest shows `X402_FACILITATOR_URL` when set, or a built-in default when not. It does not show which facilitator settles payments. pay.sh is a catalog that lists the endpoint.
 
 * **Endpoint:** `POST /api/v1/x402/chat/completions`
-* **Pricing:** \$0.005 per call, settled via x402 USDC on Solana mainnet
+* **Pricing:** \$0.02 per call, settled via x402 USDC on Solana mainnet. A signed-in caller with an active plan spends one plan call instead
 * **Encryption:** Arcium-encrypted prompt in, encrypted response out. The same TEE path as the SDK.
 * **Discovery:** `/.well-known/x402`. Any x402-aware runtime can auto-discover pricing and payment instructions.
 
@@ -137,6 +156,6 @@ curl -X POST "https://api.solrouter.com/api/v1/x402/chat/completions" \
 
 Call the endpoint without payment and the server replies `402 Payment Required` with the price, the network, and the `payTo` address. An x402-aware runtime signs a USDC payment payload with the agent's wallet key and retries with the `X-PAYMENT` header. Solrouter's server sends that payload to its facilitator to verify and settle the transfer, then returns 200. The agent never talks to the facilitator.
 
-<Callout>The paywall charges \$0.005 per call. The response body currently reports `paid.amount: 0.02`. This is a backend follow-up; the manifest price is the one charged.</Callout>
+<Callout>Every x402 price comes from `ROUTE_PRICES` in the backend, the table that also feeds `/.well-known/x402`. The full list is on [Pricing](/docs/use/pricing#agents-without-an-account-x402).</Callout>
 
 <Callout>This endpoint returns the encrypted reply only. It does not commit an on-chain receipt. Receipts are created for `POST /tee/process`, the route the SDK uses. See [Encryption Proof](/docs/how-it-works/proof).</Callout>

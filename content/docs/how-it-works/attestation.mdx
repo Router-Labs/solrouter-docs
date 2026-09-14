@@ -3,7 +3,7 @@ title: "Attestation"
 icon: BadgeCheck
 description: "Fetch the Intel-signed TDX quote from the Solrouter enclave, check that it binds the key you encrypt to, and look up the on-chain receipt for each private inference."
 status: mixed
-checked: "2026-08-26"
+checked: "2026-09-13"
 statusNote: "The quote endpoints and on-chain receipts are live. Reference measurements to compare against are not published yet."
 ---
 
@@ -32,7 +32,7 @@ This returns the X25519 public key currently active inside the Confidential VM. 
 GET https://api.solrouter.com/tee/attestation
 ```
 
-This returns the Intel TDX attestation quote, the hardware-signed proof that ties everything together. The response includes `teePublicKey`, `teePublicKeySha256`, `reportDataHex`, and `tdxQuote`. Its `report_data` is `sha256(teePublicKey)`, which binds the public key you fetched above to the enclave that produced the quote. Verify the quote and you confirm two things:
+This returns the Intel TDX attestation quote, the hardware-signed proof that ties everything together. The response includes `teePublicKey`, `teePublicKeySha256`, `reportDataHex`, and `tdxQuote`. Its `reportDataHex` is `sha256(teePublicKey)`. Phala's guest agent writes `sha512("app-data:" || reportData)` into the quote's 64-byte `report_data` field, at byte 568 of a version 4 quote. That binds the public key you fetched above to the enclave that produced the quote. Verify the quote and you confirm two things:
 
 1. The host CPU is a genuine Intel TDX-capable processor.
 2. The public key was generated inside that specific enclave instance.
@@ -41,9 +41,9 @@ Confirming that the enclave runs the published Solrouter code needs reference me
 
 ### Two report_data formulas
 
-Solrouter produces two kinds of quote. They pin different data, so check the right formula for the quote you hold.
+Solrouter produces two kinds of quote. They pin different data, so check the right formula for the quote you hold. In both, the quote's `report_data` field holds `sha512("app-data:" || reportData)`.
 
-| Quote                                            | `report_data`                              |
+| Quote                                            | `reportData`                               |
 | ------------------------------------------------ | ------------------------------------------ |
 | `GET /tee/attestation`                           | `sha256(X25519 public key)`                |
 | `attestation.tdxQuote` in a `/tee/process` reply | `sha256(X25519 public key ‖ ed25519 public key)` |

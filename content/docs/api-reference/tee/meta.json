@@ -1,5 +1,5 @@
 {
   "title": "TEE",
   "icon": "Cpu",
-  "pages": ["public-key"]
+  "pages": ["public-key", "process"]
 }

@@ -1,0 +1,91 @@
+---
+title: "POST /tee/process"
+icon: Lock
+description: "Send one sealed prompt to the Intel TDX enclave. The route the web chat, the SDK, and the MCP server's encrypted_chat use. Each call costs one unit from a plan, free messages, or USDC balance."
+status: live
+checked: "2026-09-13"
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+This endpoint takes a prompt that your client already encrypted to the enclave's key, relays it to the Intel TDX enclave without reading it, and returns the enclave's encrypted reply. The enclave decrypts the prompt, calls the model on a Nosana GPU node, and seals the reply to your key. The Nosana node sees the prompt and the reply in plaintext while it runs the model. Solrouter does not control that hardware.
+
+The web chat at solrouter.com, `@solrouter/sdk`'s `client.chat()`, and the MCP server's `encrypted_chat` all call this route. Call it yourself only in a custom client.
+
+## Endpoint
+
+```
+POST https://api.solrouter.com/tee/process
+```
+
+## Authentication
+
+| Header | Who | Paid by |
+| --- | --- | --- |
+| `Authorization: Bearer sk_solrouter_...` | API key | Plan, then USDC balance |
+| `Authorization: Bearer <sign-in token>` | Web or mobile sign-in | Plan, then free messages, then USDC balance |
+| Partner key | First-party Solrouter products | Not metered |
+| No `Authorization` header | Guest | 5 calls a day per network address |
+
+A token that is present but invalid returns `401`. It is not downgraded to a guest call.
+
+## Request
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `encryptedPrompt` | string (required) | The sealed prompt: a JSON string with `ciphertext`, `nonce`, `publicKey`, and `version`, encrypted to the key from [`GET /tee/public-key`](/docs/api-reference/tee/public-key). |
+| `model` | string (required) | `nosana:gpt-oss:20b`, `nosana:qwen3.8:27b`, or `nosana:qwen3-coder:30b`. |
+| `chatId` | string | Optional. Logged by the backend in plaintext. Not forwarded to the enclave. |
+| `userPubkey` | string | Optional. A wallet address stored as a data field in the Solana receipt. Leave it out to keep your wallet off the receipt. |
+
+## Metering
+
+Every call costs one unit, whatever its length. The backend checks the request first, so a malformed request costs nothing. For a signed-in caller it then takes the first source that covers the call:
+
+1. A call from the plan or stake allowance. `usage.source` is `plan`.
+2. A free message, for web and mobile sign-ins only. `usage.source` is `free`.
+3. The USDC balance at \$0.02 a call. `usage.source` is `balance`.
+4. Nothing covers it: `402 insufficient_funds`.
+
+If the enclave call fails, the plan call, free message, or guest message goes back. The USDC balance is charged only after the enclave answers. Guest calls share one daily counter with the plaintext guest chat route. See [Pricing](/docs/use/pricing#how-a-sealed-call-is-paid).
+
+## Response
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `success` | boolean | `true` when the enclave answered. |
+| `encryptedResponse` | string | The reply, sealed to your ephemeral key. Only your client can open it. |
+| `requestId` | string | The enclave's id for this request. |
+| `attestation` | object | The enclave's per-request attestation, with its TDX quote or `tdxQuoteError`. |
+| `encryptionProof` | object | The enclave's signature over the hash of your ciphertext. |
+| `metadata` | object | Model and lengths. No prompt or reply text. |
+| `provider`, `model` | string | The provider and model id, split from the `model` you sent. |
+| `backendRole` | string | Always `BLIND_RELAY`. |
+| `onchainAttestation` | object or null | The Solana receipt: `type`, `address`, `encryptedPromptHash`, `signature`, `explorerUrl`, `alreadyExists`. `null` when the receipt could not be committed. The reply is still served. |
+| `privacyProof` | object | `backendSawPlaintext: false`, `decryptionLocation`, and `attestationVerifiable`. |
+| `usage` | object | `source` is `plan`, `free`, `balance`, `guest`, or `partner`. `calls_remaining` is present for `plan`, `free`, and `guest`. |
+
+Example `usage` values:
+
+```json
+{ "source": "plan", "calls_remaining": 1999 }
+{ "source": "free", "calls_remaining": 4 }
+{ "source": "balance" }
+{ "source": "guest", "calls_remaining": 3 }
+{ "source": "partner" }
+```
+
+## Errors
+
+| Status | `error` | Meaning |
+| --- | --- | --- |
+| `400` | `Missing encrypted prompt` or `Missing model` | A required field is missing. Nothing is charged. |
+| `401` | `unauthorized` | The `Authorization` header is present but invalid. Sign in again or check the key. |
+| `402` | `insufficient_funds` | No plan calls, free messages, or USDC balance left. Pick a plan or add USDC. |
+| `429` | `guest_limit` | A guest used all 5 calls for the day. Sign in to keep going. |
+| `502` | `tee_unreachable` | The backend could not reach the enclave. Nothing is charged. Retry. |
+| `503` | `billing_unavailable` | Billing could not be checked and nothing else covered the call. Retry shortly. |
+
+<Callout>
+  After an enclave restart its key changes. If a reply fails to decrypt or you get `tee_unreachable`, fetch the key again from `GET /tee/public-key` and retry. The SDK does this when you call `clearSession()`.
+</Callout>

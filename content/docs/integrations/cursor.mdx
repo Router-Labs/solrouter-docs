@@ -1,0 +1,73 @@
+---
+title: "Cursor"
+icon: MousePointer2
+description: "Add one block to ~/.cursor/mcp.json and Cursor's agent gets Solrouter's sealed private chat and research tools."
+status: live
+checked: "2026-09-13"
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+Drop one block into Cursor's MCP config and its agent gets a sealed second model. Prompts sent through `encrypted_chat` are sealed on your machine and opened only inside the Intel TDX enclave.
+
+| Item | Value |
+| --- | --- |
+| File | `~/.cursor/mcp.json` (all projects), or `.cursor/mcp.json` in one project |
+| Env | `SOLROUTER_API_KEY` |
+| Needs | Node.js 18 or newer, for `npx` |
+| Sealed | Yes, for `encrypted_chat` and the model step of the research tools |
+
+## Setup
+
+<Steps>
+  <Step>
+### Edit mcp.json
+
+Merge this into `~/.cursor/mcp.json`. If the file already has `mcpServers`, add only the `solrouter` entry.
+
+```json
+{
+  "mcpServers": {
+    "solrouter": {
+      "command": "npx",
+      "args": ["-y", "@solrouter/mcp-server"],
+      "env": { "SOLROUTER_API_KEY": "sk_solrouter_..." }
+    }
+  }
+}
+```
+  </Step>
+
+  <Step>
+### Restart Cursor
+
+The tools show up under MCP in Cursor's settings. Ask the agent to use `encrypted_chat` for anything private.
+  </Step>
+</Steps>
+
+## Recommended models
+
+| Model | Why |
+| --- | --- |
+| `gpt-oss-20b` | The default for `encrypted_chat` |
+| `nosana:qwen3-coder:30b` | Code review and refactors |
+
+Each call is capped at 8K tokens of context and 4K of output. See [Models](/docs/how-it-works/models).
+
+## What is sealed
+
+- **Sealed:** `encrypted_chat`, and the final model step of `private_research`, `private_token_analysis`, and `private_wallet_audit`.
+- **Not sealed:** the lookups those research tools make (Brave, DexScreener, CoinGecko, Solana RPC, straight from your machine), and `agent_run`, which sends your prompt to Solrouter's backend.
+
+The full tool list is on [MCP server](/docs/build/mcp-server).
+
+## When it fails
+
+| Symptom | Fix |
+| --- | --- |
+| No Solrouter tools in the tool list | Cursor reads MCP config at start. Quit it fully and open it again. Check the JSON is valid. |
+| `SOLROUTER_API_KEY is not set` | The `env` block is missing or misspelled. |
+| 401 unauthorized | The key is mistyped or deleted. Keys start with `sk_solrouter_`. |
+| 402 insufficient funds | Your plan calls are used up and the USDC balance is below \$0.02. Pick a plan or add USDC. See [Pricing](/docs/use/pricing). |
+| `BRAVE_API_KEY not configured` | The research tools need a Brave Search key in `env`. `encrypted_chat` does not. |
+| "Nosana GPU node is warming up" | The model's node was idle. Wait a moment and ask again. |
