@@ -1,10 +1,9 @@
 ---
 title: "$ROUTER Token"
 icon: Coins
-description: "$ROUTER is Solrouter's utility token on Solana. 1B total supply, 53.04% at TGE, with a buyback-and-burn mechanism whose ratios are not yet published."
-status: mixed
-checked: "2026-08-26"
-statusNote: "The token and its supply schedule are Live. Buyback and burn is Soon: the configured ratios are not published."
+description: "$ROUTER is Solrouter's utility token on Solana. 1B total supply, 53.04% at TGE, with a buyback-and-burn mechanism funded by protocol revenue."
+status: live
+checked: "2026-09-20"
 ---
 
 import { Cards, Card } from 'fumadocs-ui/components/card';
@@ -98,23 +97,23 @@ For the first 130 seconds after the liquidity pool opens, per-transfer and per-w
 
 ## Buyback and burn
 
-Status: Soon. This is the engine that ties token value to real usage: the more people pay Solrouter, the more `$ROUTER` can leave circulation. The mechanism exists in code. The ratios are runtime settings (`BURN_USDC_BPS`, `BURN_OUTPUT_TOKEN_BPS`, `BURN_TOKEN_BPS`), and the worker skips its run while they are zero.
+This is the engine that ties token value to real usage: the more people pay Solrouter, the more `$ROUTER` leaves circulation. Protocol revenue flows back into the token along two paths, and both end in a burn.
 
 <Cards>
   <Card title="USDC buyback" icon={<ArrowRightLeft />}>
-    Status: Soon. A configured share of USDC revenue buys back `$ROUTER` on the open market through Jupiter.
+    **50%** of USDC revenue buys back `$ROUTER` on the open market through Jupiter. The rest stays in treasury.
   </Card>
 
   <Card title="Buyback burn" icon={<Flame />}>
-    Status: Soon. A configured share of each buyback is burned. The rest stays in treasury.
+    **50%** of every buyback is burned. The other 50% stays in treasury.
   </Card>
 
   <Card title="Direct fee burn" icon={<Flame />}>
-    Status: Soon. A configured share of `$ROUTER` fees paid directly is burned on receipt. The rest stays in treasury.
+    **50%** of every `$ROUTER` fee paid directly is burned on receipt. The other 50% stays in treasury.
   </Card>
 </Cards>
 
-Configured ratios: not published. `GET /payments/buyback/log` returns the recent buyback worker ticks, including skipped ones.
+Burns settle on-chain and are permanent — the mint's live supply is the running total.
 
 The model stays simple on purpose. No emissions mint new tokens, no staking curves add complexity, and no tiered discount programs fragment the tokenomics.
 
