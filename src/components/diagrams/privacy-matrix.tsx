@@ -1,42 +1,6 @@
 import type { ReactNode } from 'react';
 
-/** Cell tokens. `pt` (readable) is the only one that means a party can read your words. */
-export type Cell = 'pt' | 'ct' | 'no' | 'ha' | 're' | 'me' | 'nd';
 
-const STYLE: Record<Cell, { label: string; cls: string }> = {
-  pt: { label: 'readable', cls: 'bg-fd-primary text-fd-primary-foreground border border-fd-primary' },
-  ct: { label: 'encrypted', cls: 'bg-fd-background text-fd-muted-foreground border border-fd-border' },
-  no: { label: 'nothing', cls: 'bg-fd-muted text-fd-muted-foreground border border-fd-border' },
-  ha: { label: 'hash only', cls: 'bg-fd-background text-fd-muted-foreground border border-fd-border' },
-  re: { label: 'at rest*', cls: 'bg-fd-background text-fd-foreground border border-fd-primary' },
-  me: { label: 'metadata', cls: 'bg-fd-muted text-fd-muted-foreground border border-fd-border' },
-  nd: { label: 'unknown', cls: 'text-fd-muted-foreground border border-dashed border-fd-border' },
-};
-
-const LEGEND: { token: Cell; text: string }[] = [
-  { token: 'pt', text: 'readable: this party can read your words' },
-  { token: 'ct', text: 'encrypted: sees only ciphertext, holds no key' },
-  { token: 'no', text: 'nothing: never reaches this party' },
-  { token: 'ha', text: 'hash only: a fingerprint, not your words' },
-  { token: 're', text: 'at rest: stored encrypted under a key Solrouter holds' },
-  { token: 'me', text: 'metadata: size or timing, not content' },
-];
-
-function Pill({ token }: { token: Cell }) {
-  const s = STYLE[token];
-  return (
-    <span className={`inline-block rounded-md px-2 py-0.5 text-xs font-medium whitespace-nowrap ${s.cls}`}>
-      {s.label}
-    </span>
-  );
-}
-
-export type MatrixRow = { what: ReactNode; cells: Cell[] };
-
-/**
- * Threat-model matrix. Each row is a kind of data; each column is a party;
- * each cell says what that party can see. Amber cells are the only exposure.
- */
 export function PrivacyMatrix({
   parties,
   rows,

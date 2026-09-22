@@ -10,29 +10,7 @@ const DEFAULT_PROMPT = 'review this contract before friday';
 const CIPHER = '9f3a0c71e2b84d5a6c1f07be93d24a88c4e17b0d5e2a';
 const GLYPHS = '0123456789abcdef';
 
-/** Animates 0 → 1 while `open`, back to 0 when not. */
-function useOpenProgress(open: boolean) {
-  const [p, setP] = useState(0);
-  useEffect(() => {
-    let raf = 0;
-    let last = performance.now();
-    const target = open ? 1 : 0;
-    const step = (now: number) => {
-      const dt = (now - last) / 650;
-      last = now;
-      setP((x) => {
-        const next = target > x ? Math.min(target, x + dt) : Math.max(target, x - dt * 1.4);
-        if (next !== target) raf = requestAnimationFrame(step);
-        return next;
-      });
-    };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, [open]);
-  return p;
-}
 
-/** Touch screens have no hover, so demos loop on their own there. */
 function useTouchLoop(ms = 2600) {
   const [on, setOn] = useState(false);
   useEffect(() => {
@@ -60,47 +38,7 @@ function SealedLine({ text, p }: { text: string; p: number }) {
   );
 }
 
-/** One prompt: blurred ciphertext that opens on hover into what the enclave reads. */
-export function SealedPrompt({ prompt = DEFAULT_PROMPT }: { prompt?: string }) {
-  const [hover, setHover] = useState(false);
-  const loop = useTouchLoop();
-  const p = useOpenProgress(hover || loop);
-  const opened = p > 0.5;
-  return (
-    <figure
-      className="not-prose my-6 rounded-2xl border border-fd-border bg-fd-card/40 p-5 outline-none"
-      tabIndex={0}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      onFocus={() => setHover(true)}
-      onBlur={() => setHover(false)}
-      aria-label={`A sealed prompt. Hover to see what the enclave reads: "${prompt}".`}
-    >
-      <div className="mb-3 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-fd-muted-foreground">
-        <span className="inline-flex items-center gap-1.5">
-          {opened ? <KeyRound className="h-3.5 w-3.5" aria-hidden /> : <Lock className="h-3.5 w-3.5" aria-hidden />}
-          {opened ? 'What the enclave reads' : 'What leaves your machine'}
-        </span>
-        <span className="hidden sm:inline" style={{ opacity: 1 - p }}>
-          Hover to open
-        </span>
-      </div>
-      <div
-        className={`overflow-hidden whitespace-nowrap rounded-xl border px-4 py-3 transition-colors ${
-          opened ? 'border-fd-foreground/30 bg-fd-background' : 'border-fd-border bg-fd-muted/60'
-        }`}
-      >
-        <SealedLine text={prompt} p={p} />
-      </div>
-      <figcaption className="mt-3 flex justify-between font-mono text-xs text-fd-muted-foreground">
-        <span>{opened ? 'opened in Intel TDX' : 'sealed · fresh X25519 key per request'}</span>
-        <span>RescueCipher</span>
-      </figcaption>
-    </figure>
-  );
-}
 
-/** The same prompt as three parties see it. Only the enclave column opens. */
 export function WhoSeesWhat({ prompt = 'review my NDA' }: { prompt?: string }) {
   const [hover, setHover] = useState(false);
   const loop = useTouchLoop();

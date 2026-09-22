@@ -71,46 +71,7 @@ function concatBytes(...arrs: Uint8Array[]): Uint8Array {
   return out;
 }
 
-/** Accepts a 64-char hash, a Light address, a commit-tx signature, or an explorer URL to any. */
-function parseInput(
-  raw: string,
-): { kind: 'hash' | 'address' | 'tx'; value: string } | null {
-  const s = raw.trim();
-  if (!s) return null;
-  if (/^[0-9a-fA-F]{64}$/.test(s)) return { kind: 'hash', value: s.toLowerCase() };
 
-  // Explorer / Solscan URL → take the last path segment, and note /tx/ vs /account/.
-  let candidate = s;
-  let isTx = false;
-  let isAddr = false;
-  if (s.includes('/')) {
-    try {
-      const url = new URL(s.includes('://') ? s : `https://x/${s}`);
-      const segs = url.pathname.split('/').filter(Boolean);
-      candidate = segs[segs.length - 1] ?? '';
-      if (segs.includes('tx')) isTx = true;
-      if (segs.includes('account') || segs.includes('address')) isAddr = true;
-    } catch {
-      const segs = s.split(/[/?#]/).filter(Boolean);
-      candidate = segs[segs.length - 1] ?? s;
-    }
-  }
-  candidate = candidate.split(/[?#]/)[0];
-
-  if (/^[0-9a-fA-F]{64}$/.test(candidate))
-    return { kind: 'hash', value: candidate.toLowerCase() };
-  // A tx signature is ~64–88 base58 chars; an account address is ~32–44.
-  if (
-    (isTx && /^[1-9A-HJ-NP-Za-km-z]{43,100}$/.test(candidate)) ||
-    (!isAddr && /^[1-9A-HJ-NP-Za-km-z]{45,100}$/.test(candidate))
-  )
-    return { kind: 'tx', value: candidate };
-  if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(candidate))
-    return { kind: 'address', value: candidate };
-  return null;
-}
-
-/** Rebuild the signed tuple and check the enclave's ed25519 signature in-browser. */
 async function verifyEnclaveSignature(d: Attestation): Promise<boolean> {
   const message = concatBytes(
     utf8(DOMAIN_TAG),
