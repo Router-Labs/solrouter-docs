@@ -1,4 +1,4 @@
-import { getPageImage, getPageMarkdownUrl, source } from '@/lib/source';
+import { getPageMarkdownUrl, source } from '@/lib/source';
 import { statusSentence } from '@/lib/status';
 import {
   DocsBody,
@@ -63,8 +63,10 @@ export async function generateMetadata(props: PageProps<'/docs/[[...slug]]'>): P
   return {
     title: page.data.title,
     description: page.data.description,
+    // Same social card as solrouter.com — link previews must match across all domains.
     openGraph: {
-      images: getPageImage(page).url,
+      images: '/og-card.png',
     },
+    twitter: { card: 'summary_large_image', images: '/og-card.png' },
   };
 }

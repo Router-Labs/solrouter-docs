@@ -7,6 +7,9 @@ import { SITE } from '@/lib/shared';
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
   title: { default: 'Solrouter Docs', template: '%s | Solrouter Docs' },
+  // Same social card as solrouter.com — link previews must match across all domains.
+  openGraph: { images: '/og-card.png' },
+  twitter: { card: 'summary_large_image', images: '/og-card.png' },
 };
 
 // Fonts match solrouter.com: DM Sans (headings and body), JetBrains Mono (code).
