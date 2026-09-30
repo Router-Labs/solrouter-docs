@@ -3,7 +3,7 @@ title: "Encryption"
 icon: Lock
 description: "Solrouter encrypts prompts on your device with Arcium RescueCipher and X25519 key exchange. Only an Intel TDX enclave can decrypt them. Solrouter's backend never sees plaintext."
 status: live
-checked: "2026-08-26"
+checked: "2026-09-30"
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout';
@@ -30,10 +30,11 @@ The first line of defense is simple: encrypt before you transmit. The SDK encryp
 
 ### Inference isolation
 
-Your data has to be decrypted somewhere to run the model. The question is *where*, and who can see it. With Solrouter, decryption happens inside an attested enclave. The model runs on a Nosana GPU node that the enclave calls.
+Your data has to be decrypted somewhere to run the model. The question is *where*, and who can see it. With Solrouter, decryption happens inside an attested enclave, and the model runs on hardware the enclave calls.
 
 * **Intel TDX Confidential VM**: a hardware-enforced TEE. Memory is encrypted by the CPU and inaccessible to the host OS, hypervisor, and any Solrouter process running outside the enclave.
-* **Where plaintext exists**: the enclave decrypts your prompt, then calls the model on a Nosana GPU node (HTTPS per the documented node URL, not re-verified). The prompt and reply exist in plaintext in that node's memory during inference. The node runs outside the TDX enclave. The node operator could read the prompt at that moment; Solrouter does not control that hardware. The request is not linked to your identity on the node. When the reply returns to the enclave, it is encrypted with your session's ephemeral key before it leaves.
+* **Qwen3.5 122B: a GPU enclave.** The flagship model runs in vLLM inside an NVIDIA H200 in confidential-computing mode on Phala, with the server build pinned by image digest in the attested compose. The GPU host sees only encrypted memory, and only Solrouter's TDX enclave holds the key to call it. On this model no rented operator can read your prompt at any point.
+* **Smaller models: a Nosana GPU node.** GPT-OSS 20B, Qwen3.8 27B, and Qwen3-coder 30B run on a Nosana GPU node the enclave calls (HTTPS per the documented node URL, not re-verified). The prompt and reply exist in plaintext in that node's memory during inference. The node runs outside any enclave. The node operator could read the prompt at that moment; Solrouter does not control that hardware. The request is not linked to your identity on the node. When the reply returns to the enclave, it is encrypted with your session's ephemeral key before it leaves.
 * **No backend access**: no Solrouter employee, server process, or privileged operator on the backend can read your prompt or response. The hardware enforces this.
 
 ### Transport
@@ -75,7 +76,8 @@ To be precise about what is and is not guaranteed today:
 | ------------------------------------------ | -------------------------------------------------------------- |
 | Client-side encryption before transmission | Live: RescueCipher + X25519                                     |
 | Plaintext hidden from Solrouter backend    | Live: decryption happens only inside the Intel TDX enclave      |
-| Plaintext hidden from the Nosana GPU node  | No: the model runs on plaintext on that node during inference   |
+| Plaintext hidden from the GPU host, Qwen3.5 122B | Live: the model runs inside an H200 GPU enclave           |
+| Plaintext hidden from the Nosana GPU node (smaller models) | No: the model runs on plaintext on that node during inference |
 | Intel-signed TDX quote you can fetch       | Live: `GET /tee/attestation`                                    |
 | Published reference measurements           | Soon: the repository is private, no reference values yet        |
 | MPC-based inference                        | Soon: Arcium MXE roadmap                                        |
@@ -83,7 +85,7 @@ To be precise about what is and is not guaranteed today:
 
 ## Encryption options in the SDK
 
-Encryption is on by default in `@solrouter/sdk`. You do not have to do anything to get it. You can turn it off for a plaintext path, but you give up every privacy guarantee on this page when you do. The plaintext path sends your prompt to the same self-hosted Nosana models. It does not unlock any other model.
+Encryption is on by default in `@solrouter/sdk`. You do not have to do anything to get it. You can turn it off for a plaintext path, but you give up every privacy guarantee on this page when you do. The plaintext path sends your prompt to the same self-hosted models. It does not unlock any other model.
 
 <Tabs items={["Encrypted (default)", "Plaintext (opt-out)"]}>
   <Tab value="Encrypted (default)">

@@ -39,7 +39,14 @@ const ZONES: Zone[] = [
   },
   {
     icon: Zap,
-    title: 'Nosana GPU node',
+    title: 'H200 GPU enclave (Qwen3.5 122B)',
+    state: 'Plaintext in GPU-encrypted memory',
+    plaintext: true,
+    attacker: 'encrypted memory, not the text',
+  },
+  {
+    icon: Zap,
+    title: 'Nosana GPU node (smaller models)',
     state: 'Plaintext in the Ollama process, TLS in transit',
     plaintext: true,
     attacker: 'your prompt and the reply, not who you are',
@@ -62,7 +69,7 @@ export function PlaintextZones() {
   return (
     <figure
       role="img"
-      aria-label="Six zones from your device to Solana. Your prompt is readable on your device, inside the TDX enclave, and on the Nosana GPU node. It is ciphertext on the network and at the Solrouter backend. Solana holds only a hash."
+      aria-label="Seven zones from your device to Solana. Your prompt is readable on your device, inside the TDX enclave, inside the H200 GPU enclave that runs Qwen3.5 122B, and on the Nosana GPU node that runs the smaller models. It is ciphertext on the network and at the Solrouter backend. Solana holds only a hash."
       className="my-6 rounded-2xl border border-fd-border bg-fd-card/40 p-5"
     >
       <div className="flex flex-col gap-3 md:flex-row md:items-stretch md:gap-2">

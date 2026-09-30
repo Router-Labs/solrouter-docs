@@ -1,9 +1,9 @@
 ---
 title: "Models"
 icon: Layers
-description: "Three open-weight models, served only through the Intel TDX enclave on Phala: GPT-OSS 20B, Qwen 3.8 27B, and Qwen3 Coder 30B. 8K context, 4K output."
+description: "Four open-weight models, served only through the Intel TDX enclave on Phala: Qwen3.5 122B inside an H200 GPU enclave, plus GPT-OSS 20B, Qwen 3.8 27B, and Qwen3 Coder 30B on Nosana nodes."
 status: live
-checked: "2026-09-13"
+checked: "2026-09-30"
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout';
@@ -12,13 +12,14 @@ Solrouter answers with open-weight models only. No prompt goes to OpenAI, Anthro
 
 ## Available models
 
-| Model | Id | Best for | Context | Max output |
-| --- | --- | --- | --- | --- |
-| GPT-OSS 20B | `gpt-oss:20b` | Default. General questions, research, summaries | 8K | 4K |
-| Qwen 3.8 27B | `qwen3.8:27b` | Uncensored. Topics other models refuse | 8K | 4K |
-| Qwen3 Coder 30B | `qwen3-coder:30b` | Coding. Review, refactors, explaining code | 8K | 4K |
+| Model | Id | Best for | Where it runs |
+| --- | --- | --- | --- |
+| Qwen3.5 122B | `qwen3.5:122b` | Flagship. Hardest questions, long context | H200 GPU enclave on Phala. The host cannot read your prompt |
+| GPT-OSS 20B | `gpt-oss:20b` | General questions, research, summaries | Nosana node. The operator can read the prompt during a request |
+| Qwen 3.8 27B | `qwen3.8:27b` | Uncensored. Topics other models refuse | Nosana node. Same limit |
+| Qwen3 Coder 30B | `qwen3-coder:30b` | Coding. Review, refactors, explaining code | Nosana node. Same limit |
 
-- **Context** is the model's window on its GPU node (`NOSANA_CONTEXT_LENGTH`, 8,192 tokens). Prompt, history, and reply share it.
+- **Context**: Qwen3.5 122B serves a 128K window; the Nosana models serve 8K (`NOSANA_CONTEXT_LENGTH`, 8,192 tokens). Prompt, history, and reply share it.
 - **Max output** is enforced inside the enclave (`TEE_MAX_OUTPUT_TOKENS`, 4,096 tokens). A request that asks for more is clamped. A request that sets no limit gets 2,048.
 - The REST API also accepts the ids with a `nosana:` prefix, for example `nosana:gpt-oss:20b`.
 
@@ -40,10 +41,12 @@ The SDK's TypeScript type still lists an older id, `qwen3-8b`. That model is ret
 
 ## How a model runs
 
-Each model runs as its own job on a [Nosana](https://nosana.io) GPU node, one node per model. A sealed request goes from your device to the Intel TDX enclave on Phala. The enclave opens it, calls the model's node, and seals the answer back to your key. No proprietary model API is anywhere in that path.
+A sealed request goes from your device to the Intel TDX enclave on Phala. The enclave opens it, calls the model's GPU, and seals the answer back to your key. No proprietary model API is anywhere in that path.
+
+Qwen3.5 122B runs in vLLM inside an NVIDIA H200 GPU enclave on Phala (confidential-computing mode, image pinned by digest in the attested compose). Only the TDX enclave holds the key to call it. The three smaller models each run as their own job on a [Nosana](https://nosana.io) GPU node, one node per model.
 
 <Callout type="warn" title="Where the prompt is readable">
-  The GPU node runs the model outside the enclave, so the prompt and the reply are in plaintext in that node's memory while the model works. Solrouter rents the node and does not control its hardware. The request is not linked to your identity on the node. Solrouter's backend never sees the plaintext. See [What is private here](/docs/use/what-is-private).
+  On Qwen3.5 122B, nowhere outside the enclaves: the GPU host sees only encrypted memory. On the Nosana-hosted models the GPU node runs outside any enclave, so the prompt and the reply are in plaintext in that node's memory while the model works. Solrouter rents the node and does not control its hardware. The request is not linked to your identity on the node. Solrouter's backend never sees the plaintext on either path. See [What is private here](/docs/use/what-is-private).
 </Callout>
 
 ## Node warm-up

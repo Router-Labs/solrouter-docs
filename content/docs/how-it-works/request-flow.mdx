@@ -9,7 +9,7 @@ checked: "2026-09-13"
 import { RequestFlowStepper } from '@/components/diagrams/request-flow-stepper';
 import { EncryptionFlow } from '@/components/diagrams/encryption-flow';
 
-This page follows one `client.chat()` call through the SDK, the Solrouter backend, the Intel TDX enclave, the Nosana GPU node, and back. Use the step list to walk the map. Each step names its payload and source file.
+This page follows one `client.chat()` call through the SDK, the Solrouter backend, the Intel TDX enclave, the model's GPU (an H200 GPU enclave for Qwen3.5 122B, a Nosana node for the smaller models), and back. Use the step list to walk the map. Each step names its payload and source file.
 
 <RequestFlowStepper />
 
@@ -21,7 +21,7 @@ This page follows one `client.chat()` call through the SDK, the Solrouter backen
 4. `POST /tee/process` with a Bearer key. What leaves the machine: the ciphertext bundle plus, in plaintext, the API key, model id, `chatId`, and the optional `systemPrompt`, `useRAG`, `ragCollection`, `useLiveSearch`.
 5. The backend forwards `{encryptedPrompt, model, privacyAttestationId}` unchanged.
 6. The CVM derives the shared secret with its X25519 private key and decrypts.
-7. The CVM calls the configured Nosana endpoint at `/v1/chat/completions` with the plaintext prompt. HTTPS per the documented node URL, not re-verified.
+7. The CVM calls the model's endpoint at `/v1/chat/completions` with the plaintext prompt: the H200 GPU enclave for Qwen3.5 122B (plaintext exists only inside GPU-encrypted memory there), or the configured Nosana endpoint for the smaller models (HTTPS per the documented node URL, not re-verified).
 8. The CVM encrypts the reply to your key, signs the `SOLR-ATTEST-v2` tuple, and requests a tappd quote over `reportData = sha256(x25519 || ed25519)`, which tappd writes into the quote as `sha512("app-data:" || reportData)`.
 9. The backend commits the compressed receipt and returns `{success, encryptedResponse, attestation, encryptionProof, requestId, metadata, backendRole: 'BLIND_RELAY', onchainAttestation, privacyProof}`.
 10. The SDK decrypts `encryptedResponse` with the session private key.
@@ -32,11 +32,12 @@ This page follows one `client.chat()` call through the SDK, the Solrouter backen
 
 **In words**
 
-- Your device encrypts. The backend relays ciphertext. The enclave decrypts. The Nosana node runs the model in plaintext. The reply returns encrypted.
+- Your device encrypts. The backend relays ciphertext. The enclave decrypts. Qwen3.5 122B runs inside an H200 GPU enclave; the smaller models run in plaintext on a Nosana node. The reply returns encrypted.
 
 ## Key custody
 
 - Your device: an ephemeral X25519 private key per session. Never sent.
 - Solrouter backend: no key on this path.
 - Enclave: an X25519 sealing key and an ed25519 signing key, generated at boot and never exported.
-- Nosana node: no key. It receives plaintext from the enclave.
+- H200 GPU enclave (Qwen3.5 122B): a vLLM API key sealed on both CVMs, so only the enclave can call it. Its host reads nothing.
+- Nosana node (smaller models): no key. It receives plaintext from the enclave.

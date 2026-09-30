@@ -27,14 +27,15 @@ function Feature({ icon: Icon, title, sub }: { icon: LucideIcon; title: string; 
 /**
  * The sealed-room picture of a Confidential VM (Intel TDX on Phala dStack).
  * Two layers: isolation (the operator cannot open the door) and attestation
- * (the window shows which program runs inside). The Nosana GPU node sits
- * outside the room and sees the prompt while it runs the model.
+ * (the window shows which program runs inside). Qwen3.5 122B runs in its own
+ * GPU enclave; the smaller models run on a Nosana GPU node outside any room,
+ * which sees the prompt while it runs the model.
  */
 export function SealedRoom() {
   return (
     <figure
       role="img"
-      aria-label="A data center holds a glass room called Confidential VM with a locked slot for the public key and a window that shows attestation. The operator outside cannot open the door because the CPU encrypts the memory. A Nosana GPU node outside the data center runs the model and sees the prompt while it works."
+      aria-label="A data center holds a glass room called Confidential VM with a locked slot for the public key and a window that shows attestation. The operator outside cannot open the door because the CPU encrypts the memory. Qwen3.5 122B runs in a second sealed room with an H200 GPU. The smaller models run on a Nosana GPU node outside any sealed room, which sees the prompt while it works."
       className="my-6 rounded-2xl border border-fd-border bg-fd-card/40 p-5"
     >
       <div className="rounded-xl border border-dashed border-fd-border p-4">
@@ -77,9 +78,10 @@ export function SealedRoom() {
           <Zap className="h-4 w-4" aria-hidden />
         </div>
         <div>
-          <div className="text-sm font-medium text-fd-foreground">Nosana GPU node (outside the room)</div>
+          <div className="text-sm font-medium text-fd-foreground">GPU nodes (outside this room)</div>
           <div className="text-xs leading-snug text-fd-muted-foreground">
-            Runs the model. Sees the prompt while it works. Does not know who you are.
+            Qwen3.5 122B runs in its own sealed room: an H200 GPU enclave whose host sees only encrypted memory.
+            The smaller models run on a Nosana GPU node that sees the prompt while it works but does not know who you are.
           </div>
         </div>
       </div>
