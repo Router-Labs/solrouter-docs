@@ -3,7 +3,7 @@ title: "What is private here"
 icon: EyeOff
 description: "Who can read your prompt, your files, and your history, and what Solrouter keeps on its servers."
 status: live
-checked: "2026-09-13"
+checked: "2026-09-30"
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout';
@@ -17,7 +17,7 @@ import { WhoSeesWhat } from '@/components/diagrams/sealed-blur';
 
 "If I type something private into Solrouter, who can read it?"
 
-On the sealed path, Solrouter's own servers cannot read your prompt or the reply. The prompt is opened only inside a sealed computer (a TEE) and on the rented GPU machine that runs the AI model. Web chat at solrouter.com is on the sealed path, and its history stays in your browser. Agent mode, its connectors, and your knowledge base do not get that protection, and the tables below show exactly where each one is readable.
+On the sealed path, Solrouter's own servers cannot read your prompt or the reply. The prompt is opened only inside sealed hardware: an Intel TDX enclave, and, for Qwen3.5 122B, an NVIDIA H200 GPU enclave. On Qwen3.5 122B no rented machine's operator can read your words at any point. The three smaller open models (GPT-OSS 20B, Qwen3.8 27B, Qwen3-coder 30B) run on rented Nosana GPU nodes, and only there can the node operator read the prompt and reply while the model runs. Web chat at solrouter.com is on the sealed path, and its history stays in your browser. Agent mode, its connectors, and your knowledge base do not get that protection, and the tables below show exactly where each one is readable.
 
 <WhoSeesWhat />
 
@@ -47,7 +47,8 @@ The matrix shows five parties. You are the sixth: your own device always reads y
 - **Network observer.** Anyone who watches the connection between you and Solrouter. For example, your internet provider or the owner of a public Wi-Fi.
 - **Solrouter backend.** Solrouter's own servers. They check your login, take payment, store your history, and pass messages along.
 - **CVM cloud host (Phala).** The company that owns the physical machine where the sealed computer runs. The sealed computer is a Confidential Virtual Machine (CVM). The processor encrypts its memory, so the machine owner cannot read it. See [What is a TEE?](/docs/how-it-works/what-is-a-tee).
-- **Nosana GPU host.** The operator of the graphics-card machine that runs the AI model. Solrouter rents it from the Nosana network. Solrouter does not control that hardware.
+- **H200 GPU TEE host (Phala).** The machine that runs Qwen3.5 122B. The model runs in vLLM inside a GPU enclave: an NVIDIA H200 in confidential-computing mode, with the server build pinned by image digest in the attested compose. The host sees only encrypted memory, never your words. Only Solrouter's TDX enclave holds the key to call it.
+- **Nosana GPU host.** The operator of the graphics-card machine that runs one of the smaller open models (GPT-OSS 20B, Qwen3.8 27B, Qwen3-coder 30B). Solrouter rents it from the Nosana network. Solrouter does not control that hardware.
 - **Solana observer.** Anyone who reads the public Solana blockchain. Solrouter posts a receipt there for each encrypted request.
 
 Each cell says what that party can see. The legend under the matrix explains every word.
@@ -57,24 +58,27 @@ Each cell says what that party can see. The legend under the matrix explains eve
 Rows here describe the sealed path: web chat, the TypeScript SDK with its default settings, or the MCP server's `encrypted_chat`. Filled cells mark the only places a party can read your words. Every row is Live.
 
 <PrivacyMatrix
-  parties={["Network observer", "Solrouter backend", "CVM cloud host (Phala)", "Nosana GPU host", "Solana observer"]}
+  parties={["Network observer", "Solrouter backend", "CVM cloud host (Phala)", "H200 GPU TEE host (Qwen3.5 122B)", "Nosana GPU host (smaller models)", "Solana observer"]}
   rows={[
-    { what: "Prompt text", cells: ["ct", "ct", "ct", "pt", "ha"] },
-    { what: "Reply text", cells: ["ct", "ct", "ct", "pt", "no"] },
-    { what: "Plain-text files (web chat)", cells: ["ct", "ct", "ct", "pt", "ha"] },
-    { what: "Web chat history", cells: ["no", "no", "no", "no", "no"] },
-    { what: "Knowledge-base documents", cells: ["ct", "pt", "no", "no", "no"] },
-    { what: "Wallet address", cells: ["no", "pt", "no", "no", "no"] },
-    { what: "Model name", cells: ["no", "pt", "me", "pt", "pt"] },
-    { what: "That you used Solrouter", cells: ["me", "pt", "me", "me", "me"] },
-    { what: "Encrypted-prompt hash", cells: ["no", "ha", "no", "no", "ha"] },
-    { what: "Web searches (encrypted agent mode, REST)", cells: ["ct", "ct", "me", "pt", "no"] },
+    { what: "Prompt text", cells: ["ct", "ct", "ct", "ct", "pt", "ha"] },
+    { what: "Reply text", cells: ["ct", "ct", "ct", "ct", "pt", "no"] },
+    { what: "Plain-text files (web chat)", cells: ["ct", "ct", "ct", "ct", "pt", "ha"] },
+    { what: "Web chat history", cells: ["no", "no", "no", "no", "no", "no"] },
+    { what: "Knowledge-base documents", cells: ["ct", "pt", "no", "no", "no", "no"] },
+    { what: "Wallet address", cells: ["no", "pt", "no", "no", "no", "no"] },
+    { what: "Model name", cells: ["no", "pt", "me", "me", "pt", "pt"] },
+    { what: "That you used Solrouter", cells: ["me", "pt", "me", "me", "me", "me"] },
+    { what: "Encrypted-prompt hash", cells: ["no", "ha", "no", "no", "no", "ha"] },
+    { what: "Web searches (encrypted agent mode, REST)", cells: ["ct", "ct", "me", "ct", "pt", "no"] },
   ]}
 />
 
+A request touches only one GPU column: the one for the model you chose. On Qwen3.5 122B the Nosana column does not apply, and the other way round.
+
 **Notes**
 
-- **Nosana GPU host, readable.** The model runs there in plaintext for the length of one request. Solrouter rents the machine and does not control it. The request is not linked to your identity.
+- **H200 GPU TEE host, encrypted.** Qwen3.5 122B runs in vLLM inside an NVIDIA H200 GPU enclave on Phala. The host sees encrypted memory, not your words, on every request. The server build is pinned by image digest in the attested compose, and only Solrouter's TDX enclave holds the key to call it.
+- **Nosana GPU host, readable.** GPT-OSS 20B, Qwen3.8 27B, and Qwen3-coder 30B run there in plaintext for the length of one request. Solrouter rents the machine and does not control it. The request is not linked to your identity. Pick Qwen3.5 122B if no rented operator should be able to read your words.
 - **Knowledge-base documents.** Files are split and embedded on the server as plain text, not encrypted at rest. Sealed chat does not search them. Whether the deployed app isolates collections per user is not determined.
 - **Files.** Web chat inlines plain-text files into the sealed prompt, so they get the same protection as your words. Images and documents are refused in sealed chat. The SDK sends the text prompt only.
 - **Web chat history.** Stored in your browser's IndexedDB and never sent to the server, so it does not sync across devices. The backend keeps only the chat row: the title "New Chat", the model, and timestamps. Recent turns and remembered facts reach the enclave inside the sealed prompt.
@@ -86,7 +90,7 @@ Rows here describe the sealed path: web chat, the TypeScript SDK with its defaul
 This is Agent mode and its connectors, `/agent` calls with a plain prompt, and the SDK with `encrypted: false` or `reasoning: 'braid'`. Normal web chat and guest chat do not use it. There is no client-side encryption, so the backend and the model node read your words. Status: Live.
 
 <PrivacyMatrix
-  parties={["Network observer", "Solrouter backend", "CVM cloud host (Phala)", "Nosana GPU host", "Solana observer"]}
+  parties={["Network observer", "Solrouter backend", "CVM cloud host (Phala)", "Nosana GPU host (smaller models)", "Solana observer"]}
   rows={[
     { what: "Prompt text", cells: ["ct", "pt", "no", "pt", "no"] },
     { what: "Reply text", cells: ["ct", "pt", "no", "pt", "no"] },
@@ -100,6 +104,8 @@ This is Agent mode and its connectors, `/agent` calls with a plain prompt, and t
   legend={false}
 />
 
+- **The GPU column describes the Nosana-hosted models** (GPT-OSS 20B, Qwen3.8 27B, Qwen3-coder 30B). Qwen3.5 122B is served from inside an H200 GPU enclave whose host cannot read your words on any path. The Solrouter backend reads your words on this path either way.
+
 - **Chat history, at rest.** Agent mode messages are stored encrypted with AES-256-GCM under a key the backend holds. That protects against a stolen database copy, not against Solrouter, which also reads the prompt on the way in.
 - **Connectors.** In Agent mode the backend calls Notion or GitHub with your connected token, reads what comes back, and passes it to the model node with your prompt.
 
@@ -107,7 +113,7 @@ On this path attachments and knowledge-base files reach the backend and the mode
 
 ## Where your words are readable
 
-The strip below follows one sealed request from your device to the Solana receipt. Tinted zones hold your words in readable form. Grey zones hold only ciphertext or a hash. The rented GPU machine is one of the tinted zones.
+The strip below follows one sealed request from your device to the Solana receipt. Tinted zones hold your words in readable form. Grey zones hold only ciphertext or a hash. Of the two GPU zones, only the Nosana one exposes your words to the machine's operator, and only when you picked one of the smaller models.
 
 <PlaintextZones />
 
@@ -117,13 +123,14 @@ The strip below follows one sealed request from your device to the Solana receip
 - Network: ciphertext only. A watcher sees size and timing.
 - Solrouter backend: ciphertext only. It checks your login, bills you, and passes the blob along.
 - TDX CVM: your words are readable here, inside memory that the processor encrypts. The machine owner cannot open it.
-- Nosana GPU node: your words are readable here while the model runs. Solrouter does not control this machine. The request is not linked to you.
+- H200 GPU enclave (Qwen3.5 122B): your words are readable here, inside GPU memory that the hardware encrypts. The machine host cannot open it.
+- Nosana GPU node (smaller models): your words are readable here while the model runs. Solrouter does not control this machine. The request is not linked to you.
 - Solana: hash only. A receipt proves a request happened and names the model. It does not hold your words.
 
 <Callout type="warn" title="Not FHE inference">
   Solrouter does not run fully homomorphic encryption (FHE) inference. FHE means a computer works on scrambled data without ever unscrambling it. No production system runs AI models of this size under FHE in 2026. The compute cost is many orders of magnitude away from usable speed. Anyone who claims "FHE LLM inference" in production is overclaiming.
 
-  What Solrouter provides is encryption on your device, a hardware-isolated CVM that unscrambles the prompt, a model that runs on a rented Nosana GPU node, and a receipt on Solana for each encrypted request. That is a real and checkable guarantee. It is not FHE, and we will not claim otherwise.
+  What Solrouter provides is encryption on your device, a hardware-isolated CVM that unscrambles the prompt, a model that runs either inside an H200 GPU enclave (Qwen3.5 122B) or on a rented Nosana GPU node (the smaller models), and a receipt on Solana for each encrypted request. That is a real and checkable guarantee. It is not FHE, and we will not claim otherwise.
 </Callout>
 
 ## What we keep
@@ -154,7 +161,7 @@ Guest chat is sealed like signed-in chat. It stores no chat rows on the server; 
 - "Can Solrouter read my history?" Sealed chat history, no: it stays in your browser. Agent mode history, yes: it is stored under a key the backend holds.
 - "Can Solrouter read my memory?" No. Only your wallet can unlock it.
 - "Can Solrouter read my uploaded documents?" Yes. They are stored as plain text and plain files.
-- "Can anyone else read my prompt?" The operator of the Nosana GPU node could, while the model runs. No one else.
+- "Can anyone else read my prompt?" On Qwen3.5 122B, no one: the model runs inside a GPU enclave. On the smaller Nosana-hosted models, the node operator could, while the model runs. No one else.
 - "Is my wallet address public?" It is not on the Solana receipt. Solrouter's backend knows it.
 
 ## Next

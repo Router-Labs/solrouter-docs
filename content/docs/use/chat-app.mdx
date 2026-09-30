@@ -57,7 +57,7 @@ Each has 8K tokens of context and up to 4K tokens of output. See [Models](/docs/
 
 Every normal chat message is sealed, whether you are signed in or a guest. The browser encrypts the prompt to the enclave's key and sends it to `POST /tee/process`. Solrouter's backend relays ciphertext and cannot read it. There is no plaintext fallback: if sealing fails, the app shows an error and sends nothing.
 
-The enclave calls the model on a Nosana GPU node, and that node sees the prompt and the reply in plaintext while it runs the model. Solrouter does not control that hardware.
+The enclave calls the model's GPU. For Qwen3.5 122B that is an H200 GPU enclave whose host cannot read your words. For the smaller models it is a Nosana GPU node, and that node sees the prompt and the reply in plaintext while it runs the model; Solrouter does not control that hardware.
 
 | Feature | Sealed |
 | --- | --- |

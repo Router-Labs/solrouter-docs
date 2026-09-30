@@ -3,7 +3,7 @@ title: "What is a TEE?"
 icon: ShieldCheck
 description: "A TEE is a sealed part of a computer that the cloud operator cannot look into, and this page explains what that means for your prompt."
 status: live
-checked: "2026-08-26"
+checked: "2026-09-30"
 statusNote: "Describes the Intel TDX enclave on Phala Cloud that answers at api.solrouter.com/tee/public-key today."
 ---
 
@@ -53,12 +53,12 @@ Think of a tamper-evident seal on a package. The seal shows the package was not 
 
 A TEE stops outsiders from looking in. It does not stop the program inside from talking out.
 
-Solrouter's program inside the enclave decrypts your prompt. It then sends the plain-text prompt to a Nosana GPU node, a separate computer that runs the language model. That node is outside the sealed room. The node can see your prompt and the reply during inference. Solrouter does not control that hardware. The request is not linked to your identity on the node.
+Solrouter's program inside the enclave decrypts your prompt. It then sends the plain-text prompt to the computer that runs the language model. Where that computer is matters. For Qwen3.5 122B it is a second sealed room: an NVIDIA H200 GPU enclave on Phala, whose host sees only encrypted memory and which only Solrouter's enclave can call. For the smaller models (GPT-OSS 20B, Qwen3.8 27B, Qwen3-coder 30B) it is a Nosana GPU node outside any sealed room: that node can see your prompt and the reply during inference, Solrouter does not control its hardware, and the request is not linked to your identity there.
 
 Solrouter's own deployment file states the same limit. It claims "Solrouter never sees your prompt or searches" and adds "NOT no one sees them".
 
 <Callout type="warn" title="One sentence to remember">
-Solrouter's backend and its cloud host cannot read your prompt. The Nosana GPU node that runs the model can, while it works on it.
+Solrouter's backend and its cloud host cannot read your prompt. On Qwen3.5 122B nobody else can either: the model runs inside a GPU enclave. On the smaller models, the Nosana GPU node that runs the model can read it while it works on it.
 </Callout>
 
 The page [What is private here](/docs/use/what-is-private) has the full table of who can see what.

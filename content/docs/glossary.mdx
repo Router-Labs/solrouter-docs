@@ -77,7 +77,9 @@ This page defines each term in plain words first, then the technical name. Every
 ## N
 **Nonce.** A random number used once per encrypted message, so two identical prompts never make the same ciphertext. The nonce is stored in the encryption proof. See [RescueCipher and X25519](/docs/how-it-works/encryption).
 
-**Nosana GPU node.** A rented computer with a graphics card on the Nosana network. It runs the AI model. The enclave sends it your decrypted prompt over an encrypted connection. The model runs outside the enclave, so the node operator could read the prompt at that moment. Solrouter does not control that hardware, and the request is not tied to your identity there. See [What is private here](/docs/use/what-is-private).
+**H200 GPU enclave.** The sealed GPU machine that runs Qwen3.5 122B: an NVIDIA H200 in confidential-computing mode on Phala, running vLLM. The host sees only encrypted memory, and only Solrouter's TDX enclave can call it. On this model no rented operator can read your prompt. See [What is private here](/docs/use/what-is-private).
+
+**Nosana GPU node.** A rented computer with a graphics card on the Nosana network. It runs one of the smaller AI models (GPT-OSS 20B, Qwen3.8 27B, Qwen3-coder 30B). The enclave sends it your decrypted prompt over an encrypted connection. The model runs outside the enclave, so the node operator could read the prompt at that moment. Solrouter does not control that hardware, and the request is not tied to your identity there. See [What is private here](/docs/use/what-is-private).
 
 **Nosana job.** One running task on the Nosana network. Solrouter runs each model as its own job, so each model has its own node and address. After idle time a node can answer "Nosana GPU node is warming up"; wait and retry. See [Models and Nosana nodes](/docs/how-it-works/models).
 ## O
@@ -85,7 +87,7 @@ This page defines each term in plain words first, then the technical name. Every
 
 **One-shot swap (Mode B).** A swap mode where your agent keeps its own wallet. Solrouter returns an unsigned funding transaction, your agent signs it, and a worker does the rest. Swap execution is Soon. See [Agent Privacy API](/docs/build/agent-privacy-api).
 
-**Open-weight model.** An AI model whose files are public, so anyone can download and run it on their own hardware. This is what makes private hosting possible. Solrouter runs `gpt-oss:20b`, `qwen3.8:27b`, and `qwen3-coder:30b`. See [Models](/docs/how-it-works/models).
+**Open-weight model.** An AI model whose files are public, so anyone can download and run it on their own hardware. This is what makes private hosting possible. Solrouter runs `qwen3.5:122b`, `gpt-oss:20b`, `qwen3.8:27b`, and `qwen3-coder:30b`. See [Models](/docs/how-it-works/models).
 ## P
 **Phala dStack.** The hosting platform that runs Solrouter's Confidential VM on Intel TDX hardware. It also provides the small service (tappd) that hands out attestation quotes. See [TDX attestation](/docs/how-it-works/attestation).
 
