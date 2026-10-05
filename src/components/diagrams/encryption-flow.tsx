@@ -47,8 +47,8 @@ function Hop({ label, open = false }: { label: string; open?: boolean }) {
  * Theme-adaptive infographic of the request path.
  *
  * encrypted (default): device encrypts, backend relays ciphertext, the CVM
- * decrypts and calls the model on a Nosana GPU node, the reply comes back
- * encrypted.
+ * decrypts and calls the model (the H200 GPU enclave for Qwen3.5 122B, a
+ * Nosana GPU node for the smaller models), the reply comes back encrypted.
  *
  * encrypted={false}: the same path with plaintext at the backend. Used on the
  * Privacy SDK page to show what `encrypted: false` gives up.
@@ -56,8 +56,8 @@ function Hop({ label, open = false }: { label: string; open?: boolean }) {
 export function EncryptionFlow({ encrypted = true }: { encrypted?: boolean }) {
   const wire = encrypted ? 'ciphertext' : 'plaintext';
   const label = encrypted
-    ? 'Request path with encryption on: your device encrypts the prompt, the Solrouter backend relays ciphertext it cannot read, the Intel TDX enclave decrypts it and calls the model on a Nosana GPU node, and the reply returns encrypted to your device.'
-    : 'Request path with encryption off: your device sends plaintext, the Solrouter backend reads and routes it to the same self-hosted model on a Nosana GPU node, and the reply returns in plaintext.';
+    ? 'Request path with encryption on: your device encrypts the prompt, the Solrouter backend relays ciphertext it cannot read, the Intel TDX enclave decrypts it and calls the model inside the H200 GPU enclave for Qwen3.5 122B or on a Nosana GPU node for the smaller models, and the reply returns encrypted to your device.'
+    : 'Request path with encryption off: your device sends plaintext, the Solrouter backend reads and routes it to the same self-hosted models, and the reply returns in plaintext.';
 
   return (
     <figure
@@ -88,8 +88,8 @@ export function EncryptionFlow({ encrypted = true }: { encrypted?: boolean }) {
         <Hop label="plaintext over TLS" open />
         <Stage
           icon={Zap}
-          title="Nosana GPU node"
-          sub="Runs the open-weight model (Ollama)"
+          title="GPU node"
+          sub="Qwen3.5 122B: H200 GPU enclave, host reads nothing. Smaller models: Nosana node, operator can read"
         />
       </div>
       <figcaption className="mt-4 text-center text-xs text-fd-muted-foreground">
