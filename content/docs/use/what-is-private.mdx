@@ -3,7 +3,7 @@ title: "What is private here"
 icon: EyeOff
 description: "Who can read your prompt, your files, and your history, and what Solrouter keeps on its servers."
 status: live
-checked: "2026-09-13"
+checked: "2026-10-05"
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout';
@@ -21,14 +21,29 @@ On the sealed path, Solrouter's own servers cannot read your prompt or the reply
 
 <WhoSeesWhat />
 
+## Local proxy modes
+
+`private` is provider-hosted proxy inference. The SDK encrypts the masked prompt
+to the Solrouter TEE, then the TEE forwards it to Nosana. The Nosana GPU host can
+read the prompt and reply. This mode is not full-path E2E.
+
+`e2e` requires a client-verified TEE key. The current SDK does not verify the TDX
+quote, so the local proxy returns 503 `e2e_model_unavailable`. The `qwen3.5:122b`
+model runs in an H200 enclave, but it is not eligible for this mode yet.
+
 ## What is sealed
 
-Sealed means the prompt is encrypted on your machine with a fresh X25519 key agreement and Arcium RescueCipher, opened only inside the Intel TDX enclave on Phala, and recorded with a Light Protocol compressed attestation on Solana (program `ATMRatMtsKX4bHax7U4FRdhbE4mjU4NKpDZGqZqAhBKb`).
+Here, "sealed" means the client encrypts the prompt to the TEE with X25519 and
+RescueCipher. The TEE opens it. For Nosana models, the TEE sends prompt text to
+the GPU node in plaintext; its operator can read it. The SDK does not verify
+the TEE key quote, so strict E2E is unavailable.
 
-| Surface | Sealed | Status |
+| Surface | Encrypted to TEE | Status |
 | --- | --- | --- |
 | TypeScript SDK, `client.chat()` with the default `encrypted: true` | Yes | Live |
 | MCP server, `encrypted_chat` | Yes | Live |
+| Local proxy, `--mode private` | Yes | Live; Nosana host can read prompt and reply |
+| Local proxy, `--mode e2e` | Not available | Returns 503 until the SDK verifies TEE attestation |
 | MCP server, the model step of `private_research`, `private_token_analysis`, `private_wallet_audit` | Yes | Live |
 | MCP server, the lookups those research tools make (Brave, DexScreener, CoinGecko, Solana RPC) | No. They go from your machine to those services in plaintext | Live |
 | MCP server, `agent_run` | No. The prompt goes to Solrouter's backend in plaintext | Live |

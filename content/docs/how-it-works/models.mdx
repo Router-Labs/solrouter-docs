@@ -1,16 +1,19 @@
 ---
 title: "Models"
 icon: Layers
-description: "Three open-weight models, served only through the Intel TDX enclave on Phala: GPT-OSS 20B, Qwen 3.8 27B, and Qwen3 Coder 30B. 8K context, 4K output."
+description: "Nosana models run outside TEE; the GPU host can read inference text. qwen3.5:122b runs in H200 TEE, but SDK attestation verification is not built."
 status: live
-checked: "2026-09-13"
+checked: "2026-10-05"
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout';
 
-Solrouter answers with open-weight models only. No prompt goes to OpenAI, Anthropic, or Google. Their models run on their makers' servers, where prompts are readable, so they cannot sit behind a sealed path.
+Solrouter's open-weight routes do not call OpenAI, Anthropic, or Google model APIs.
+Nosana models run outside the enclave; their GPU host can read prompt and reply text.
+The `qwen3.5:122b` model runs in an H200 TEE, but the SDK does not verify its TEE
+key, so strict E2E is unavailable through the proxy.
 
-## Available models
+## Nosana-hosted models
 
 | Model | Id | Best for | Context | Max output |
 | --- | --- | --- | --- | --- |
@@ -23,6 +26,10 @@ Solrouter answers with open-weight models only. No prompt goes to OpenAI, Anthro
 - The REST API also accepts the ids with a `nosana:` prefix, for example `nosana:gpt-oss:20b`.
 
 8K in and 4K out is fine for questions, a diff, or a file. It is not enough for a whole repository.
+
+## Strict E2E model route
+
+`qwen3.5:122b` runs on an H200 confidential-computing GPU enclave hosted on Phala. The SDK can encrypt to this route, but it does not verify the TDX quote. The local proxy therefore rejects `--mode e2e` with HTTP 503 `e2e_model_unavailable`. Private mode is separate: it uses the Nosana proxy route, whose GPU host can read inference text.
 
 ## Choosing a model
 
@@ -38,9 +45,13 @@ const res = await client.chat('Review this function for bugs', {
 
 The SDK's TypeScript type still lists an older id, `qwen3-8b`. That model is retired and is not served. Use `gpt-oss-20b`. To reach the other two models from the SDK, pass the backend id with a cast, for example `model: 'nosana:qwen3-coder:30b' as any`.
 
-## How a model runs
+## How Nosana-hosted models run
 
-Each model runs as its own job on a [Nosana](https://nosana.io) GPU node, one node per model. A sealed request goes from your device to the Intel TDX enclave on Phala. The enclave opens it, calls the model's node, and seals the answer back to your key. No proprietary model API is anywhere in that path.
+Each listed model runs as its own job on a Nosana GPU node. The client encrypts
+its prompt to the Intel TDX enclave on Phala. The enclave decrypts it and sends
+the plaintext prompt to Nosana over HTTPS. The node runs outside the enclave and
+can read the prompt and reply. The enclave encrypts the reply to your key. The
+Solrouter backend does not see prompt plaintext.
 
 <Callout type="warn" title="Where the prompt is readable">
   The GPU node runs the model outside the enclave, so the prompt and the reply are in plaintext in that node's memory while the model works. Solrouter rents the node and does not control its hardware. The request is not linked to your identity on the node. Solrouter's backend never sees the plaintext. See [What is private here](/docs/use/what-is-private).
