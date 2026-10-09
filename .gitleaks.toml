@@ -1,0 +1,18 @@
+title = "Router Labs gitleaks config"
+
+[extend]
+useDefault = true
+
+# Fixtures and documentation placeholders are not credentials. A real credential
+# anywhere else still fails the scan.
+[allowlist]
+description = "Test fixtures, docs placeholders, App Store Connect identifiers"
+paths = [
+  '''(^|/)test/''',
+  '''\.test\.[cm]?[jt]sx?$''',
+  '''(^|/)__tests__/''',
+  '''(^|/)eas\.json$''',
+]
+regexes = [
+  '''(?i)(your[-_ ]?|example|placeholder|dummy|redacted|\.\.\.|<[^>]+>|\$\{?[A-Z_]+\}?)''',
+]
